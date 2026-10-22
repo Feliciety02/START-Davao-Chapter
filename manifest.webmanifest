@@ -1,0 +1,17 @@
+{
+  "id": "./",
+  "name": "START Scholar Portal",
+  "short_name": "START",
+  "description": "Weekly check-ins, your school and START events for DOST-SEI START scholars, Campus Leads and RRs.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#12203A",
+  "theme_color": "#12203A",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

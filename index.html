@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>START Scholar Portal</title>
+<meta name="description" content="Weekly check-ins, your school and START events for DOST-SEI START scholars.">
+<meta name="theme-color" content="#12203A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="START">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --navy: #12203A; --blue: #0099FF; --sky: #7CCBFF; --sun: #FFDD00; --ice: #EAF3FC; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--navy); font-family: Poppins, 'Segoe UI', Arial, sans-serif; color: #fff; overflow: hidden; }
+  #portal { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: var(--ice); opacity: 0; transition: opacity .35s; }
+  #portal.on { opacity: 1; }
+
+  /* splash: the email hero, full screen */
+  #splash { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px;
+            background: linear-gradient(160deg, #12203A 0%, #163A6B 60%, #005CAA 100%); transition: opacity .35s; z-index: 5; text-align: center; }
+  #splash.off { opacity: 0; pointer-events: none; }
+  #splash::before, #splash::after { content: ""; position: absolute; border-radius: 50%; pointer-events: none; }
+  #splash::before { width: 420px; height: 420px; right: -160px; top: -170px; border: 2px solid rgba(124,203,255,.18); }
+  #splash::after { width: 260px; height: 260px; right: 10px; top: -90px; border: 2px solid rgba(255,221,0,.16); }
+  .mark { width: 112px; height: 112px; border-radius: 26px; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+  .name { font-size: 30px; font-weight: 800; letter-spacing: .5px; line-height: 1.05; text-transform: uppercase; }
+  .name span { color: var(--sun); display: block; font-size: 15px; letter-spacing: 3px; margin-top: 6px; }
+  .bar { width: 160px; height: 6px; border-radius: 6px; background: rgba(255,255,255,.15); overflow: hidden; }
+  .bar i { display: block; width: 40%; height: 100%; background: linear-gradient(90deg, var(--blue), var(--sun)); border-radius: 6px; animation: slide 1.1s ease-in-out infinite; }
+  @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
+  .note { font-size: 13px; color: #B9C3D6; max-width: 320px; line-height: 1.5; }
+  .pillbtn { display: inline-block; background: var(--sun); color: var(--navy); border: 0; border-radius: 999px; padding: 12px 24px; font: 800 13px Poppins, Arial, sans-serif;
+             letter-spacing: .8px; text-transform: uppercase; cursor: pointer; border-bottom: 3px solid var(--blue); text-decoration: none; }
+  .regions { display: grid; gap: 10px; width: 100%; max-width: 340px; }
+  .regions button { background: rgba(255,255,255,.08); color: #fff; border: 1px solid rgba(255,255,255,.18); border-radius: 14px; padding: 14px 16px;
+                    font: 700 15px Poppins, Arial, sans-serif; text-align: left; cursor: pointer; }
+  .regions button:hover { border-color: var(--sun); }
+  .signoff { position: absolute; bottom: max(18px, env(safe-area-inset-bottom)); font-size: 12px; font-weight: 800; letter-spacing: 1px; color: var(--sky); }
+
+  /* install hint (bottom sheet) and the small region switch */
+  #hint { position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 6; display: none; align-items: center; gap: 12px;
+          background: #fff; color: var(--navy); border-radius: 16px; padding: 12px 14px; box-shadow: 0 10px 30px rgba(18,32,58,.35); font-size: 13px; line-height: 1.4; }
+  #hint img { width: 40px; height: 40px; border-radius: 10px; }
+  #hint b { display: block; font-size: 14px; }
+  #hint .x { background: none; border: 0; font-size: 20px; color: #4B5B77; cursor: pointer; padding: 4px 6px; margin-left: auto; }
+  #hint .pillbtn { padding: 9px 14px; font-size: 11px; white-space: nowrap; }
+  #switch { position: fixed; left: 8px; bottom: max(8px, env(safe-area-inset-bottom)); z-index: 4; display: none; background: rgba(18,32,58,.55); color: #fff; border: 0;
+            border-radius: 999px; padding: 5px 10px; font: 600 11px Poppins, Arial, sans-serif; cursor: pointer; }
+</style>
+</head>
+<body>
+<iframe id="portal" title="START Scholar Portal" allow="clipboard-write"></iframe>
+
+<div id="splash">
+  <img class="mark" src="icons/mark-256.png" alt="">
+  <div class="name">START<span>Scholar Portal</span></div>
+  <div id="state"><div class="bar"><i></i></div></div>
+  <div class="signoff">✦ START · DOST-SEI</div>
+</div>
+
+<div id="hint" role="dialog" aria-label="Install the START app">
+  <img src="icons/icon-192.png" alt="">
+  <div><b>Install the START app</b><span id="hinttext">Open START from your home screen, like any app.</span></div>
+  <button class="pillbtn" id="install" style="display:none">Install</button>
+  <button class="x" id="hintx" aria-label="Close">×</button>
+</div>
+<button id="switch">⇄ Region</button>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  var REGIONS = ((window.START_APP || {}).regions || []).filter(function (r) { return r && r.url; });
+  var $ = function (id) { return document.getElementById(id); };
+  var frame = $('portal'), splash = $('splash'), state = $('state');
+  var store = {                               // this app's own storage (first-party, so phones keep it)
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+  };
+  var current = null;
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function show(html) { state.innerHTML = html; splash.classList.remove('off'); }
+  function loadingBar() { show('<div class="bar"><i></i></div>'); }
+
+  function pick() {
+    if (!REGIONS.length || /PASTE_YOUR_WEBSITE_ID/.test(REGIONS[0].url)) {
+      show('<p class="note">This app is not set up yet. Put your region\'s website address in <b>config.js</b>.</p>');
+      return;
+    }
+    if (REGIONS.length === 1) return open(REGIONS[0]);
+    var saved = store.get('start_region');
+    var r = REGIONS.filter(function (x) { return x.url === saved; })[0];
+    if (r) return open(r);
+    show('<p class="note">Which region are you in?</p><div class="regions">' + REGIONS.map(function (x, i) {
+      return '<button data-i="' + i + '">' + esc(x.name) + '</button>'; }).join('') + '</div>');
+    [].forEach.call(state.querySelectorAll('button[data-i]'), function (b) {
+      b.onclick = function () { var x = REGIONS[Number(b.getAttribute('data-i'))]; store.set('start_region', x.url); open(x); };
+    });
+  }
+
+  function open(r) {
+    current = r;
+    if (!navigator.onLine) {
+      show('<p class="note">You are offline. Connect to the internet to open START.</p><button class="pillbtn" id="retry">Try again</button>');
+      $('retry').onclick = function () { open(r); };
+      return;
+    }
+    loadingBar();
+    frame.classList.remove('on');
+    var u = r.url + (r.url.indexOf('?') === -1 ? '?' : '&') + 'app=' + encodeURIComponent(location.origin + location.pathname);
+    frame.src = u;
+    $('switch').style.display = REGIONS.length > 1 ? 'block' : 'none';
+    clearTimeout(open.t);
+    open.t = setTimeout(reveal, 12000);       // never stay on the splash forever
+  }
+  function reveal() { frame.classList.add('on'); splash.classList.add('off'); }
+
+  // The portal (inside Google's frame) talks to the app: "ready", and saving the sign-in here
+  window.addEventListener('message', function (e) {
+    if (!/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/i.test(e.origin)) return;
+    var d = e.data || {};
+    if (d.start === 'ready') { clearTimeout(open.t); reveal(); return; }
+    if (d.start !== 'store' || !current) return;
+    var key = 'start_store:' + current.url, all = {};
+    try { all = JSON.parse(store.get(key) || '{}') || {}; } catch (err) { all = {}; }
+    if (d.op === 'get') { e.source.postMessage({ start: 'store', op: 'all', data: all }, e.origin); return; }
+    if (d.op === 'set' && typeof d.k === 'string' && d.k.indexOf('start_') === 0) {
+      if (d.v == null) delete all[d.k]; else all[d.k] = String(d.v).slice(0, 2000);
+      store.set(key, JSON.stringify(all));
+    }
+  });
+
+  $('switch').onclick = function () { store.set('start_region', null); frame.classList.remove('on'); frame.src = 'about:blank'; pick(); };
+  window.addEventListener('online', function () { if (current && !frame.classList.contains('on')) open(current); });
+
+  // Install: Android/desktop Chrome give a button; iPhone needs Share › Add to Home Screen
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  var ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var deferred = null;
+  function hint(text, withButton) {
+    if (standalone || store.get('start_hint_closed')) return;
+    $('hinttext').textContent = text; $('install').style.display = withButton ? '' : 'none'; $('hint').style.display = 'flex';
+  }
+  $('hintx').onclick = function () { $('hint').style.display = 'none'; store.set('start_hint_closed', String(Date.now())); };
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; hint('Add START to your home screen.', true); });
+  $('install').onclick = function () {
+    if (!deferred) return;
+    deferred.prompt();
+    deferred.userChoice.then(function () { deferred = null; $('hint').style.display = 'none'; });
+  };
+  window.addEventListener('appinstalled', function () { $('hint').style.display = 'none'; });
+  if (ios && !standalone) setTimeout(function () { hint('Tap the Share button, then "Add to Home Screen".', false); }, 2500);
+
+  if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  pick();
+})();
+</script>
+</body>
+</html>
