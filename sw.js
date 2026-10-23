@@ -1,6 +1,6 @@
 // START app: keeps the app shell (this page, icons) so the app opens even on a weak connection.
 // The portal itself always comes live from the region's tracker, so nobody sees old data.
-const CACHE = 'start-app-v1';
+const CACHE = 'start-app-v4';
 const SHELL = ['./', './index.html', './config.js', './manifest.webmanifest', './icons/mark-256.png', './icons/icon-192.png', './icons/favicon-32.png'];
 
 self.addEventListener('install', e => {
