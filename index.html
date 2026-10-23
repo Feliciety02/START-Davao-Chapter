@@ -5,95 +5,198 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>START Scholar Portal</title>
 <meta name="description" content="Weekly check-ins, your school and START events for DOST-SEI START scholars.">
-<meta name="theme-color" content="#12203A">
+<meta name="theme-color" content="#0099FF">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="START">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root { --navy: #12203A; --blue: #0099FF; --sky: #7CCBFF; --sun: #FFDD00; --ice: #EAF3FC; }
+  /* Same look as the START website: the blue-to-yellow wash, big white rounded cards, the star, pill buttons */
+  :root { --navy: #12203A; --navy2: #23365C; --blue: #0099FF; --sky: #7CCBFF; --sun: #FFDD00; --ice: #EAF3FC; --ink2: #66748C;
+          --shadow: 0 6px 22px rgba(18,32,58,.08); --wash: linear-gradient(135deg, #0099FF 0%, #EAF3FC 48%, #FFDD00 100%); }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; background: var(--navy); font-family: Poppins, 'Segoe UI', Arial, sans-serif; color: #fff; overflow: hidden; }
-  #portal { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: var(--ice); opacity: 0; transition: opacity .35s; }
+  html, body { margin: 0; height: 100%; font-family: Poppins, 'Segoe UI', Arial, sans-serif; color: var(--navy); overflow: hidden; background: #EAF3FC; }
+  body::before { content: ""; position: fixed; inset: 0; background: var(--wash); z-index: 0; }
+  button { font-family: inherit; }
+  #portal { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: #F2F5FA; opacity: 0; transition: opacity .35s; z-index: 1; }
   #portal.on { opacity: 1; }
 
-  /* splash: the email hero, full screen */
-  #splash { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px;
-            background: linear-gradient(160deg, #12203A 0%, #163A6B 60%, #005CAA 100%); transition: opacity .35s; z-index: 5; text-align: center; }
-  #splash.off { opacity: 0; pointer-events: none; }
-  #splash::before, #splash::after { content: ""; position: absolute; border-radius: 50%; pointer-events: none; }
-  #splash::before { width: 420px; height: 420px; right: -160px; top: -170px; border: 2px solid rgba(124,203,255,.18); }
-  #splash::after { width: 260px; height: 260px; right: 10px; top: -90px; border: 2px solid rgba(255,221,0,.16); }
-  .mark { width: 112px; height: 112px; border-radius: 26px; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
-  .name { font-size: 30px; font-weight: 800; letter-spacing: .5px; line-height: 1.05; text-transform: uppercase; }
-  .name span { color: var(--sun); display: block; font-size: 15px; letter-spacing: 3px; margin-top: 6px; }
-  .bar { width: 160px; height: 6px; border-radius: 6px; background: rgba(255,255,255,.15); overflow: hidden; }
-  .bar i { display: block; width: 40%; height: 100%; background: linear-gradient(90deg, var(--blue), var(--sun)); border-radius: 6px; animation: slide 1.1s ease-in-out infinite; }
-  @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
-  .note { font-size: 13px; color: #B9C3D6; max-width: 320px; line-height: 1.5; }
-  .pillbtn { display: inline-block; background: var(--sun); color: var(--navy); border: 0; border-radius: 999px; padding: 12px 24px; font: 800 13px Poppins, Arial, sans-serif;
-             letter-spacing: .8px; text-transform: uppercase; cursor: pointer; border-bottom: 3px solid var(--blue); text-decoration: none; }
-  .regions { display: grid; gap: 10px; width: 100%; max-width: 340px; }
-  .regions button { background: rgba(255,255,255,.08); color: #fff; border: 1px solid rgba(255,255,255,.18); border-radius: 14px; padding: 14px 16px;
-                    font: 700 15px Poppins, Arial, sans-serif; text-align: left; cursor: pointer; }
-  .regions button:hover { border-color: var(--sun); }
-  .signoff { position: absolute; bottom: max(18px, env(safe-area-inset-bottom)); font-size: 12px; font-weight: 800; letter-spacing: 1px; color: var(--sky); }
+  /* the star mascot */
+  .star { display: block; } .bob { animation: bob 2.6s ease-in-out infinite; }
+  @keyframes bob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-8px) rotate(3deg); } }
+  .star .blink { transform-origin: 50px 55px; animation: blink 4.2s infinite; }
+  @keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
 
-  /* install hint (bottom sheet) and the small region switch */
-  #hint { position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 6; display: none; align-items: center; gap: 12px;
-          background: #fff; color: var(--navy); border-radius: 16px; padding: 12px 14px; box-shadow: 0 10px 30px rgba(18,32,58,.35); font-size: 13px; line-height: 1.4; }
-  #hint img { width: 40px; height: 40px; border-radius: 10px; }
-  #hint b { display: block; font-size: 14px; }
-  #hint .x { background: none; border: 0; font-size: 20px; color: #4B5B77; cursor: pointer; padding: 4px 6px; margin-left: auto; }
-  #hint .pillbtn { padding: 9px 14px; font-size: 11px; white-space: nowrap; }
-  #switch { position: fixed; left: 8px; bottom: max(8px, env(safe-area-inset-bottom)); z-index: 4; display: none; background: rgba(18,32,58,.55); color: #fff; border: 0;
-            border-radius: 999px; padding: 5px 10px; font: 600 11px Poppins, Arial, sans-serif; cursor: pointer; }
-  #rescue { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 50; background: #12203A; color: #fff;
-    border-radius: 18px; padding: 14px 16px; box-shadow: 0 12px 30px rgba(18,32,58,.35); font: 13.5px/1.45 Poppins, Arial, sans-serif; }
-  #rescue p { margin: 0 0 10px; } #rescue div { display: flex; gap: 8px; flex-wrap: wrap; }
-  #rescue button, #rescue a { border: 0; border-radius: 999px; padding: 9px 16px; font: 700 13px Poppins, Arial, sans-serif; cursor: pointer; text-decoration: none; }
-  #rescue button { background: #FFDD00; color: #12203A; } #rescue a { background: #fff; color: #12203A; }
-  #off { position: fixed; inset: 0; z-index: 7; overflow-y: auto; background: linear-gradient(160deg, #EAF4FF 0%, #F7FBFF 55%, #FFF6BF 100%); color: var(--navy); }
-  .obar { position: sticky; top: 0; background: var(--navy); color: #FFDD00; font: 700 12.5px Poppins, Arial, sans-serif; text-align: center; padding: calc(10px + env(safe-area-inset-top)) 12px 10px; }
-  .owrap { max-width: 560px; margin: 0 auto; padding: 18px 16px calc(28px + env(safe-area-inset-bottom)); }
-  .ohead { display: flex; gap: 12px; align-items: center; } .ohead img { width: 52px; height: 52px; border-radius: 14px; }
-  .ohead h1, .owrap > h1 { margin: 0; font-size: 26px; font-weight: 800; } .ohead p { margin: 2px 0 0; color: #4b5b77; font-size: 14px; }
-  .ochips { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; } .ochips span { background: #fff; border-radius: 999px; padding: 7px 12px; font-weight: 700; font-size: 13px; box-shadow: 0 2px 8px rgba(18,32,58,.08); }
-  .ocard { background: #fff; border-radius: 18px; padding: 14px 16px; margin: 10px 0; box-shadow: 0 4px 14px rgba(18,32,58,.08); display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
-  .ocard b { font-size: 15px; } .ocard span { color: #4b5b77; } .ocard.ok { border-left: 5px solid #1E8E3E; }
-  .ocard.hero { background: var(--navy); color: #fff; } .ocard.hero span { color: #CFE0F3; } .ocard.hero .pillbtn { margin-top: 10px; align-self: flex-start; }
-  .owrap h2 { font-size: 13px; letter-spacing: 1.2px; text-transform: uppercase; margin: 18px 0 6px; }
-  .oev { background: #fff; border-radius: 14px; padding: 10px 14px; margin: 6px 0; display: flex; flex-direction: column; font-size: 14px; } .oev span { color: #4b5b77; font-size: 13px; }
-  .pillbtn.light { background: #fff; border: 1.5px solid var(--navy); border-bottom-width: 3px; margin-top: 16px; }
-  #off fieldset { border: 0; background: #fff; border-radius: 16px; padding: 12px 14px; margin: 12px 0; } #off legend { font-weight: 800; font-size: 15px; padding: 8px 0 4px; }
-  .opt { display: flex; gap: 10px; align-items: flex-start; padding: 8px 2px; font-size: 14.5px; } .opt input { width: 20px; height: 20px; margin-top: 2px; flex: none; }
-  .opt.consent { background: #FFF6BF; border-radius: 14px; padding: 12px; font-size: 13px; }
-  #off textarea { width: 100%; border: 1.5px solid #CBD3DE; border-radius: 12px; padding: 10px; font: 14px Poppins, Arial, sans-serif; }
-  .oerr { color: #B3261E; font-weight: 700; font-size: 13.5px; min-height: 18px; } .orow { display: flex; gap: 10px; justify-content: flex-end; } .orow .pillbtn { margin-top: 0; }
+  /* splash: a white card on the wash */
+  #splash { position: fixed; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; padding: 20px; transition: opacity .35s; }
+  #splash.off { opacity: 0; pointer-events: none; }
+  .scard { width: 100%; max-width: 380px; background: #fff; border-radius: 32px; padding: 30px 24px 24px; text-align: center; box-shadow: 0 18px 50px rgba(18,32,58,.16); position: relative; }
+  .scard .star { margin: -74px auto 6px; filter: drop-shadow(0 10px 14px rgba(18,32,58,.18)); }
+  .brand { font-size: 30px; font-weight: 800; letter-spacing: .5px; line-height: 1; }
+  .brand small { display: block; margin-top: 8px; font-size: 12px; font-weight: 700; letter-spacing: 2.4px; text-transform: uppercase; color: var(--ink2); }
+  #state { margin-top: 20px; min-height: 30px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .bar { width: 170px; height: 12px; border-radius: 999px; background: var(--ice); overflow: hidden; }
+  .bar i { display: block; width: 40%; height: 100%; background: linear-gradient(90deg, var(--blue), var(--sun)); border-radius: 999px; animation: slide 1.1s ease-in-out infinite; }
+  @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
+  .note { margin: 0; font-size: 14px; color: var(--ink2); line-height: 1.55; max-width: 300px; }
+  .note b { color: var(--navy); }
+  .signoff { margin-top: 22px; font-size: 11.5px; font-weight: 700; letter-spacing: 1.4px; color: #8A97AD; text-transform: uppercase; }
+
+  /* buttons, like the website */
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 999px; padding: 13px 22px; font: 700 14px Poppins, Arial, sans-serif;
+          cursor: pointer; text-decoration: none; background: var(--navy); color: #fff; box-shadow: 0 4px 0 #050C1A; transition: transform .06s, box-shadow .06s; }
+  .pill:active { transform: translateY(3px); box-shadow: 0 1px 0 #050C1A; }
+  .pill.sun { background: #FFDD00 linear-gradient(90deg, #FFDD00 0%, #FFF3A0 50%, #7CCBFF 100%); color: var(--navy); border-bottom: 3px solid var(--blue);
+              box-shadow: 0 4px 12px rgba(0,153,255,.3); font-weight: 800; letter-spacing: .6px; text-transform: uppercase; font-size: 13px; }
+  .pill.sun:active { transform: translateY(2px); box-shadow: 0 2px 6px rgba(0,153,255,.3); }
+  .pill.light { background: #fff; color: var(--navy); border: 1.5px solid var(--navy); box-shadow: none; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; font-size: 13px; }
+  .pill[disabled] { background: #E7EBF1; color: #9AA6B8; border: 0; border-bottom: 3px solid #D3DAE4; box-shadow: none; cursor: default; transform: none; }
+  .regions { display: grid; gap: 10px; width: 100%; }
+  .regions button { background: var(--ice); color: var(--navy); border: 0; border-radius: 18px; padding: 14px 16px; font: 700 15px Poppins, Arial, sans-serif; text-align: left; cursor: pointer; box-shadow: 0 4px 0 #D6E4F5; }
+  .regions button:hover { background: #FFF3B0; }
+
+  /* install hint (bottom sheet) and the region switch */
+  #hint { position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 6; display: none; align-items: center; gap: 12px; max-width: 520px; margin: 0 auto;
+          background: #fff; color: var(--navy); border-radius: 24px; padding: 12px 14px; box-shadow: 0 12px 34px rgba(18,32,58,.22); font-size: 13px; line-height: 1.4; }
+  #hint .star { flex: none; }
+  #hint b { display: block; font-size: 14px; } #hint span { color: var(--ink2); }
+  #hint .x { background: var(--ice); border: 0; width: 34px; height: 34px; border-radius: 50%; font-size: 18px; color: var(--navy); cursor: pointer; margin-left: auto; flex: none; }
+  #hint .pill { padding: 9px 16px; font-size: 13px; white-space: nowrap; }
+  #switch { position: fixed; left: 10px; bottom: max(10px, env(safe-area-inset-bottom)); z-index: 4; display: none; background: #fff; color: var(--navy); border: 0;
+            border-radius: 999px; padding: 6px 12px; font: 700 11.5px Poppins, Arial, sans-serif; cursor: pointer; box-shadow: var(--shadow); }
+  #rescue { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 50; max-width: 560px; margin: 0 auto; background: #fff; color: var(--navy);
+    border-radius: 24px; padding: 14px 16px; box-shadow: 0 14px 36px rgba(18,32,58,.25); font: 13.5px/1.5 Poppins, Arial, sans-serif; display: flex; gap: 12px; align-items: flex-start; }
+  #rescue .star { flex: none; } #rescue p { margin: 0 0 10px; } #rescue .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  #rescue .pill { padding: 9px 16px; font-size: 13px; }
+
+  /* ---------- offline: the saved page ---------- */
+  #off { position: fixed; inset: 0; z-index: 7; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .owrap { max-width: 600px; margin: 0 auto; padding: max(16px, env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom)); }
+  .ostat { display: inline-flex; align-items: center; gap: 8px; background: var(--navy); color: #fff; border-radius: 999px; padding: 7px 14px; font-size: 12.5px; font-weight: 600; }
+  .ostat i { width: 9px; height: 9px; border-radius: 50%; background: var(--sun); box-shadow: 0 0 0 4px rgba(255,221,0,.25); }
+  .ohead { display: flex; gap: 14px; align-items: center; margin: 16px 0 14px; }
+  .ohead h1 { margin: 0; font-size: clamp(24px, 7vw, 30px); font-weight: 800; line-height: 1.1; } .ohead p { margin: 4px 0 0; color: var(--navy); opacity: .7; font-size: 14px; font-weight: 600; }
+  .stk { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  .stk div { flex: 1 1 150px; display: flex; align-items: center; gap: 12px; padding: 10px 18px 10px 10px; border-radius: 999px; box-shadow: 0 5px 0 rgba(18,32,58,.10); min-width: 0; }
+  .stk div.navy { background: var(--navy); color: #fff; } .stk div.sky { background: var(--sky); } .stk div.sunl { background: var(--sun); }
+  .stk em { flex: none; width: 46px; height: 46px; border-radius: 50%; background: #fff; display: grid; place-items: center; font-style: normal; }
+  .stk div.navy em { background: var(--sun); }
+  .stk b { display: block; font-size: 20px; line-height: 1.1; } .stk small { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase; opacity: .8; }
+  .card { background: #fff; border-radius: 24px; padding: 18px 20px; margin: 0 0 14px; box-shadow: var(--shadow); }
+  .card h2 { margin: 0 0 4px; font-size: 17px; } .card p { margin: 0; color: var(--ink2); font-size: 14px; line-height: 1.5; }
+  .card.ok { border-left: 6px solid #1E8E3E; } .card.wait { border-left: 6px solid var(--sun); }
+  .hero { position: relative; overflow: hidden; background: #12203A linear-gradient(135deg, #12203A 0%, #163A6B 60%, #005CAA 100%); color: #fff; border-radius: 28px; padding: 22px 20px 20px; margin-bottom: 14px; }
+  .hero .badge { display: inline-block; background: var(--sun); color: var(--navy); font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; padding: 5px 12px; border-radius: 999px; }
+  .hero h2 { margin: 10px 0 4px; font-size: 22px; } .hero p { margin: 0 0 16px; color: #CFE0F3; font-size: 14px; max-width: 70%; }
+  .hero .star { position: absolute; right: 10px; bottom: 6px; }
+  .sech { margin: 20px 4px 10px; font-size: 12px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; }
+  .tk { display: flex; align-items: stretch; background: #fff; border-radius: 20px; margin-bottom: 10px; box-shadow: var(--shadow); overflow: hidden; }
+  .tk .td { flex: none; width: 70px; display: grid; place-items: center; text-align: center; background: var(--sun); font-weight: 800; line-height: 1.05; padding: 10px 4px; border-right: 2px dashed rgba(18,32,58,.25); }
+  .tk .td small { display: block; font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; } .tk .td b { font-size: 22px; }
+  .tk .tx { padding: 12px 14px; min-width: 0; } .tk .tx b { display: block; font-size: 14.5px; overflow-wrap: anywhere; } .tk .tx span { color: var(--ink2); font-size: 13px; }
+  .oagain { margin-top: 18px; width: 100%; }
+
+  /* ---------- offline check-in: one question at a time, like the website ---------- */
+  .ckwrap { display: flex; flex-direction: column; min-height: 100%; } .ckwrap .q { flex: 1; }
+  .ckwrap .lf { margin-top: auto; }
+  .lt { display: flex; align-items: center; gap: 12px; }
+  .lt .x { flex: none; width: 44px; height: 44px; border: 0; border-radius: 50%; background: #fff; box-shadow: var(--shadow); font-size: 18px; cursor: pointer; color: var(--navy); }
+  .prog { flex: 1; height: 12px; background: #fff; border-radius: 999px; box-shadow: var(--shadow); position: relative; }
+  .prog i { display: block; position: relative; height: 100%; background: linear-gradient(90deg, #0099FF 0%, #7CCBFF 55%, #FFDD00 100%); border-radius: 999px; transition: width .3s; min-width: 12px; }
+  .prog .ride { position: absolute; right: -14px; top: 50%; transform: translateY(-50%); } .prog .ride .star { filter: drop-shadow(0 2px 3px rgba(18,32,58,.25)); }
+  .kick { margin-top: 18px; font-size: 13px; font-weight: 600; color: var(--navy); opacity: .7; }
+  .q h2 { margin: 4px 0 0; font-size: clamp(21px, 6vw, 26px); line-height: 1.25; }
+  .coach { display: flex; align-items: center; gap: 10px; margin: 12px 0 16px; }
+  .say { background: #fff; border-radius: 16px; padding: 9px 14px; font-size: 13.5px; font-weight: 600; box-shadow: var(--shadow); }
+  .opts { display: grid; gap: 10px; }
+  .opt { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; background: #fff; border: 0; border-radius: 22px; padding: 12px 16px 12px 12px; font: 600 15px Poppins, Arial, sans-serif;
+         color: var(--navy); cursor: pointer; box-shadow: 0 4px 0 #DFE6EF; transition: transform .12s, background .15s; min-height: 64px; }
+  .opt:active { transform: scale(.98); }
+  .opt[aria-pressed="true"] { background: var(--sun); box-shadow: 0 4px 0 #D4B200; }
+  .opt .ic { flex: none; width: 44px; height: 44px; border-radius: 14px; background: var(--ice); display: grid; place-items: center; }
+  .opt[aria-pressed="true"] .ic { background: #fff; }
+  .opt .tick { margin-left: auto; flex: none; width: 26px; height: 26px; border-radius: 8px; border: 2px solid #CBD3DE; display: grid; place-items: center; font-weight: 800; color: transparent; }
+  .opt[aria-pressed="true"] .tick { background: var(--navy); border-color: var(--navy); color: var(--sun); }
+  /* the mood card: the same face and slider as the website */
+  .moodcard { position: relative; border-radius: 28px; overflow: hidden; background: var(--bg); transition: background .35s; box-shadow: 0 14px 30px rgba(18,32,58,.22); max-width: 420px; margin: 0 auto; }
+  .mface { display: block; width: 100%; height: auto; padding: 22px 30px 6px; }
+  /* short screens (laptops, small phones): the face gets what height is left; the card keeps its width so nothing wraps */
+  .mface { max-height: clamp(150px, calc(100vh - 430px), 380px); max-height: clamp(150px, calc(100dvh - 430px), 380px); }
+  @media (max-height: 780px) {
+    #ock-none {}
+    .mpanel { padding: 16px 20px 8px; } .mface { padding-top: 14px; }
+    .kick { margin-top: 10px; } .q h2 { font-size: 22px; } .coach { margin: 8px 0 10px; } .coach .star { width: 40px; height: 40px; } .lf { padding-top: 8px; margin-top: 8px; }
+  }
+  .mface .eyes { transition: transform .35s cubic-bezier(.2,1.4,.4,1); }
+  .mface .eye circle:first-child { filter: drop-shadow(0 6px 4px rgba(18,32,58,.25)); }
+  .mface .mm { opacity: 0; transform-origin: 100px 140px; transform: scale(.6); transition: opacity .25s, transform .3s cubic-bezier(.2,1.6,.4,1); }
+  .moodcard[data-p="0"] .m0, .moodcard[data-p="1"] .m1, .moodcard[data-p="2"] .m2, .moodcard[data-p="3"] .m3 { opacity: 1; transform: scale(1); }
+  .mpanel { position: relative; background: #fff; border-radius: 30px 30px 0 0; margin-top: 8px; padding: 22px 22px 12px; }
+  .mpanel input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 34px; background: transparent; margin: 0; position: relative; z-index: 2; cursor: grab; }
+  .mpanel input[type=range]::-webkit-slider-runnable-track { height: 34px; background: transparent; }
+  .mpanel input[type=range]::-moz-range-track { height: 34px; background: transparent; }
+  .mpanel input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 46px; height: 46px; margin-top: -6px; border-radius: 50%; background: var(--bg); border: 5px solid #fff; box-shadow: 0 6px 14px rgba(18,32,58,.3), inset 0 0 0 2px rgba(18,32,58,.15); transition: background .35s; }
+  .mpanel input[type=range]::-moz-range-thumb { width: 36px; height: 36px; border-radius: 50%; background: var(--bg); border: 5px solid #fff; box-shadow: 0 6px 14px rgba(18,32,58,.3); }
+  .mticks { position: absolute; left: 44px; right: 44px; top: 32px; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
+  .mticks i { width: 4px; height: 22px; border-radius: 3px; background: #C9D6E6; } .mticks b { width: 4px; height: 4px; border-radius: 50%; background: #D7E1EE; }
+  .mstops { display: flex; justify-content: space-between; gap: 4px; margin-top: 8px; }
+  .mstop { flex: 1; padding: 6px 2px; border: 0; background: none; font: 700 12px Poppins, Arial, sans-serif; color: #5b6b84; text-align: center; cursor: pointer; }
+  .mstop[aria-pressed="true"] { color: var(--navy); text-decoration: underline 3px #FFDD00; text-underline-offset: 4px; }
+  @media (prefers-reduced-motion: reduce) { .mface .eyes, .mface .mm, .moodcard { transition: none; } }
+  .care { margin-top: 14px; background: #fff; border-radius: 18px; padding: 12px 14px; font-size: 13.5px; line-height: 1.5; border-left: 6px solid var(--blue); }
+  .opt.ticket { padding: 0; overflow: hidden; gap: 0; position: relative; min-height: 76px; }
+  .opt.ticket .tdate { flex: none; width: 72px; align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--navy); color: #fff; line-height: 1.05; border-right: 3px dashed #EAF3FC; }
+  .opt.ticket .tdate b { font-size: 24px; color: var(--sun); } .opt.ticket .tdate small { font-size: 10.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+  .opt.ticket .tname { flex: 1; padding: 12px 92px 12px 16px; min-width: 0; overflow-wrap: anywhere; }
+  .opt.ticket .stamp { position: absolute; right: 12px; top: 50%; transform: translateY(-50%) rotate(-12deg) scale(.6); opacity: 0; border: 2.5px solid var(--blue); color: var(--blue); border-radius: 8px;
+                       padding: 2px 8px; font-size: 11px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; transition: transform .25s cubic-bezier(.2,1.6,.4,1), opacity .2s; }
+  .opt.ticket[aria-pressed="true"] { background: #FFF3B0; box-shadow: 0 4px 0 #D4B200; } .opt.ticket[aria-pressed="true"] .stamp { opacity: 1; transform: translateY(-50%) rotate(-12deg) scale(1); }
+  .opt.tnone { justify-content: center; color: #4b5b77; min-height: 52px; }
+  .opt.sig .ic { border-radius: 50%; } .opt.sig.s0 .ic { background: #DDF5E6; } .opt.sig.s1 .ic { background: #DDF0FF; } .opt.sig.s2 .ic { background: #FDE3E3; }
+  .opt.sig[aria-pressed="true"] { background: #FFF3B0; }
+  .mbar { flex: none; width: 54px; height: 12px; border-radius: 999px; background: var(--ice); overflow: hidden; } .mbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--blue), var(--sky)); border-radius: inherit; }
+  .starters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .starter { border: 0; background: #fff; border-radius: 999px; padding: 7px 12px; font: 700 12.5px Poppins, Arial, sans-serif; color: var(--navy); cursor: pointer; box-shadow: var(--shadow); }
+  .pact .ic { flex: none; width: 48px; height: 48px; border-radius: 14px; background: var(--ice); display: grid; place-items: center; }
+  .pact[aria-pressed="true"] { background: #FFF3B0; }
+  .sticky { background: #FFF3B0; border-radius: 6px 6px 22px 6px; padding: 14px; box-shadow: 0 8px 18px rgba(18,32,58,.12); transform: rotate(-.6deg); }
+  .sticky textarea { width: 100%; min-height: 130px; border: 0; background: transparent; resize: vertical; font: 500 15px/1.5 Poppins, Arial, sans-serif; color: var(--navy); outline: none; }
+  .pact { display: flex; gap: 14px; align-items: center; width: 100%; text-align: left; background: #fff; border: 0; border-radius: 22px; padding: 14px 16px; cursor: pointer; box-shadow: 0 4px 0 #DFE6EF; font: 500 14px/1.45 Poppins, Arial, sans-serif; color: var(--navy); }
+  .pact .sw { flex: none; width: 52px; height: 30px; border-radius: 99px; background: #CBD3DE; position: relative; transition: background .2s; }
+  .pact .sw i { position: absolute; left: 3px; top: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.2); transition: left .2s cubic-bezier(.2,1.6,.4,1); }
+  .pact[aria-pressed="true"] .sw { background: #1E8E3E; } .pact[aria-pressed="true"] .sw i { left: 25px; }
+  .priv { margin: 10px 4px 0; font-size: 12px; color: var(--navy); opacity: .7; line-height: 1.5; }
+  .lf { position: sticky; bottom: 0; display: flex; gap: 10px; padding: 14px 0 max(14px, env(safe-area-inset-bottom)); margin-top: 18px; }
+  .lf .pill { flex: 1; padding: 15px; } .lf .pill.sun { flex: 2; }
+  .lf.solo { justify-content: center; } .lf.solo .pill.sun { flex: 0 1 360px; }
+  .oerr { min-height: 20px; margin-top: 10px; color: #A1261B; font-weight: 700; font-size: 13.5px; text-align: center; }
+  @media (prefers-reduced-motion: reduce) { .bob, .bar i, .star .blink { animation: none; } .face, .opt, .pill { transition: none; } }
 </style>
 </head>
 <body>
 <iframe id="portal" title="START Scholar Portal" allow="clipboard-write"></iframe>
 
 <div id="splash">
-  <img class="mark" src="icons/mark-256.png" alt="">
-  <div class="name">START<span>Scholar Portal</span></div>
-  <div id="state"><div class="bar"><i></i></div></div>
-  <div class="signoff">✦ START · DOST-SEI</div>
+  <div class="scard">
+    <div id="splashstar"></div>
+    <div class="brand">START<small id="regionname">Scholar Portal</small></div>
+    <div id="state"><div class="bar"><i></i></div></div>
+    <div class="signoff">START · DOST-SEI</div>
+  </div>
 </div>
 
 <div id="hint" role="dialog" aria-label="Install the START app">
-  <img src="icons/icon-192.png" alt="">
+  <span id="hintstar"></span>
   <div><b>Install the START app</b><span id="hinttext">Open START from your home screen, like any app.</span></div>
-  <button class="pillbtn" id="install" style="display:none">Install</button>
+  <button class="pill sun" id="install" style="display:none">Install</button>
   <button class="x" id="hintx" aria-label="Close">×</button>
 </div>
-<button id="switch">⇄ Region</button>
+<button id="switch">Change region</button>
 
 <script src="config.js"></script>
 <script>
@@ -107,9 +210,59 @@
   };
   var current = null;
 
-  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  // the START star (same drawing as the website)
+  function star(size, cls) {
+    var cx = 50, cy = 55, R = 41, r = 26, pts = [];
+    for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, rad = i % 2 ? r : R; pts.push([cx + rad * Math.cos(a), cy + rad * Math.sin(a)]); }
+    var d = 'M' + pts.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L') + 'Z';
+    var soft = function (fill, w, extra) { return '<path d="' + d + '" fill="' + fill + '" stroke="' + fill + '" stroke-width="' + w + '" stroke-linejoin="round"' + (extra || '') + '/>'; };
+    return '<svg class="star ' + (cls || '') + '" viewBox="0 0 100 100" width="' + size + '" height="' + size + '" aria-hidden="true">' +
+      '<ellipse cx="50" cy="95" rx="26" ry="3.6" fill="#12203A" opacity=".14"/>' + soft('#12203A', 16, ' transform="translate(0 3.5)"') + soft('#12203A', 16) +
+      soft('#E9A800', 10, ' transform="translate(0 3)"') + soft('#FFD21F', 10) +
+      '<path d="' + d + '" fill="#FFE77A" transform="translate(50 50) scale(.6) translate(-50 -55)" opacity=".75"/>' +
+      '<ellipse cx="33" cy="38" rx="6.5" ry="3.4" fill="#fff" opacity=".7" transform="rotate(-32 33 38)"/><circle cx="41.5" cy="31" r="1.9" fill="#fff" opacity=".8"/>' +
+      '<g class="blink"><ellipse cx="40.5" cy="55" rx="4.8" ry="6.2" fill="#12203A"/><ellipse cx="59.5" cy="55" rx="4.8" ry="6.2" fill="#12203A"/>' +
+      '<circle cx="42.3" cy="52.4" r="2" fill="#fff"/><circle cx="61.3" cy="52.4" r="2" fill="#fff"/></g>' +
+      '<ellipse cx="31.5" cy="63" rx="4.6" ry="2.8" fill="#FF8FA3" opacity=".7"/><ellipse cx="68.5" cy="63" rx="4.6" ry="2.8" fill="#FF8FA3" opacity=".7"/>' +
+      '<path d="M45.6 62.4 q2.2 3 4.4 0 q2.2 3 4.4 0" fill="none" stroke="#12203A" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
+  // the mood card (same as the website's check-in): a face that changes as you slide. 0 need support · 1 tough · 2 good · 3 great
+  var MOOD = [{ word: 'Need support', bg: '#12203A', look: [0, 5] }, { word: 'Tough', bg: '#CFE3F7', look: [-5, -3] },
+              { word: 'Good', bg: '#7CCBFF', look: [3, 0] }, { word: 'Great', bg: '#FFDD00', look: [0, -5] }];
+  function moodCard(pos, title) {
+    var p = pos < 0 ? 2 : pos, M = MOOD[p];
+    var eye = function (cx) { return '<g class="eye"><circle cx="' + cx + '" cy="80" r="27" fill="url(#eyeg)" stroke="#12203A" stroke-opacity=".15" stroke-width="2"/>' +
+      '<circle cx="' + cx + '" cy="80" r="9" fill="#12203A"/><circle cx="' + (cx + 3) + '" cy="76" r="3" fill="#fff"/></g>'; };
+    return '<div class="moodcard" id="moodc" style="--bg:' + M.bg + '" data-p="' + p + '">' +
+      '<svg class="mface" viewBox="0 0 200 170" aria-hidden="true"><defs><radialGradient id="eyeg" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#fff"/><stop offset=".75" stop-color="#F1F5FB"/><stop offset="1" stop-color="#C9D6E6"/></radialGradient></defs>' +
+      '<g class="eyes" style="transform:translate(' + M.look[0] + 'px,' + M.look[1] + 'px)">' + eye(62) + eye(138) + '</g>' +
+      '<g class="mm m0"><rect x="70" y="128" width="60" height="22" rx="11" fill="#12203A" stroke="#FF8FA3" stroke-width="5"/><path d="M80 139h40" stroke="#fff" stroke-width="7" stroke-dasharray="6 3"/></g>' +
+      '<g class="mm m1"><rect x="90" y="122" width="20" height="34" rx="10" fill="#12203A" stroke="#FF8FA3" stroke-width="5"/></g>' +
+      '<g class="mm m2"><path d="M72 130q28 22 56 0" fill="none" stroke="#12203A" stroke-width="9" stroke-linecap="round"/></g>' +
+      '<g class="mm m3"><path d="M66 124h68q0 34-34 34t-34-34z" fill="#12203A" stroke="#FF8FA3" stroke-width="5" stroke-linejoin="round"/><path d="M76 128h48" stroke="#fff" stroke-width="6" stroke-linecap="round"/></g></svg>' +
+      '<div class="mpanel"><input type="range" id="moodr" min="0" max="300" step="1" value="' + (p * 100) + '" aria-label="' + esc(title) + '">' +
+      '<div class="mticks"><i></i><b></b><b></b><i></i><b></b><b></b><i></i><b></b><b></b><i></i></div><div class="mstops">' +
+      MOOD.map(function (m, i) { return '<button class="mstop" data-p="' + i + '" aria-pressed="' + (pos === i) + '">' + m.word + '</button>'; }).join('') + '</div></div></div>';
+  }
+  var ICON = {
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#12203A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
+    flame: '<path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.2 1.2-3.6 2.4-4.6.2 1.6 1 2.6 2 2.6C11 8 11 5.5 12 3z" fill="#FFDD00" stroke="#12203A" stroke-width="1.8" stroke-linejoin="round"/>',
+    star: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" fill="#FFDD00" stroke="#12203A" stroke-width="1.8" stroke-linejoin="round"/>',
+    hand: '<path d="M8 12V6.5a1.5 1.5 0 0 1 3 0V11m0-5.5a1.5 1.5 0 0 1 3 0V11m0-4a1.5 1.5 0 0 1 3 0v6.5c0 4-2.5 6.5-6 6.5-2.7 0-4.2-1.4-5.6-3.6L4 13.6a1.5 1.5 0 0 1 2.4-1.7L8 14" fill="none" stroke="#12203A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+    siren: '<path d="M6 18v-5a6 6 0 0 1 12 0v5M4 18h16v3H4zM12 2v2M4.2 5.2l1.4 1.4M19.8 5.2l-1.4 1.4" fill="none" stroke="#12203A" stroke-width="1.8" stroke-linecap="round"/>',
+    meter: '<path d="M4 16a8 8 0 0 1 16 0M12 16l4-5" fill="none" stroke="#12203A" stroke-width="2" stroke-linecap="round"/>',
+    events: '<rect x="4" y="5.5" width="16" height="14" rx="3" fill="none" stroke="#12203A" stroke-width="1.8"/><path d="M8 3.5v4M16 3.5v4M4 10h16" stroke="#12203A" stroke-width="1.8" stroke-linecap="round"/>',
+  };
+  var ICON_SHIELD = '<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.3-7 10-4-1.7-7-5.4-7-10V6z" fill="#FFDD00" stroke="#12203A" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 12l2.5 2.5 4.5-5" fill="none" stroke="#12203A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  function ico(n, s) { return '<svg viewBox="0 0 24 24" width="' + (s || 24) + '" height="' + (s || 24) + '" aria-hidden="true">' + (ICON[n] || '') + '</svg>'; }
+
   function show(html) { state.innerHTML = html; splash.classList.remove('off'); }
   function loadingBar() { show('<div class="bar"><i></i></div>'); }
+  $('splashstar').innerHTML = star(104, 'bob');
+  $('hintstar').innerHTML = star(44);
+  if (REGIONS.length === 1 && REGIONS[0].name) $('regionname').textContent = 'Scholar Portal · ' + REGIONS[0].name.split(' · ')[0];
 
   function pick() {
     if (!REGIONS.length || /PASTE_YOUR_WEBSITE_ID/.test(REGIONS[0].url)) {
@@ -120,7 +273,7 @@
     var saved = store.get('start_region');
     var r = REGIONS.filter(function (x) { return x.url === saved; })[0];
     if (r) return open(r);
-    show('<p class="note">Which region are you in?</p><div class="regions">' + REGIONS.map(function (x, i) {
+    show('<p class="note"><b>Which region are you in?</b></p><div class="regions">' + REGIONS.map(function (x, i) {
       return '<button data-i="' + i + '">' + esc(x.name) + '</button>'; }).join('') + '</div>');
     [].forEach.call(state.querySelectorAll('button[data-i]'), function (b) {
       b.onclick = function () { var x = REGIONS[Number(b.getAttribute('data-i'))]; store.set('start_region', x.url); open(x); };
@@ -131,7 +284,7 @@
     current = r;
     if (!navigator.onLine) {
       if (offline(r)) return;
-      show('<p class="note">You are offline. Connect to the internet to open START.</p><button class="pillbtn" id="retry">Try again</button>');
+      show('<p class="note"><b>You are offline.</b><br>Connect to the internet to open START.</p><button class="pill sun" id="retry">Try again</button>');
       $('retry').onclick = function () { open(r); };
       return;
     }
@@ -152,66 +305,130 @@
   function plain(c) { var m = String(c).match(/^(\S+)\s+(.*)$/); return m && !/[A-Za-z0-9]/.test(m[1]) ? m[2] : String(c); }   // the answer without its emoji tag
   function closeOffline() { var o = $('off'); if (o) o.remove(); }
   function ago(t) { var m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' days ago'; }
+  function offPage() { var o = $('off'); if (!o) { o = document.createElement('div'); o.id = 'off'; document.body.appendChild(o); } o.scrollTop = 0; return o; }
   function offline(r) {
     var sn = snapOf(r);
     if (!sn) return false;
-    closeOffline(); splash.classList.add('off');
-    var o = document.createElement('div'); o.id = 'off'; document.body.appendChild(o);
+    splash.classList.add('off');
+    var o = offPage();
     var ck = sn.checkin, pend = pendingOf(r);
-    var status = pend ? '<div class="ocard ok"><b>Check-in saved on this phone</b><span>It will be sent by itself when you are back online.</span></div>'
-      : sn.done ? '<div class="ocard ok"><b>You\'re all set this week</b><span>Thanks for checking in.</span></div>'
-      : ck && ck.open ? '<div class="ocard hero"><b>Time for your check-in</b><span>Due ' + esc(ck.due || '') + '. You can answer it now, offline.</span><button class="pillbtn" id="ock">Answer the check-in</button></div>'
-      : '<div class="ocard"><b>Check-in is closed</b><span>' + (ck && ck.opens ? 'The next one opens on ' + esc(ck.opens) + '.' : '') + '</span></div>';
-    o.innerHTML = '<div class="obar">Offline · last updated ' + ago(sn.at) + '</div><div class="owrap">' +
-      '<div class="ohead"><img src="icons/mark-256.png" alt=""><div><h1>Hi, ' + esc(sn.first || 'there') + '</h1><p>' + esc(sn.school || '') + '</p></div></div>' +
-      '<div class="ochips"><span>' + (sn.streak || 0) + '-week streak</span>' + (sn.level ? '<span>' + (sn.xp || 0) + ' XP · ' + esc(sn.level) + '</span>' : '') + '</div>' +
-      status + (sn.note ? '<div class="ocard"><b>' + esc(sn.rr || 'Your RR') + '</b><span>' + esc(sn.note) + '</span></div>' : '') +
-      ((sn.events || []).length ? '<h2>Coming up</h2>' + sn.events.map(function (e) { return '<div class="oev"><b>' + esc(e.title) + '</b><span>' + esc(e.when) + (e.place ? ' · ' + esc(e.place) : '') + '</span></div>'; }).join('') : '') +
-      '<button class="pillbtn light" id="otry">Try again online</button></div>';
-    $('otry').onclick = function () { if (navigator.onLine) open(r); };
+    var status = pend ? '<div class="card wait"><h2>Check-in saved on this phone</h2><p>Status: <b>Pending</b>. It is sent by itself when you are back online and open START.</p></div>'
+      : sn.done ? '<div class="card ok"><h2>You\'re all set this week</h2><p>Thanks for checking in. See you next week!</p></div>'
+      : ck && ck.open ? '<div class="hero"><span class="badge">This week</span><h2>Time for your check-in</h2><p>Due ' + esc(ck.due || '') + '. You can answer it now, even offline.</p>' +
+          '<button class="pill sun" id="ock">Answer the check-in</button>' + star(70, 'bob') + '</div>'
+      : '<div class="card"><h2>Check-in is closed</h2><p>' + (ck && ck.opens ? 'The next one opens on ' + esc(ck.opens) + '.' : 'See you next week.') + '</p></div>';
+    var ev = (sn.events || []).map(function (e) {
+      var m = String(e.when || '').match(/^(\w{3}),?\s*(\w{3})\s+(\d+)/);
+      return '<div class="tk"><div class="td">' + (m ? '<div><small>' + esc(m[2]) + '</small><b>' + esc(m[3]) + '</b><small>' + esc(m[1]) + '</small></div>' : ico('events', 26)) + '</div>' +
+        '<div class="tx"><b>' + esc(e.title) + '</b><span>' + esc(e.when) + (e.place ? ' · ' + esc(e.place) : '') + '</span></div></div>'; }).join('');
+    o.innerHTML = '<div class="owrap"><span class="ostat"><i></i>Offline · last updated ' + ago(sn.at) + '</span>' +
+      '<div class="ohead">' + star(58, 'bob') + '<div><h1>Hi, ' + esc(sn.first || 'there') + '</h1><p>' + esc(sn.school || '') + '</p></div></div>' +
+      '<div class="stk"><div class="navy"><em>' + ico('flame', 26) + '</em><span><b>' + (sn.streak || 0) + '</b><small>Week streak</small></span></div>' +
+        (sn.level ? '<div class="sky"><em>' + ico('star', 26) + '</em><span><b>' + (sn.xp || 0) + ' XP</b><small>' + esc(sn.level) + '</small></span></div>' : '') + '</div>' +
+      status + (sn.note ? '<div class="card"><h2>' + esc(sn.rr || 'Your RR') + '</h2><p>' + esc(sn.note) + '</p></div>' : '') +
+      (ev ? '<div class="sech">Coming up</div>' + ev : '') +
+      '<button class="pill light oagain" id="otry">Try again online</button></div>';
+    $('otry').onclick = function () { if (navigator.onLine) open(r); else { this.textContent = 'Still offline. Try again soon.'; } };
     if ($('ock')) $('ock').onclick = function () { offlineCheckin(r, sn); };
     return true;
   }
+
+  // The weekly check-in, offline: the same questions, one at a time, kept on this phone until START is reachable
   function offlineCheckin(r, sn) {
-    var ck = sn.checkin, o = $('off');
-    var q = (ck.q || []).map(function (x, i) {
-      var name = 'oq' + i;
-      if (x.type === 'text') return '<fieldset><legend>' + esc(x.title) + '</legend><textarea id="' + name + '" maxlength="900" rows="3"></textarea></fieldset>';
-      return '<fieldset><legend>' + esc(x.title) + '</legend>' + x.choices.map(function (c) {
-        return '<label class="opt"><input type="' + (x.type === 'many' ? 'checkbox' : 'radio') + '" name="' + name + '" value="' + esc(c) + '"> <span>' + esc(plain(c)) + '</span></label>'; }).join('') + '</fieldset>';
-    }).join('');
-    o.innerHTML = '<div class="obar">Offline check-in · saved on this phone until you are online</div><div class="owrap"><h1>Weekly check-in</h1>' + q +
-      '<label class="opt consent"><input type="checkbox" id="ocons"> <span>' + esc(ck.consent || 'I agree to the data privacy notice.') + '</span></label>' +
-      '<p class="oerr" id="oerr"></p><div class="orow"><button class="pillbtn light" id="oback">Back</button><button class="pillbtn" id="osave">Save</button></div></div>';
-    $('oback').onclick = function () { offline(r); };
-    o.onchange = function () { $('oerr').textContent = ''; };
-    $('osave').onclick = function () {
-      var a = {}, miss = '';
-      (ck.q || []).forEach(function (x, i) {
-        var name = 'oq' + i;
-        if (x.type === 'text') { a[x.k] = ($(name).value || '').trim().slice(0, 900); return; }
-        var picked = [].map.call(document.querySelectorAll('input[name="' + name + '"]:checked'), function (e) { return e.value; });
-        if (!picked.length && !miss) miss = x.title;
-        a[x.k] = x.type === 'many' ? (picked.indexOf(x.none) !== -1 ? [x.none] : picked) : (picked[0] || '');
-      });
-      if (miss) { $('oerr').textContent = 'Please answer: ' + miss; return; }
-      if (!$('ocons').checked) { $('oerr').textContent = 'Please tick the data privacy consent.'; return; }
-      a.consent = true;
-      var st = sharedStore(r); st.all.start_pending = JSON.stringify({ a: a, at: Date.now(), email: sn.email }); st.save();
-      offline(r);
-    };
+    var ck = sn.checkin, steps = (ck.q || []).concat([{ k: 'consent', type: 'consent' }]), a = {}, i = 0;
+    var o = offPage();
+    var answered = function (q) { var v = a[q.k]; return q.type === 'text' ? true : q.type === 'consent' ? v === true : q.type === 'many' ? !!(v && v.length) : !!v; };
+    function draw() {
+      var q = steps[i], n = steps.length, h = '', coach = 'Pick one';
+      if (q.k === 'vibe' && q.type === 'one') {
+        coach = a.vibe == null ? 'Quick vibe check' : '';
+        var byFace = {}, posOf = {}, TAG = { '🆘': 0, '😵‍💫': 1, '🙂': 2, '🔥': 3 };      // each answer to its stop, by the answer's tag
+        q.choices.forEach(function (c, j) { var t = TAG[String(c).split(' ')[0]]; t = t != null ? t : q.choices.length - 1 - j; byFace[t] = c; posOf[c] = t; });
+        if (!coach) coach = ['Thank you for telling us. Help is coming.', 'Tough weeks happen. You got this.', 'Steady and strong. Nice.', 'Love that! Keep soaring.'][posOf[a.vibe]] || 'Got it.';
+        h = moodCard(a.vibe != null && posOf[a.vibe] != null ? posOf[a.vibe] : -1, q.title) +
+          (a.vibe != null && a.vibe === byFace[0] ? '<div class="care"><b>Thank you for telling us.</b> Your Campus Lead and Regional Representative will reach out. Need to talk to someone now? <b>NCMH Crisis Hotline: 1553</b> or <b>0917-899-8727</b>.</div>' : '');
+      } else if (q.k === 'events' && q.type === 'many') {                 // event tickets, stamped when tapped
+        coach = (a.events || []).filter(function (x) { return x !== q.none; }).length ? 'Nice! ' + (a.events || []).filter(function (x) { return x !== q.none; }).length + ' event' + ((a.events || []).length > 1 ? 's' : '') + ' this week.' : 'Pick all you joined';
+        h = '<div class="opts">' + q.choices.map(function (c) {
+          var on = (a.events || []).indexOf(c) !== -1;
+          if (c === q.none) return '<button class="opt tnone" data-c="' + esc(c) + '" aria-pressed="' + on + '">' + esc(c) + '</button>';
+          var at = c.lastIndexOf(' · '), t = at < 0 ? c : c.slice(0, at), d = at < 0 ? '' : c.slice(at + 3), m = d.match(/^(\w{3}),\s*(\w{3})\s+(\d+)/);
+          return '<button class="opt ticket" data-c="' + esc(c) + '" aria-pressed="' + on + '"><span class="tdate">' + (m ? '<small>' + esc(m[1]) + '</small><b>' + esc(m[3]) + '</b><small>' + esc(m[2]) + '</small>' : ico('events', 24)) + '</span>' +
+            '<span class="tname">' + esc(t) + '</span><span class="stamp">Attended</span></button>'; }).join('') + '</div>';
+      } else if (q.k === 'help' && q.type === 'one') {                   // three signal cards
+        var HI = ['check', 'hand', 'siren'], HL = ['All good', 'A little help', 'Urgent'];
+        coach = a.help ? (a.help === q.choices[0] ? 'Great to hear.' : 'Got it. We\'ll reach out.') : 'Need a hand?';
+        h = '<div class="opts">' + q.choices.map(function (c, j) {
+          return '<button class="opt sig s' + j + '" data-c="' + esc(c) + '" aria-pressed="' + (a.help === c) + '"><span class="ic">' + ico(HI[j] || 'hand', 26) + '</span><span>' + esc(HL[j] || plain(c)) + '</span></button>'; }).join('') + '</div>';
+      } else if (q.type === 'one' || q.type === 'many') {
+        coach = q.type === 'many' ? 'Pick all that apply' : q.k === 'learning' ? 'DataCamp meter' : 'Pick one';
+        h = '<div class="opts">' + q.choices.map(function (c, j) {
+          var on = q.type === 'one' ? a[q.k] === c : (a[q.k] || []).indexOf(c) !== -1;
+          return '<button class="opt" data-c="' + esc(c) + '" aria-pressed="' + on + '">' + (q.k === 'learning' ? '<span class="mbar"><i style="width:' + ([100, 50, 8][j] || 0) + '%"></i></span>' : '<span class="ic">' + ico('check', 24) + '</span>') +
+            '<span>' + esc(plain(c)) + '</span>' + (q.type === 'many' ? '<span class="tick">✓</span>' : '') + '</button>'; }).join('') + '</div>';
+      } else if (q.type === 'text') {
+        coach = 'Optional';
+        coach = 'Anything on your mind? This one is optional.';
+        h = '<div class="sticky"><textarea id="otea" maxlength="900" placeholder="Anything on your mind? Leave it blank if not.">' + esc(a[q.k] || '') + '</textarea></div>' +
+          '<div class="starters">' + ['Exams this week', 'Schedule conflict', 'Stipend question', 'An idea for START'].map(function (t) { return '<button class="starter" data-st="' + t + '">+ ' + t + '</button>'; }).join('') + '</div>';
+      } else {
+        coach = 'Last step';
+        coach = a.consent ? 'All set. Tap Submit.' : 'Last step';
+        h = '<button class="pact" id="opact" aria-pressed="' + (a.consent === true) + '"><span class="ic">' + ICON_SHIELD + '</span><span style="flex:1">' + esc(ck.consent || 'I agree to the data privacy notice.') + '</span><span class="sw"><i></i></span></button>' +
+          (ck.privacy ? '<p class="priv">' + esc(ck.privacy) + '</p>' : '');
+      }
+      var title = q.type === 'consent' ? 'Data privacy consent' : q.type === 'text' ? String(q.title).replace(/\s*\(optional\)\s*$/i, '') : q.title;
+      o.innerHTML = '<div class="owrap ckwrap"><div class="lt"><button class="x" id="ox" aria-label="Close">×</button><div class="prog"><i style="width:' + Math.round(100 * i / n) + '%"><span class="ride">' + star(30) + '</span></i></div></div>' +
+        '<div class="q"><div class="kick">' + (i + 1) + ' of ' + n + (ck.due ? ' · Due ' + esc(ck.due) : '') + '</div><h2>' + esc(title) + '</h2>' +
+        '<div class="coach">' + star(54) + '<div class="say">' + coach + '</div></div>' + h + '</div>' +
+        '<p class="oerr" id="oerr"></p><div class="lf' + (i ? '' : ' solo') + '">' + (i ? '<button class="pill light" id="oback">Back</button>' : '') +
+        '<button class="pill sun" id="ogo"' + (answered(q) ? '' : ' disabled') + '>' + (i === n - 1 ? 'Submit' : q.type === 'text' && !a[q.k] ? 'Skip' : 'Continue') + '</button></div></div>';
+      $('ox').onclick = function () { offline(r); };
+      if ($('oback')) $('oback').onclick = function () { if (i > 0) { i--; draw(); } };
+      [].forEach.call(o.querySelectorAll('[data-c]'), function (b) { b.onclick = function () {
+        var c = b.getAttribute('data-c');
+        if (q.type === 'many') { var v = (a[q.k] || []).slice(), at = v.indexOf(c);
+          if (at !== -1) v.splice(at, 1); else if (c === q.none) v = [c]; else { v = v.filter(function (x) { return x !== q.none; }); v.push(c); } a[q.k] = v; }
+        else a[q.k] = c;
+        draw(); }; });
+      if ($('moodr')) {                                               // the card follows the knob; letting go picks the nearest stop
+        var pickMood = function (p) { p = Math.max(0, Math.min(3, p)); if (byFace[p] != null) { a.vibe = byFace[p]; draw(); } };
+        var paint = function (v) { var p = Math.max(0, Math.min(3, Math.round(v / 100))), M = MOOD[p], c = $('moodc');
+          c.style.setProperty('--bg', M.bg); c.setAttribute('data-p', p); c.querySelector('.eyes').style.transform = 'translate(' + M.look[0] + 'px,' + M.look[1] + 'px)'; };
+        $('moodr').oninput = function () { paint(Number(this.value)); };
+        $('moodr').onchange = function () { pickMood(Math.round(Number(this.value) / 100)); };
+        [].forEach.call(o.querySelectorAll('.mstop'), function (b) { b.onclick = function () { pickMood(Number(b.getAttribute('data-p'))); }; });
+      }
+      if ($('opact')) $('opact').onclick = function () { a.consent = a.consent !== true; draw(); };
+      [].forEach.call(o.querySelectorAll('[data-st]'), function (b) { b.onclick = function () {
+        var t = $('otea'), add = b.getAttribute('data-st'); t.value = (t.value ? t.value.replace(/\s*$/, '') + '\n' : '') + add + ': '; t.focus(); t.oninput(); }; });
+      if ($('otea')) $('otea').oninput = function () { a[q.k] = this.value; $('ogo').textContent = i === n - 1 ? 'Submit' : (this.value ? 'Continue' : 'Skip'); };
+      $('ogo').onclick = function () {
+        if (!answered(q)) { $('oerr').textContent = 'Please answer this one first.'; return; }
+        if (i < n - 1) { i++; draw(); return; }
+        var out = {};
+        (ck.q || []).forEach(function (x) {
+          var v = a[x.k];
+          out[x.k] = x.type === 'text' ? String(v || '').trim().slice(0, 900) : x.type === 'many' ? (v && v.indexOf(x.none) !== -1 ? [x.none] : (v || [])) : (v || '');
+        });
+        out.consent = true;
+        var st = sharedStore(r); st.all.start_pending = JSON.stringify({ a: out, at: Date.now(), email: sn.email }); st.save();
+        offline(r);
+      };
+    }
+    draw();
   }
   function reveal() { frame.classList.add('on'); splash.classList.add('off'); }
   // START did not say "ready": Google may be showing its own error page (often: signed into several Google accounts).
-  // Show START anyway, with a small bar to try again or open it in the browser.
+  // Show START anyway, with a small card to try again or open it in the browser.
   function slow() { reveal(); rescue(true); }
   function rescue(on) {
     var b = $('rescue');
     if (!on) { if (b) b.remove(); return; }
     if (b || !current) return;
     b = document.createElement('div'); b.id = 'rescue';
-    b.innerHTML = '<p><b>START is taking long to open.</b> If you see "unable to open the file", you may be signed into more than one Google account. ' +
-      'Try again, or open START in your browser.</p><div><button id="rtry">Try again</button><a id="ropen" target="_blank" rel="noopener">Open in browser</a></div>';
+    b.innerHTML = star(40) + '<div><p><b>START is taking long to open.</b> If you see "unable to open the file", you may be signed into more than one Google account. ' +
+      'Try again, or open START in your browser.</p><div class="row"><button class="pill sun" id="rtry">Try again</button><a class="pill light" id="ropen" target="_blank" rel="noopener">Open in browser</a></div></div>';
     document.body.appendChild(b);
     $('rtry').onclick = function () { open(current); };
     $('ropen').href = current.url;
