@@ -173,19 +173,26 @@
   .oerr { min-height: 20px; margin-top: 10px; color: #A1261B; font-weight: 700; font-size: 13.5px; text-align: center; }
   @media (prefers-reduced-motion: reduce) { .bob, .star .blink { animation: none; } .face, .opt, .pill { transition: none; } }
 
-  /* Simple START Region 11 loader on the existing gradient */
+  /* Playful START Region 11 loader on the existing gradient */
   #splash { background: linear-gradient(145deg, #EAF3FC, #F8FAFF 70%, #FFF8D4); }
   .scard { max-width: 300px; padding: 20px; background: transparent; border-radius: 0; box-shadow: none; }
-  .scard .star { margin: 0 auto 12px; filter: none; }
+  .splash-icon { position: relative; display: grid; place-items: center; width: 112px; height: 112px; margin: 0 auto 12px; border-radius: 50%; background: radial-gradient(circle, rgba(255,221,0,.36), rgba(255,221,0,0) 70%); }
+  .splash-icon::before, .splash-icon::after { content: '✦'; position: absolute; color: var(--blue); font-size: 19px; animation: sparkle 1.8s ease-in-out infinite; }
+  .splash-icon::before { top: 6px; left: 1px; }
+  .splash-icon::after { right: 0; bottom: 18px; color: #E9A800; animation-delay: .9s; }
+  .scard .star { margin: 0; filter: drop-shadow(0 5px 5px rgba(18,32,58,.14)); }
   .scard .brand { font-size: 32px; }
   .scard .brand small { font-size: 14px; letter-spacing: 2px; }
-  #state { margin-top: 22px; min-height: 18px; gap: 0; }
-  .start-dots { display: flex; align-items: center; justify-content: center; gap: 7px; height: 18px; }
-  .start-dots i { width: 7px; height: 7px; display: block; border-radius: 50%; background: var(--blue); animation: start-pulse 1.15s ease-in-out infinite; }
-  .start-dots i:nth-child(2) { animation-delay: .15s; }
-  .start-dots i:nth-child(3) { animation-delay: .3s; }
-  @keyframes start-pulse { 0%,65%,100% { opacity:.35; transform:translateY(0); } 35% { opacity:1; transform:translateY(-5px); } }
-  @media (prefers-reduced-motion: reduce) { .start-dots i { animation:none; } }
+  #state { margin-top: 22px; min-height: 22px; gap: 0; }
+  .quest-gems { display: flex; align-items: center; justify-content: center; gap: 11px; height: 22px; }
+  .quest-gems i { display: block; width: 13px; height: 13px; border: 2px solid #86B9DC; border-radius: 3px; background: #D6EDFC; transform: rotate(45deg) scale(.8); animation: gem-light 1.8s ease-in-out infinite; }
+  .quest-gems i:nth-child(2) { animation-delay: .18s; }
+  .quest-gems i:nth-child(3) { animation-delay: .36s; }
+  .quest-gems i:nth-child(4) { animation-delay: .54s; }
+  .quest-gems i:nth-child(5) { animation-delay: .72s; }
+  @keyframes gem-light { 0%,22%,100% { background: #D6EDFC; transform: rotate(45deg) scale(.8); } 40%,60% { background: var(--sun); border-color: #E9A800; transform: rotate(45deg) scale(1.15); } }
+  @keyframes sparkle { 0%,100% { opacity: .3; transform: scale(.7) rotate(-15deg); } 50% { opacity: 1; transform: scale(1.2) rotate(15deg); } }
+  @media (prefers-reduced-motion: reduce) { .splash-icon::before, .splash-icon::after, .quest-gems i { animation: none; } }
 </style>
 </head>
 <body>
@@ -193,9 +200,9 @@
 
 <div id="splash">
   <div class="scard">
-    <div id="splashstar"></div>
+    <div class="splash-icon"><div id="splashstar"></div></div>
     <div class="brand">START<small>Region 11</small></div>
-    <div id="state" role="status" aria-label="Opening START Region 11"><div class="start-dots" aria-hidden="true"><i></i><i></i><i></i></div></div>
+    <div id="state" role="status" aria-label="Opening START Region 11"><div class="quest-gems" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div>
   </div>
 </div>
 
@@ -268,8 +275,8 @@
   function ico(n, s) { return '<svg viewBox="0 0 24 24" width="' + (s || 24) + '" height="' + (s || 24) + '" aria-hidden="true">' + (ICON[n] || '') + '</svg>'; }
 
   function show(html) { state.innerHTML = html; splash.classList.remove('off'); }
-  function loadingBar() { show('<div class="start-dots" aria-hidden="true"><i></i><i></i><i></i></div>'); }
-  $('splashstar').innerHTML = star(76, '');
+  function loadingBar() { show('<div class="quest-gems" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>'); }
+  $('splashstar').innerHTML = star(84, 'bob');
   $('hintstar').innerHTML = star(44);
 
   function pick() {
