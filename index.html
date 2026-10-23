@@ -174,7 +174,10 @@
   @media (prefers-reduced-motion: reduce) { .bob, .star .blink { animation: none; } .face, .opt, .pill { transition: none; } }
 
   /* Playful START Region 11 loader on the existing gradient */
-  #splash { background: linear-gradient(145deg, #EAF3FC, #F8FAFF 70%, #FFF8D4); }
+  #splash { background:
+    radial-gradient(circle at 12% 18%, rgba(0,153,255,.55), transparent 42%),
+    radial-gradient(circle at 88% 84%, rgba(255,221,0,.72), transparent 46%),
+    linear-gradient(145deg, #7CCBFF 0%, #F1F9FF 50%, #FFF09A 100%); }
   .scard { max-width: 300px; padding: 20px; background: transparent; border-radius: 0; box-shadow: none; }
   .splash-icon { position: relative; display: grid; place-items: center; width: 112px; height: 112px; margin: 0 auto 12px; border-radius: 50%; background: radial-gradient(circle, rgba(255,221,0,.36), rgba(255,221,0,0) 70%); }
   .splash-icon::before, .splash-icon::after { content: '✦'; position: absolute; color: var(--blue); font-size: 19px; animation: sparkle 1.8s ease-in-out infinite; }
