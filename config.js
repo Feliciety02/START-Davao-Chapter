@@ -9,7 +9,7 @@
  */
 window.START_APP = {
   regions: [
-    { name: 'Region XI · Davao Region', url: 'https://script.google.com/macros/s/AKfycbxpcLECfDritU6AQFf-9InGOCbWaOGrY3PkCyxtZ25YGiK5QbzFxy1lQafn7LX-XVShWQ/exec' },
+    { name: 'Region XI · Davao Region', url: 'https://script.google.com/macros/s/AKfycbx4kEU5Wdkb9lOMLo2NadVpyUJMMIkk8erQU4v9Fu9n1NMhatX7fqjj1nlAelKkGijUaQ/exec' },
     // { name: 'NCR · National Capital Region', url: 'https://script.google.com/macros/s/.../exec' },
   ],
 };

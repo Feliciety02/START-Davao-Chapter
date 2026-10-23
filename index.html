@@ -53,6 +53,28 @@
   #hint .pillbtn { padding: 9px 14px; font-size: 11px; white-space: nowrap; }
   #switch { position: fixed; left: 8px; bottom: max(8px, env(safe-area-inset-bottom)); z-index: 4; display: none; background: rgba(18,32,58,.55); color: #fff; border: 0;
             border-radius: 999px; padding: 5px 10px; font: 600 11px Poppins, Arial, sans-serif; cursor: pointer; }
+  #rescue { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 50; background: #12203A; color: #fff;
+    border-radius: 18px; padding: 14px 16px; box-shadow: 0 12px 30px rgba(18,32,58,.35); font: 13.5px/1.45 Poppins, Arial, sans-serif; }
+  #rescue p { margin: 0 0 10px; } #rescue div { display: flex; gap: 8px; flex-wrap: wrap; }
+  #rescue button, #rescue a { border: 0; border-radius: 999px; padding: 9px 16px; font: 700 13px Poppins, Arial, sans-serif; cursor: pointer; text-decoration: none; }
+  #rescue button { background: #FFDD00; color: #12203A; } #rescue a { background: #fff; color: #12203A; }
+  #off { position: fixed; inset: 0; z-index: 7; overflow-y: auto; background: linear-gradient(160deg, #EAF4FF 0%, #F7FBFF 55%, #FFF6BF 100%); color: var(--navy); }
+  .obar { position: sticky; top: 0; background: var(--navy); color: #FFDD00; font: 700 12.5px Poppins, Arial, sans-serif; text-align: center; padding: calc(10px + env(safe-area-inset-top)) 12px 10px; }
+  .owrap { max-width: 560px; margin: 0 auto; padding: 18px 16px calc(28px + env(safe-area-inset-bottom)); }
+  .ohead { display: flex; gap: 12px; align-items: center; } .ohead img { width: 52px; height: 52px; border-radius: 14px; }
+  .ohead h1, .owrap > h1 { margin: 0; font-size: 26px; font-weight: 800; } .ohead p { margin: 2px 0 0; color: #4b5b77; font-size: 14px; }
+  .ochips { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; } .ochips span { background: #fff; border-radius: 999px; padding: 7px 12px; font-weight: 700; font-size: 13px; box-shadow: 0 2px 8px rgba(18,32,58,.08); }
+  .ocard { background: #fff; border-radius: 18px; padding: 14px 16px; margin: 10px 0; box-shadow: 0 4px 14px rgba(18,32,58,.08); display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+  .ocard b { font-size: 15px; } .ocard span { color: #4b5b77; } .ocard.ok { border-left: 5px solid #1E8E3E; }
+  .ocard.hero { background: var(--navy); color: #fff; } .ocard.hero span { color: #CFE0F3; } .ocard.hero .pillbtn { margin-top: 10px; align-self: flex-start; }
+  .owrap h2 { font-size: 13px; letter-spacing: 1.2px; text-transform: uppercase; margin: 18px 0 6px; }
+  .oev { background: #fff; border-radius: 14px; padding: 10px 14px; margin: 6px 0; display: flex; flex-direction: column; font-size: 14px; } .oev span { color: #4b5b77; font-size: 13px; }
+  .pillbtn.light { background: #fff; border: 1.5px solid var(--navy); border-bottom-width: 3px; margin-top: 16px; }
+  #off fieldset { border: 0; background: #fff; border-radius: 16px; padding: 12px 14px; margin: 12px 0; } #off legend { font-weight: 800; font-size: 15px; padding: 8px 0 4px; }
+  .opt { display: flex; gap: 10px; align-items: flex-start; padding: 8px 2px; font-size: 14.5px; } .opt input { width: 20px; height: 20px; margin-top: 2px; flex: none; }
+  .opt.consent { background: #FFF6BF; border-radius: 14px; padding: 12px; font-size: 13px; }
+  #off textarea { width: 100%; border: 1.5px solid #CBD3DE; border-radius: 12px; padding: 10px; font: 14px Poppins, Arial, sans-serif; }
+  .oerr { color: #B3261E; font-weight: 700; font-size: 13.5px; min-height: 18px; } .orow { display: flex; gap: 10px; justify-content: flex-end; } .orow .pillbtn { margin-top: 0; }
 </style>
 </head>
 <body>
@@ -108,25 +130,99 @@
   function open(r) {
     current = r;
     if (!navigator.onLine) {
+      if (offline(r)) return;
       show('<p class="note">You are offline. Connect to the internet to open START.</p><button class="pillbtn" id="retry">Try again</button>');
       $('retry').onclick = function () { open(r); };
       return;
     }
+    closeOffline();
     loadingBar();
     frame.classList.remove('on');
     var u = r.url + (r.url.indexOf('?') === -1 ? '?' : '&') + 'app=' + encodeURIComponent(location.origin + location.pathname);
     frame.src = u;
     $('switch').style.display = REGIONS.length > 1 ? 'block' : 'none';
     clearTimeout(open.t);
-    open.t = setTimeout(reveal, 12000);       // never stay on the splash forever
+    open.t = setTimeout(slow, 12000);         // never stay on the splash forever
+    rescue(false);
+  }
+  /* ---------- offline: the saved copy of the scholar's page, and the weekly check-in kept on the phone ---------- */
+  function snapOf(r) { try { return JSON.parse(store.get('start_snap:' + r.url) || 'null'); } catch (e) { return null; } }
+  function sharedStore(r) { var k = 'start_store:' + r.url, all = {}; try { all = JSON.parse(store.get(k) || '{}') || {}; } catch (e) { all = {}; } return { all: all, save: function () { store.set(k, JSON.stringify(all)); } }; }
+  function pendingOf(r) { try { var p = JSON.parse(sharedStore(r).all.start_pending || 'null'); return p && Date.now() - p.at < 7 * 86400000 ? p : null; } catch (e) { return null; } }
+  function plain(c) { var m = String(c).match(/^(\S+)\s+(.*)$/); return m && !/[A-Za-z0-9]/.test(m[1]) ? m[2] : String(c); }   // the answer without its emoji tag
+  function closeOffline() { var o = $('off'); if (o) o.remove(); }
+  function ago(t) { var m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' days ago'; }
+  function offline(r) {
+    var sn = snapOf(r);
+    if (!sn) return false;
+    closeOffline(); splash.classList.add('off');
+    var o = document.createElement('div'); o.id = 'off'; document.body.appendChild(o);
+    var ck = sn.checkin, pend = pendingOf(r);
+    var status = pend ? '<div class="ocard ok"><b>Check-in saved on this phone</b><span>It will be sent by itself when you are back online.</span></div>'
+      : sn.done ? '<div class="ocard ok"><b>You\'re all set this week</b><span>Thanks for checking in.</span></div>'
+      : ck && ck.open ? '<div class="ocard hero"><b>Time for your check-in</b><span>Due ' + esc(ck.due || '') + '. You can answer it now, offline.</span><button class="pillbtn" id="ock">Answer the check-in</button></div>'
+      : '<div class="ocard"><b>Check-in is closed</b><span>' + (ck && ck.opens ? 'The next one opens on ' + esc(ck.opens) + '.' : '') + '</span></div>';
+    o.innerHTML = '<div class="obar">Offline · last updated ' + ago(sn.at) + '</div><div class="owrap">' +
+      '<div class="ohead"><img src="icons/mark-256.png" alt=""><div><h1>Hi, ' + esc(sn.first || 'there') + '</h1><p>' + esc(sn.school || '') + '</p></div></div>' +
+      '<div class="ochips"><span>' + (sn.streak || 0) + '-week streak</span>' + (sn.level ? '<span>' + (sn.xp || 0) + ' XP · ' + esc(sn.level) + '</span>' : '') + '</div>' +
+      status + (sn.note ? '<div class="ocard"><b>' + esc(sn.rr || 'Your RR') + '</b><span>' + esc(sn.note) + '</span></div>' : '') +
+      ((sn.events || []).length ? '<h2>Coming up</h2>' + sn.events.map(function (e) { return '<div class="oev"><b>' + esc(e.title) + '</b><span>' + esc(e.when) + (e.place ? ' · ' + esc(e.place) : '') + '</span></div>'; }).join('') : '') +
+      '<button class="pillbtn light" id="otry">Try again online</button></div>';
+    $('otry').onclick = function () { if (navigator.onLine) open(r); };
+    if ($('ock')) $('ock').onclick = function () { offlineCheckin(r, sn); };
+    return true;
+  }
+  function offlineCheckin(r, sn) {
+    var ck = sn.checkin, o = $('off');
+    var q = (ck.q || []).map(function (x, i) {
+      var name = 'oq' + i;
+      if (x.type === 'text') return '<fieldset><legend>' + esc(x.title) + '</legend><textarea id="' + name + '" maxlength="900" rows="3"></textarea></fieldset>';
+      return '<fieldset><legend>' + esc(x.title) + '</legend>' + x.choices.map(function (c) {
+        return '<label class="opt"><input type="' + (x.type === 'many' ? 'checkbox' : 'radio') + '" name="' + name + '" value="' + esc(c) + '"> <span>' + esc(plain(c)) + '</span></label>'; }).join('') + '</fieldset>';
+    }).join('');
+    o.innerHTML = '<div class="obar">Offline check-in · saved on this phone until you are online</div><div class="owrap"><h1>Weekly check-in</h1>' + q +
+      '<label class="opt consent"><input type="checkbox" id="ocons"> <span>' + esc(ck.consent || 'I agree to the data privacy notice.') + '</span></label>' +
+      '<p class="oerr" id="oerr"></p><div class="orow"><button class="pillbtn light" id="oback">Back</button><button class="pillbtn" id="osave">Save</button></div></div>';
+    $('oback').onclick = function () { offline(r); };
+    o.onchange = function () { $('oerr').textContent = ''; };
+    $('osave').onclick = function () {
+      var a = {}, miss = '';
+      (ck.q || []).forEach(function (x, i) {
+        var name = 'oq' + i;
+        if (x.type === 'text') { a[x.k] = ($(name).value || '').trim().slice(0, 900); return; }
+        var picked = [].map.call(document.querySelectorAll('input[name="' + name + '"]:checked'), function (e) { return e.value; });
+        if (!picked.length && !miss) miss = x.title;
+        a[x.k] = x.type === 'many' ? (picked.indexOf(x.none) !== -1 ? [x.none] : picked) : (picked[0] || '');
+      });
+      if (miss) { $('oerr').textContent = 'Please answer: ' + miss; return; }
+      if (!$('ocons').checked) { $('oerr').textContent = 'Please tick the data privacy consent.'; return; }
+      a.consent = true;
+      var st = sharedStore(r); st.all.start_pending = JSON.stringify({ a: a, at: Date.now(), email: sn.email }); st.save();
+      offline(r);
+    };
   }
   function reveal() { frame.classList.add('on'); splash.classList.add('off'); }
+  // START did not say "ready": Google may be showing its own error page (often: signed into several Google accounts).
+  // Show START anyway, with a small bar to try again or open it in the browser.
+  function slow() { reveal(); rescue(true); }
+  function rescue(on) {
+    var b = $('rescue');
+    if (!on) { if (b) b.remove(); return; }
+    if (b || !current) return;
+    b = document.createElement('div'); b.id = 'rescue';
+    b.innerHTML = '<p><b>START is taking long to open.</b> If you see "unable to open the file", you may be signed into more than one Google account. ' +
+      'Try again, or open START in your browser.</p><div><button id="rtry">Try again</button><a id="ropen" target="_blank" rel="noopener">Open in browser</a></div>';
+    document.body.appendChild(b);
+    $('rtry').onclick = function () { open(current); };
+    $('ropen').href = current.url;
+  }
 
   // The portal (inside Google's frame) talks to the app: "ready", and saving the sign-in here
   window.addEventListener('message', function (e) {
     if (!/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/i.test(e.origin)) return;
     var d = e.data || {};
-    if (d.start === 'ready') { clearTimeout(open.t); reveal(); return; }
+    if (d.start === 'ready') { clearTimeout(open.t); reveal(); rescue(false); return; }
+    if (d.start === 'snapshot' && current && d.data) { var j = JSON.stringify(d.data); if (j.length < 40000) store.set('start_snap:' + current.url, j); return; }
     if (d.start !== 'store' || !current) return;
     var key = 'start_store:' + current.url, all = {};
     try { all = JSON.parse(store.get(key) || '{}') || {}; } catch (err) { all = {}; }
@@ -138,7 +234,7 @@
   });
 
   $('switch').onclick = function () { store.set('start_region', null); frame.classList.remove('on'); frame.src = 'about:blank'; pick(); };
-  window.addEventListener('online', function () { if (current && !frame.classList.contains('on')) open(current); });
+  window.addEventListener('online', function () { if (current && (!frame.classList.contains('on') || $('off'))) open(current); });
 
   // Install: Android/desktop Chrome give a button; iPhone needs Share › Add to Home Screen
   var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
