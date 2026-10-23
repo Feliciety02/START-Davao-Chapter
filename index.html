@@ -176,6 +176,24 @@
   .lf.solo { justify-content: center; } .lf.solo .pill.sun { flex: 0 1 360px; }
   .oerr { min-height: 20px; margin-top: 10px; color: #A1261B; font-weight: 700; font-size: 13.5px; text-align: center; }
   @media (prefers-reduced-motion: reduce) { .bob, .bar i, .star .blink { animation: none; } .face, .opt, .pill { transition: none; } }
+
+  /* START app loader: small, understated and readable */
+  #splash { background: linear-gradient(145deg, #EAF3FC, #F8FAFF 70%, #FFF8D4); }
+  .scard { max-width: 276px; padding: 28px 24px 24px; border-radius: 26px; box-shadow: 0 12px 34px rgba(18,32,58,.09); }
+  .scard .star { margin: 0 auto 8px; filter: none; }
+  .scard .brand { font-size: 27px; }
+  .scard .brand small { font-size: 11px; letter-spacing: 1px; }
+  #state { margin-top: 18px; min-height: 28px; gap: 10px; }
+  .start-dots { display: flex; align-items: center; justify-content: center; gap: 7px; height: 18px; }
+  .start-dots i { width: 7px; height: 7px; display: block; border-radius: 50%; background: var(--blue); animation: start-pulse 1.15s ease-in-out infinite; }
+  .start-dots i:nth-child(2) { animation-delay: .15s; }
+  .start-dots i:nth-child(3) { animation-delay: .3s; }
+  @keyframes start-pulse { 0%,65%,100% { opacity:.35; transform:translateY(0); } 35% { opacity:1; transform:translateY(-5px); } }
+  .start-track { width: 116px; height: 3px; overflow: hidden; background: #E5ECF4; border-radius: 12px; }
+  .start-track i { display:block; width: 34%; height:100%; border-radius:12px; background:var(--sun); animation:start-sweep 1.35s ease-in-out infinite alternate; }
+  @keyframes start-sweep { from { transform:translateX(0); } to { transform:translateX(194%); } }
+  .signoff { margin-top: 16px; font-size: 11px; letter-spacing: .5px; }
+  @media (prefers-reduced-motion: reduce) { .start-dots i,.start-track i { animation:none; } }
 </style>
 </head>
 <body>
@@ -185,7 +203,7 @@
   <div class="scard">
     <div id="splashstar"></div>
     <div class="brand">START<small id="regionname">Scholar Portal</small></div>
-    <div id="state"><div class="bar"><i></i></div></div>
+    <div id="state" role="status" aria-label="Opening START"><div class="start-dots" aria-hidden="true"><i></i><i></i><i></i></div><div class="start-track" aria-hidden="true"><i></i></div></div>
     <div class="signoff">START · DOST-SEI</div>
   </div>
 </div>
@@ -259,8 +277,8 @@
   function ico(n, s) { return '<svg viewBox="0 0 24 24" width="' + (s || 24) + '" height="' + (s || 24) + '" aria-hidden="true">' + (ICON[n] || '') + '</svg>'; }
 
   function show(html) { state.innerHTML = html; splash.classList.remove('off'); }
-  function loadingBar() { show('<div class="bar"><i></i></div>'); }
-  $('splashstar').innerHTML = star(104, 'bob');
+  function loadingBar() { show('<div class="start-dots" aria-hidden="true"><i></i><i></i><i></i></div><div class="start-track" aria-hidden="true"><i></i></div>'); }
+  $('splashstar').innerHTML = star(76, '');
   $('hintstar').innerHTML = star(44);
   if (REGIONS.length === 1 && REGIONS[0].name) $('regionname').textContent = 'Scholar Portal · ' + REGIONS[0].name.split(' · ')[0];
 
