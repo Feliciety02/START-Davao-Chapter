@@ -26,5 +26,8 @@ assert.equal(imageId('University of Mindanao — UM Main'), main);
 assert.notEqual(imageId('UM Digos'), main);
 assert.notEqual(imageId('UM Tagum'), main);
 assert.notEqual(imageId('UM Digos'), imageId('UM Tagum'));
+assert.equal(imageId('Ateneo de Davao University'), imageId('AdDU'));
+assert.equal(imageId('USeP Obrero'), imageId('USeP'));
+assert.equal(imageId('University of the Philippines Mindanao'), imageId('UP Mindanao'));
 assert.match(context.schoolBadge('UM Main', 40), /alt="UM Main logo"/);
 console.log('School badge logo checks passed');

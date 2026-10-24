@@ -52,6 +52,8 @@ Without this step, Google won't let the website show inside the app.
 The website must be deployed with **Who has access: Anyone**. A website that needs a Google sign-in can't be shown inside the app.
 
 ## Installing on a phone
+When START is opened in a phone browser, the loading screen shows phone-specific install steps and keeps a reminder visible after opening. These are hidden when START runs from its installed home-screen app. Browsers require each person to approve adding the app to their phone.
+
 - **Android (Chrome):** open the app address. Tap **Install** on the white bar, or use ⋮ › **Install app**.
 - **iPhone (Safari):** open the app address. Tap **Share** ⬆, then **Add to Home Screen**.
 - **Computer (Chrome / Edge):** click the install icon in the address bar.

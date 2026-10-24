@@ -682,10 +682,23 @@ function renameSchool_(ss, from, to) {
   const col = (tab, c) => { const s = ss.getSheetByName(tab); return s && s.getLastRow() > 1 ? s.getRange(2, c, s.getLastRow() - 1, 1) : null; };
   replaceExact_(col(TAB.scholars, 2), from, to);
   replaceExact_(col(TAB.outreach, 2), from, to);
+  const mc = ss.getSheetByName(TAB.mcheckins);
+  if (mc && mc.getLastRow() > 1) { const c = memberCols_(mc); if (c.school >= 0) replaceExact_(col(TAB.mcheckins, c.school + 1), from, to); }
+  replaceExact_(col(OLD_MASTER_TAB, 2), from, to);
+  replaceExact_(col(JOIN_TAB, 3), from, to);
+  replaceExact_(col(WEEKLY_ROSTER_TAB_, 4), from, to);
+  replaceExact_(col(TAB.events, EV.who + 1), from, to);
+  if (ss.getSheetByName(JOIN_TAB)) refreshJoinViews_(ss);
   const ck = ss.getSheetByName(TAB.checkins);
   if (ck && ck.getLastRow() > 1) { const c = ckCols_(ck); if (c.school >= 0) replaceExact_(col(TAB.checkins, c.school + 1), from, to); }
   const store = portalStore_();
   if (store.map[from] && !store.map[to]) { store.map[to] = store.map[from]; delete store.map[from]; savePortalStore_(store); }
+  const calendars = calStore_();
+  if (calendars.schools && calendars.schools[from] && !calendars.schools[to]) {
+    calendars.schools[to] = calendars.schools[from];
+    delete calendars.schools[from];
+    saveCalStore_(calendars);
+  }
 }
 
 // THE one place a START Campus Lead is written into Schools › START Campus Lead (typing, check-ins, Outreach log).
@@ -920,7 +933,7 @@ function webNewSession_(email, ver, shared) {
   return token;
 }
 
-// Step 1: the email. Tells the page what comes next: the password box, or a code (new account).
+// Step 1: the email. A first-time scholar confirms the address before requesting a code.
 function webStart(email, purpose) {
   return webSafe_(() => {
     const ss = webSheet_();
@@ -931,12 +944,15 @@ function webStart(email, purpose) {
     const who = webRoles_(ss, email), acct = webAccount_(email);
     // Only accounts in the Scholars roster can receive verification codes; eligible new requests enter the roster automatically.
     if (!webAllowed_(who)) return webNotListed_(ss, email);
-    if (purpose !== 'reset' && acct && acct.h) return { ok: true, mode: 'password' };
+    if (purpose !== 'reset' && purpose !== 'setup' && acct && acct.h) return { ok: true, mode: 'password' };
+    if ((!acct || !acct.h) && purpose !== 'setup' && purpose !== 'reset')
+      return { ok: true, mode: 'setup', to: email === typed ? '' : webMask_(email) };
     // the code fits the account: no password yet = create it; a password = reset it (whichever button they pressed)
     const kind = acct && acct.h ? 'reset' : 'new';
     const sent = webMailCode_(email, kind, who);                   // codes go ONLY to the main email
     if (!sent.ok) return sent;
-    return { ok: true, mode: 'code', purpose: kind, recent: !!sent.recent, to: email === typed ? '' : webMask_(email) };
+    return { ok: true, mode: 'code', purpose: kind, recent: !!sent.recent, retryAfter: sent.retryAfter || 60,
+             to: email === typed ? '' : webMask_(email) };
   });
 }
 
@@ -952,37 +968,50 @@ function webNotListed_(ss, email) {
   const p = scholarByEmail_(ss)[email];
   if (p) return { ok: false, msg: 'Your START access is turned off right now (Status: ' + (p.status || 'blank') + '). Please contact your Campus Lead or Regional Representative.' };
   const j = joinStateOf_(ss, email);
-  if (j === 'waiting') return { ok: true, mode: 'joined', msg: 'Your request is pending RR review. Once approved, we will email you a verification code so you can create your password and sign in.' };
+  if (j === 'waiting') return { ok: true, mode: 'pending', msg: 'Your Regional Representative will review your details. Once approved, return here to set up your password.' };
   if (j === 'sorry') return { ok: true, mode: 'joined', sorry: true, msg: JOIN_SORRY };
+  if (j === 'added') return { ok: true, mode: 'access-check', msg: 'Your join request was approved, but your account access needs a tracker check. Please contact your Regional Representative. You do not need to register again.' };
   return { ok: true, mode: 'join', note: j === 'declined'
     ? 'Your last request wasn\'t approved. Check your details and send again, or contact your Campus Lead or Regional Representative.'
     : 'This email isn\'t on the START list yet. New scholar? Fill this in once, and you\'ll be added to START.' };
 }
 
 function webMailCode_(email, kind, who) {
-  const props = docProps_(), key = 'WEB_C_' + webHash_(email), now = Date.now();
-  let rec = {}; try { rec = JSON.parse(props.getProperty(key) || '{}'); } catch (e) { rec = {}; }
-  rec.sent = (rec.sent || []).filter(t => now - t < 3600000);
-  if (rec.sent.length && now - rec.sent[rec.sent.length - 1] < 60000 && rec.k === kind && rec.h) return { ok: true, recent: true };   // one went out less than a minute ago
-  if (rec.sent.length >= WEB.perHour) return { ok: false, msg: 'You asked for ' + WEB.perHour + ' codes in the last hour. Please use the newest code, or try again in an hour.' };
-  // the daily email limit is shared with the reminders: sign-up codes stop early so the reminders still go out
-  const dayKey = 'WEB_D_' + Utilities.formatDate(new Date(), CONFIG.timezone, 'yyyyMMdd');
-  const today = Number(props.getProperty(dayKey) || 0);
-  if (today >= WEB.codesPerDay || MailApp.getRemainingDailyQuota() <= WEB.mailReserve)
-    return { ok: false, msg: 'START has reached today\'s email limit, so no code could be sent. Please try again tomorrow, or ask your Regional Representative.' };
-  const code = String(100000 + parseInt(Utilities.getUuid().replace(/-/g, '').slice(0, 12), 16) % 900000);
-  const m = webEmail_(kind, who, code);
-  // send FIRST, then remember it: a failed email never blocks the next try or counts against the limits
-  try { MailApp.sendEmail({ to: email, subject: m.subject, htmlBody: m.html, body: m.text, name: m.from }); }
-  catch (e) {
-    Logger.log('Sign-in code email failed: ' + (e && e.message));
-    return { ok: false, msg: 'We couldn\'t send the email just now. Please try again in a few minutes.' };
-  }
-  props.setProperty(dayKey, String(today + 1));
-  Object.assign(rec, { h: webHash_(email + '|' + code), k: kind, exp: now + WEB.codeMins * 60000, tries: 0 });
-  rec.sent.push(now);
-  props.setProperty(key, JSON.stringify(rec));
-  return { ok: true };
+  const lock = docLock_();
+  if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try sending the code again.' };
+  try {
+    const props = docProps_(), key = 'WEB_C_' + webHash_(email), now = Date.now();
+    const previous = props.getProperty(key);
+    let rec = {}; try { rec = JSON.parse(previous || '{}'); } catch (e) { rec = {}; }
+    rec.sent = (Array.isArray(rec.sent) ? rec.sent : []).filter(t => now - t < 3600000);
+    if (rec.sent.length && now - rec.sent[rec.sent.length - 1] < 60000 && rec.k === kind && rec.h && rec.exp > now)
+      return { ok: true, recent: true, retryAfter: Math.ceil((60000 - (now - rec.sent[rec.sent.length - 1])) / 1000) };
+    if (rec.sent.length >= WEB.perHour) return { ok: false, msg: 'You asked for ' + WEB.perHour + ' codes in the last hour. Please use the newest code, or try again in an hour.' };
+    // The daily email limit is shared with reminders.
+    const dayKey = 'WEB_D_' + Utilities.formatDate(new Date(), CONFIG.timezone, 'yyyyMMdd');
+    const previousDay = props.getProperty(dayKey), today = Number(previousDay || 0);
+    if (today >= WEB.codesPerDay || MailApp.getRemainingDailyQuota() <= WEB.mailReserve)
+      return { ok: false, msg: 'START has reached today\'s email limit, so no code could be sent. Please try again tomorrow, or ask your Regional Representative.' };
+    const code = String(100000 + parseInt(Utilities.getUuid().replace(/-/g, '').slice(0, 12), 16) % 900000);
+    let m;
+    try { m = webEmail_(kind, who, code); }
+    catch (e) { Logger.log('Sign-in email template: ' + e.message); return { ok: false, msg: 'START could not prepare the email. Please ask your Regional Representative to check the tracker.' }; }
+    Object.assign(rec, { h: webHash_(email + '|' + code), k: kind, exp: now + WEB.codeMins * 60000, tries: 0 });
+    rec.sent.push(now);
+    const restore = () => {
+      try { if (previous === null) props.deleteProperty(key); else props.setProperty(key, previous); } catch (e) { Logger.log('Code rollback: ' + e.message); }
+      try { if (previousDay === null) props.deleteProperty(dayKey); else props.setProperty(dayKey, previousDay); } catch (e) { Logger.log('Code count rollback: ' + e.message); }
+    };
+    try { props.setProperty(key, JSON.stringify(rec)); props.setProperty(dayKey, String(today + 1)); }
+    catch (e) { restore(); Logger.log('Sign-in code storage: ' + e.message); return { ok: false, msg: 'START could not save the code. Please try again later.' }; }
+    try { MailApp.sendEmail({ to: email, subject: m.subject, htmlBody: m.html, body: m.text, name: m.from }); }
+    catch (e) {
+      Logger.log('Sign-in code email failed: ' + e.message);
+      restore();
+      return { ok: false, msg: 'We couldn\'t send the email just now. Please try again in a few minutes.' };
+    }
+    return { ok: true, retryAfter: 60 };
+  } finally { lock.releaseLock(); }
 }
 
 // Step 2 (new account / reset): check the code. Gives a 15-minute pass to choose a password.
@@ -990,28 +1019,40 @@ function webCheckCode(email, code) {
   return webSafe_(() => {
     const ss = webSheet_();
     email = primaryEmail_(ss, email);
+    const lock = docLock_();
+    if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try that code again.' };
+    try {
     const props = docProps_(), key = 'WEB_C_' + webHash_(email);
     let rec = {}; try { rec = JSON.parse(props.getProperty(key) || '{}'); } catch (e) { rec = {}; }
-    if (!email || !rec.h || Date.now() > rec.exp) return { ok: false, msg: 'This code has expired. Send a new one.' };
+    if (!email || !rec.h) return { ok: false, msg: 'This code was already used or is no longer valid. Send a new one.' };
+    if (Date.now() > rec.exp) return { ok: false, msg: 'This code has expired. Send a new one.' };
     if ((rec.tries || 0) >= WEB.maxTries) return { ok: false, msg: 'Too many wrong tries. Send a new code.' };
     if (webHash_(email + '|' + String(code || '').replace(/\D/g, '')) !== rec.h) {
       rec.tries = (rec.tries || 0) + 1; props.setProperty(key, JSON.stringify(rec));
       const left = WEB.maxTries - rec.tries;
       return { ok: false, msg: left > 0 ? `Wrong code. ${left} ${left === 1 ? 'try' : 'tries'} left.` : 'Too many wrong tries. Send a new code.' };
     }
-    rec.h = ''; props.setProperty(key, JSON.stringify(rec));                    // a code works once
     if (!webAllowed_(webRoles_(ss, email)))
       return { ok: false, msg: 'Your membership must be approved before password setup. Contact your Regional Representative.' };
     const ticket = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
-    props.setProperty('WEB_T_' + webHash_(ticket), JSON.stringify({ e: email, k: rec.k || 'new', exp: Date.now() + 15 * 60000 }));
+    const tkey = 'WEB_T_' + webHash_(ticket);
+    try { props.setProperty(tkey, JSON.stringify({ e: email, k: rec.k || 'new', exp: Date.now() + 15 * 60000 })); }
+    catch (e) { Logger.log('Password setup ticket: ' + e.message); return { ok: false, msg: 'START could not continue password setup. Please try the code again.' }; }
+    rec.h = '';                                               // a code works once
+    try { props.setProperty(key, JSON.stringify(rec)); }
+    catch (e) { try { props.deleteProperty(tkey); } catch (cleanup) {} return { ok: false, msg: 'START could not finish checking the code. Please try again.' }; }
     return { ok: true, ticket, purpose: rec.k || 'new' };
+    } finally { lock.releaseLock(); }
   });
 }
 
 // Step 3 (new account / reset): save the password, sign in here, sign out everywhere else
 function webSetPassword(ticket, pw, keep) {
   return webSafe_(() => {
-    const ss = webSheet_(), props = docProps_(), tkey = 'WEB_T_' + webHash_(ticket || '');
+    const ss = webSheet_(), lock = docLock_();
+    if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try saving your password again.' };
+    try {
+    const props = docProps_(), tkey = 'WEB_T_' + webHash_(ticket || '');
     let t = null; try { t = JSON.parse(props.getProperty(tkey) || 'null'); } catch (e) { t = null; }
     if (!t || t.exp < Date.now()) return { ok: false, restart: true, msg: 'That took too long. Start again.' };
     const bad = webPwProblem_(pw, t.e);
@@ -1019,15 +1060,18 @@ function webSetPassword(ticket, pw, keep) {
     const who = webRoles_(ss, t.e);
     if (!webAllowed_(who)) return { ok: false, restart: true, msg: 'Your START membership is not approved yet.' };
     const old = webAccount_(t.e) || {};
+    if (t.k === 'new' && old.h) return { ok: false, restart: true, msg: 'A password is already set for this email. Sign in or use Forgot password.' };
     const salt = Utilities.getUuid().replace(/-/g, '');
     const a = { s: salt, h: webPwHash_(pw, salt), v: (old.v || 0) + 1, at: Date.now(), fails: 0, lock: 0 };
     webSaveAccount_(t.e, a);
     try { markVerifiedEmail_(ss, t.e); } catch (e) { Logger.log('Verified email: ' + e.message); }
-    props.deleteProperty(tkey);
-    webEndSessions_(t.e);
+    try { props.deleteProperty(tkey); } catch (e) { Logger.log('Password ticket cleanup: ' + e.message); }
+    try { webEndSessions_(t.e); } catch (e) { Logger.log('Old session cleanup: ' + e.message); }
     try { const m = webEmail_(old.h ? 'changed' : 'created', who); MailApp.sendEmail({ to: t.e, subject: m.subject, htmlBody: m.html, body: m.text, name: m.from }); }
     catch (e) { Logger.log('Password email: ' + e.message); }
-    return { ok: true, token: webNewSession_(t.e, a.v, keep === false) };
+    try { return { ok: true, token: webNewSession_(t.e, a.v, keep === false) }; }
+    catch (e) { Logger.log('New session: ' + e.message); return { ok: true, signIn: true, msg: 'Password saved. Please sign in with it.' }; }
+    } finally { lock.releaseLock(); }
   });
 }
 
@@ -1079,7 +1123,8 @@ function webSignOut(token) {
 function webSignOutAll(token) {
   return webSafe_(() => {
     const s = webSession_(token);
-    if (s) { webEndSessions_(s.e); webForget_(s.e); }
+    if (!s) return { ok: false, signedOut: true, msg: 'This session expired. Sign in again before signing out other devices.' };
+    webEndSessions_(s.e); webForget_(s.e);
     return { ok: true };
   });
 }
@@ -1148,7 +1193,7 @@ function webEmail_(kind, who, code) {
                    `<p style="margin:6px 0 0 0;text-align:center;font-size:12px;color:#4b5b77;">Works once, for ${WEB.codeMins} minutes.</p>`;
   const K = {
     new:     { subject: `START · Your code: ${code}`, badge: 'New account', title: ['Your', 'code'],
-               intro: ['Enter this code to create your START password. If you applied to join, your request still needs approval from the Regional Representative before you can sign in.'], extra: code ? big(code) : '',
+               intro: ['Your START membership is approved. Enter this code to create your password.'], extra: code ? big(code) : '',
                outro: ['Didn\'t ask for this? You can ignore it. Never share this code: START will never ask you for it.'] },
     reset:   { subject: `START · Your reset code: ${code}`, badge: 'Password reset', title: ['Reset', 'code'],
                intro: ['Enter this code to set a new password.'], extra: code ? big(code) : '',
@@ -1160,7 +1205,7 @@ function webEmail_(kind, who, code) {
                intro: ['Your password was changed and your other devices were signed out.'], extra: '',
                outro: ['Didn\'t do this? Click "Forgot password?" on the sign-in page, then reply to this email.'] },
   }[kind];
-  const button = !code && url;                                   // code emails: the code is all they need
+  const button = !!url;                                           // also guide newly approved scholars back to START
   const html = designedEmail_({
     badge: K.badge, badgeColor: kind === 'changed' ? THEME.red : THEME.blue, title: K.title,
     greeting: `Hi ${first},`, intro: K.intro, extraHtml: K.extra, outro: K.outro,
@@ -1274,7 +1319,7 @@ function webViewList(token) {
     if (!webRoles_(ss, s.e).admin) return { ok: false, msg: 'Only the Regional Representative can do this.' };
     const people = {};
     Object.entries(scholarByEmail_(ss)).forEach(([e, p]) => { if (p.status === 'Active' && p.primary === e) people[e] = { name: displayName_(p.name), school: p.school, email: e }; });
-    return { ok: true, schools: schoolRows_(ss).filter(x => !x.inactive).map(x => ({ name: x.name, lead: x.focal ? displayName_(x.focal) : '' })),
+    return { ok: true, schools: joinSchoolList_(ss).map(x => { const s = schoolRows_(ss).find(y => y.name === x.name); return { name: x.name, lead: s && s.focal ? displayName_(s.focal) : '' }; }),
              people: Object.values(people).sort((a, b) => a.school.localeCompare(b.school) || a.name.localeCompare(b.name)) };
   });
 }
@@ -1494,8 +1539,9 @@ function webSubmitCheckin(token, a) {
       v[meta.submitted] = new Date();
       // First submission is final. The check runs inside the document lock to prevent races.
       const again = webAnswerRow_(ss, who.email, spec.week, sh, c);
-      if (again > 0) return { ok: false, msg: 'Your check-in is already submitted. Responses cannot be edited.' };
+      if (again > 0) return { ok: true, saved: true, already: true }; // a lost reply must not ask for a second answer
       row = Math.max(sh.getLastRow(), 1) + 1;
+      if (sh.getMaxRows() < row) sh.insertRowsAfter(sh.getMaxRows(), row - sh.getMaxRows());
       sh.getRange(row, 1, 1, v.length).setValues([v]);
       SpreadsheetApp.flush();
       MEMBER_CACHE_ = null;
@@ -1503,8 +1549,10 @@ function webSubmitCheckin(token, a) {
     // follow-ups (help alerts, Campus Lead status, ranks) run AFTER the save, outside the lock, so a Friday rush does not queue up
     try { onMemberCheckin_({ range: sh.getRange(row, 1) }); } catch (e) { Logger.log('Website check-in follow-up: ' + e.message); }
     try { markAnswersSeen_(ss); } catch (e) { /* the hourly check catches up */ }
-    MEMBER_CACHE_ = null; webForget_(who.email);
-    return { ok: true, member: JSON.parse(JSON.stringify(webMember_(ss, who))) };
+    MEMBER_CACHE_ = null;
+    try { webForget_(who.email); } catch (e) { Logger.log('Check-in cache refresh: ' + e.message); }
+    try { return { ok: true, member: JSON.parse(JSON.stringify(webMember_(ss, who))) }; }
+    catch (e) { Logger.log('Check-in page refresh: ' + e.message); return { ok: true, saved: true }; }
   });
 }
 
@@ -1612,8 +1660,8 @@ function webScholarUpdate_(ss, actor, arg) {
     const role = clean(arg.role, 40);
     newEmail = emailOf_(contact);
     if (name.length < 2 || !newEmail) return { ok: false, msg: 'Enter a name and a contact email.' };
-    const schools = schoolRows_(ss), target = schools.find(s => s.name === school && (!s.inactive || school === String(old[1] || '').trim()));
-    if (!target) return { ok: false, msg: 'Choose a school on the active Schools list.' };
+    const schools = schoolRows_(ss), target = schools.find(s => s.name === school);
+    if (!target) return { ok: false, msg: 'Choose a school on the Schools list.' };
     if (target.inactive && role === ROLES[1]) return { ok: false, msg: 'Campus Leads must belong to an active school.' };
     if (program && START_PROGRAMS.list.indexOf(program) === -1 && program !== String(old[2] || '').trim())
       return { ok: false, msg: 'Choose a START degree program.' };
@@ -1699,7 +1747,7 @@ function webAdmin_(ss, st) {
               members: sum('members'), answered: sum('answered'), help: sum('help') },
     memberCheckins: !!md, schools, scholars: webScholarRoster_(ss, md), help, events: webEvents_(ss, undefined, true), tracker: ss.getUrl(), form,
     dataQuality: (() => { try { return dataFlowQuality_(ss); } catch (e) { Logger.log('Data quality: ' + e.message); return { count: 0, issues: [] }; } })(),
-    scholarChoices: { schools: schools.map(s => s.name), programs: START_PROGRAMS.list, scholarships: JOIN.kinds },
+    scholarChoices: { schools: joinSchoolList_(ss).map(s => s.name), programs: START_PROGRAMS.list, scholarships: JOIN.kinds },
     joins: (() => { try { return webJoins_(ss).filter(j => !/^Added|^Declined/.test(j.status)); } catch (e) { Logger.log('Join requests: ' + e.message); return []; } })(),
     joinHistory: (() => { try { return webJoins_(ss).filter(j => /^Added|^Declined/.test(j.status)); } catch (e) { Logger.log('Join history: ' + e.message); return []; } })(),
     autoApprove: autoApproveOn_(),
@@ -1973,8 +2021,9 @@ function webAdminAction(token, action, arg) {
     if (action === 'scholar-status') return webScholarStatus_(ss, s.e, arg);
     if (action === 'scholar-update') return webScholarUpdate_(ss, s.e, arg);
     if (action === 'resetpw') return { ok: true, msg: resetWebPassword_(arg) };
-    if (action === 'auto-approve') { webForget_(s.e); const on = setAutoApprove_(arg === 'on');
-      return { ok: true, msg: on ? 'Auto-approve is ON: only requests matching one old masterlist record by email, name, school, program and award year are added at once. Others wait for review.' : 'Auto-approve is OFF: every sign-up waits for you.' }; }
+    if (action === 'auto-approve') { const on = setAutoApprove_(arg === 'on');
+      try { webForget_(s.e); } catch (e) { Logger.log('Auto-approve cache refresh: ' + e.message); }
+      return { ok: true, msg: on ? 'Auto-approve is ON: requests matching one active old masterlist record by name, school, program and award year are added at once. A recorded email must match too. Others wait for review.' : 'Auto-approve is OFF: every sign-up waits for you.' }; }
     if (action === 'join-add' || action === 'join-decline' || action === 'join-clarify') {
       webForget_(s.e); return webJoinAction_(ss, action, Object.assign({}, arg || {}, { actor: s.e, auto: false })); }
     if (action === 'remind' || action === 'followup') {
@@ -2116,6 +2165,7 @@ function setupJoinHistory() {
 // mixed up with UM Digos or UM Tagum.
 function schoolLabel_(name, official) {
   name = String(name || '').trim(); official = String(official || '').trim();
+  if (name === 'UIC') return 'University of the Immaculate Conception (UIC)';
   if (/^UM( Main)?$/i.test(name) || /^(The )?University of Mindanao$/i.test(official)) return 'University of Mindanao — UM Main';
   const um = name.match(/^UM\s+(.+)$/i);                                  // UM Digos, UM Tagum… each its own school
   if (um) return 'University of Mindanao — UM ' + um[1].replace(/\s*College$/i, '');
@@ -2125,7 +2175,12 @@ function schoolLabel_(name, official) {
 function joinSchoolList_(ss) {
   const off = {};
   try { ss.getSheetByName(TAB.schools).getRange(2, 1, CONFIG.maxSchools, 9).getValues().forEach(r => { off[String(r[0]).trim()] = r[8]; }); } catch (e) { /* names only */ }
-  return schoolRows_(ss).filter(s => !s.inactive).map(s => ({ name: s.name, label: schoolLabel_(s.name, off[s.name]) }))
+  const schools = schoolRows_(ss);
+  const list = schools.filter(s => s.name !== 'UM' || !schools.some(x => x.name === 'UM Main'))
+    .map(s => ({ name: s.name, label: schoolLabel_(s.name, off[s.name]) }));
+  const counts = {};
+  list.forEach(s => { counts[s.label] = (counts[s.label] || 0) + 1; });
+  return list.map(s => counts[s.label] > 1 ? { name: s.name, label: s.label + ' (' + s.name + ')' } : s)
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
@@ -2209,8 +2264,11 @@ function webJoinRequest(email, name, school, note, d) {
     }
     const el = newForm ? joinEligibility_(program, programTyped, school !== JOIN.other) : { result: 'Needs review', why: 'no program given' };
     const done = el.result === 'Not eligible' ? { ok: true, sorry: true, msg: JOIN_SORRY }
-               : { ok: true, msg: 'Your request has been sent to your Regional Representative. Once approved, START will email you a verification code to create your password and sign in.' };
-    if (webAllowed_(webRoles_(ss, email))) return { ok: true, onList: true, msg: 'You\'re already on the START list. We\'ll send your code now.' };
+               : { ok: true, pending: true, msg: 'Your Regional Representative will review your details. Once approved, return here to set up your password.' };
+    if (webAllowed_(webRoles_(ss, email))) return { ok: true, onList: true, hasPassword: !!(webAccount_(email) || {}).h, msg: 'Your START membership is already approved.' };
+    const prior = joinStateOf_(ss, email);
+    if (prior === 'waiting') return { ok: true, pending: true, msg: 'Your Regional Representative is still reviewing this registration.' };
+    if (prior === 'added') return { ok: true, accessCheck: true, msg: 'Your request was approved, but account access needs a tracker check. Contact your Regional Representative. You do not need to register again.' };
     const props = docProps_(), now = Date.now();
     // one request per email a day, and a cap for the whole site (stops floods)
     const k = 'WEB_J_' + webHash_(email), lastAsk = Number(props.getProperty(k) || 0);
@@ -2228,22 +2286,45 @@ function webJoinRequest(email, name, school, note, d) {
                  school === JOIN.other ? schoolTyped : '', program,
                  year, kind, el.result + (el.why ? ' (' + el.why + ')' : ''), i >= 0 ? rows[i][11] : '', last, first, mi, awarded, campus, hometown];
       savedRow = i >= 0 ? i + 2 : sh.getLastRow() + 1;
+      if (sh.getMaxRows() < savedRow) sh.insertRowsAfter(sh.getMaxRows(), savedRow - sh.getMaxRows());
       sh.getRange(savedRow, 1, 1, v.length).setValues([v]);                   // asked again: the newer details win
-      markJoinChange_(ss, sh, savedRow, email, i >= 0 ? 'request updated' : 'request created', el.result);
-      props.setProperty(k, String(now));
-      if (savedRow > 1) props.setProperty(dayKey, String(today + 1));
+      try { markJoinChange_(ss, sh, savedRow, email, i >= 0 ? 'request updated' : 'request created', el.result); }
+      catch (e) { Logger.log('Join audit: ' + e.message); }
+      try { props.setProperty(k, String(now)); if (savedRow > 1) props.setProperty(dayKey, String(today + 1)); }
+      catch (e) { Logger.log('Join rate counter: ' + e.message); }
+      try { refreshJoinViews_(ss); } catch (e) { Logger.log('Join views: ' + e.message); }
     } finally { lock.releaseLock(); }
-    try { refreshJoinViews_(ss); } catch (err) { Logger.log('Join views: ' + err.message); }
     // Eligible applications from a recognized school are activated immediately.
     // The applicant must still prove control of their email before choosing a password.
     if (autoApproveOn_() && el.result === 'Eligible' && school !== JOIN.other && savedRow > 1) {
       try {
         const r = webJoinAction_(ss, 'join-add', { row: savedRow, auto: true });
-        if (r && r.ok) return { ok: true, auto: true, msg: 'Your START details were accepted. Check your email for a verification code to create your password.' };   // the page sends the code next
+        if (r && r.ok) {
+          MEMBER_CACHE_ = null;
+          if (webAllowed_(webRoles_(ss, email)))
+            return { ok: true, auto: true, hasPassword: !!(webAccount_(email) || {}).h, msg: 'Your START membership is approved. Confirm your email to set up your password.' };
+          return { ok: true, accessCheck: true, msg: 'Your request was approved, but account access needs a tracker check. Contact your Regional Representative. You do not need to register again.' };
+        }
       } catch (e) { Logger.log('Auto-approve: ' + e.message); }                  // not added: it stays in the list for the RR
+      // A later notification or status-view error must not make a completed approval look pending.
+      MEMBER_CACHE_ = null;
+      try { if (webAllowed_(webRoles_(ss, email))) return { ok: true, auto: true, hasPassword: !!(webAccount_(email) || {}).h, msg: 'Your START membership is approved. Confirm your email to set up your password.' }; }
+      catch (e) { Logger.log('Auto-approve status: ' + e.message); }
     }
     // Requests that do not meet all listed eligibility conditions remain for RR review.
     return done;
+  });
+}
+
+// Read-only recovery after a mobile connection drops while registration is being saved.
+function webJoinStatus(email) {
+  return webSafe_(() => {
+    const ss = webSheet_(), main = primaryEmail_(ss, email);
+    if (!main) return { ok: false, msg: 'Enter a valid email address.' };
+    const who = webRoles_(ss, main), account = webAccount_(main);
+    if (webAllowed_(who)) return { ok: true, state: account && account.h ? 'password' : 'setup' };
+    const state = joinStateOf_(ss, main);
+    return { ok: true, state: state === 'waiting' ? 'pending' : state === 'added' ? 'access-check' : state === 'sorry' ? 'noteligible' : state === 'declined' ? 'declined' : 'notfound' };
   });
 }
 
@@ -2285,8 +2366,9 @@ function joinMatch_(roster, name, school, email) {
   return { i: -1, plan: 'Adds a new row in Scholars with their program, year level and scholarship (check the ONSSE masterlist first)' };
 }
 
-// Automatic approval requires a single matching pre-existing masterlist record.
-// The applicant's self-reported school and program alone are insufficient evidence.
+// Automatic approval requires one active masterlist record matching all recorded details.
+// Older imported records often have no email. A recorded email must still match, and
+// the applicant must verify control of the requested email before creating a password.
 function autoJoinMasterMatch_(ss, request, roster) {
   if (!autoApproveOn_() || String(request[2] || '').trim() === JOIN.other) return null;
   const norm = v => String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
@@ -2294,10 +2376,10 @@ function autoJoinMasterMatch_(ss, request, roster) {
   const school = String(request[2] || '').trim(), email = emailOf_(request[3]);
   if (joinMatch_(roster, request[1], school, email).i >= 0) return null; // never reactivate or attach an alias automatically
   const hits = oldMasterRows_(ss).filter(o => !String(o.r[10] || '').trim() &&
-    email && emailOf_(o.r[4]) === email && String(o.r[1] || '').trim() === school && words(o.r[0]) === words(request[1]) &&
+    email && String(o.r[1] || '').trim() === school && words(o.r[0]) === words(request[1]) &&
     norm(o.r[2]) === norm(request[7]) && String(o.r[3] || '').trim() === String(request[15] || '').trim() &&
     String(o.r[5] || '').trim() === 'Active');
-  if (hits.length !== 1) return null;
+  if (hits.length !== 1 || (emailOf_(hits[0].r[4]) && emailOf_(hits[0].r[4]) !== email)) return null;
   const hit = hits[0];
   return { at: hit.at, row: hit.r, text: [hit.r[0], hit.r[1], hit.r[2], hit.r[3]].filter(Boolean).join(' · ') };
 }
@@ -2318,7 +2400,9 @@ function webJoinAction_(ss, action, arg) {
     email = emailOf_(r[3]); name = String(r[1]).trim(); school = String(r[2]).trim();
     const stamp = Utilities.formatDate(new Date(), CONFIG.timezone, 'MMM d');
     if (action === 'join-decline') { sh.getRange(row, 5).setValue('Declined ' + stamp);
-      markJoinChange_(ss, sh, row, String(o.actor || 'RR'), 'declined', name); refreshJoinViews_(ss); return { ok: true, msg: name + ' was not added.' }; }
+      try { markJoinChange_(ss, sh, row, String(o.actor || 'RR'), 'declined', name); } catch (e) { Logger.log('Join audit: ' + e.message); }
+      try { refreshJoinViews_(ss); } catch (e) { Logger.log('Join views: ' + e.message); }
+      return { ok: true, msg: name + ' was not added.' }; }
     if (action === 'join-clarify') {                                     // one short email to the applicant; the request stays open
       const q = String(o.note || '').replace(/\s+/g, ' ').trim().slice(0, 300);
       if (q.length < 5) return { ok: false, msg: 'Type what you need to know first.' };
@@ -2328,8 +2412,8 @@ function webJoinAction_(ss, action, arg) {
       catch (e) { return { ok: false, msg: 'Not sent: ' + e.message }; }
       sh.getRange(row, 5).setValue('Asked for details ' + stamp);
       if (sh.getMaxColumns() >= 12) sh.getRange(row, 12).setValue(q);
-      markJoinChange_(ss, sh, row, String(o.actor || 'RR'), 'clarification requested', 'Question sent');
-      refreshJoinViews_(ss);
+      try { markJoinChange_(ss, sh, row, String(o.actor || 'RR'), 'clarification requested', 'Question sent'); } catch (e) { Logger.log('Join audit: ' + e.message); }
+      try { refreshJoinViews_(ss); } catch (e) { Logger.log('Join views: ' + e.message); }
       return { ok: true, msg: 'Asked ' + name + '. Their reply comes to your email.' };
     }
     if (o.school) {                                                      // the RR matched a typed school to one on the list
@@ -2377,24 +2461,27 @@ function webJoinAction_(ss, action, arg) {
       sc.getRange(at, 1, 1, 13).setValues([[name, school, pick(program, 2), awarded, email, 'Active', year || pick('', 6), campus, hometown, 'Member', '', kind, from]]);
     }
     sh.getRange(row, 5).setValue((o.auto ? 'Added automatically ' : 'Added ') + stamp); addedRow = at;
-    markScholarChange_(ss, sc, at, o.auto ? 'automatic approval' : String(o.actor || 'RR'), 'join approved', 'Join request row ' + row,
-      m.i >= 0 ? String(roster[m.i][5] || '').trim() : '', 'Active');
-    markJoinChange_(ss, sh, row, o.auto ? 'automatic approval' : String(o.actor || 'RR'), 'approved', 'Scholar ID at row ' + at);
+    try { markScholarChange_(ss, sc, at, o.auto ? 'automatic approval' : String(o.actor || 'RR'), 'join approved', 'Join request row ' + row,
+      m.i >= 0 ? String(roster[m.i][5] || '').trim() : '', 'Active'); } catch (e) { Logger.log('Scholar audit: ' + e.message); }
+    try { markJoinChange_(ss, sh, row, o.auto ? 'automatic approval' : String(o.actor || 'RR'), 'approved', 'Scholar ID at row ' + at); }
+    catch (e) { Logger.log('Join audit: ' + e.message); }
     if (oldHit) try { oldMasterTab_(ss).getRange(oldHit.at, OLD_MASTER_HEAD.length).setValue('Signed up · Scholars row ' + at + ' · ' + stamp); } catch (e) { /* note only */ }
     if (sh.getMaxColumns() >= 12) sh.getRange(row, 12).setValue('Scholars row ' + at);   // where they are now
     SpreadsheetApp.flush();
-    refreshJoinViews_(ss);
+    try { refreshJoinViews_(ss); } catch (e) { Logger.log('Join views: ' + e.message); }
   } finally { lock.releaseLock(); }
   MEMBER_CACHE_ = null;
   try { calPeopleChanged_(ss); } catch (e) { Logger.log('Calendar sharing: ' + e.message); }
+  if (o.auto) return { ok: true, approved: true, msg: name + ' was approved (Scholars row ' + addedRow + '). Password setup starts after they confirm their email on the website.' };
   // Approval is complete before any password code is sent.
   // A new applicant gets a code. An existing account gets an approval/sign-in email.
   let mailed = false, mailIssue = '';
   const hasPassword = !!(webAccount_(email) || {}).h;
   if (!hasPassword) {
-    const sent = webMailCode_(email, 'new', { name: name });
-    mailed = !!sent.ok;
-    if (!mailed) mailIssue = sent.msg || 'Could not send verification code';
+    try { const sent = webMailCode_(email, 'new', { name: name });
+      mailed = !!sent.ok;
+      if (!mailed) mailIssue = sent.msg || 'Could not send verification code';
+    } catch (e) { mailIssue = 'Could not prepare the verification email'; Logger.log('Join code: ' + e.message); }
   } else {
     try {
       if (mailRoom_() > 0) {
@@ -2406,7 +2493,7 @@ function webJoinAction_(ss, action, arg) {
   }
   return { ok: true, msg: name + ' was approved (Scholars row ' + addedRow + '). ' +
     (mailed ? (hasPassword ? 'Approval email sent.' : 'Password verification code sent.') :
-      'Email not sent: ' + mailIssue + '. Ask the scholar to use Create Account to request a new code.') };
+      'Email not sent: ' + mailIssue + '. Ask the scholar to open START, enter their email, then select Set Up Password to request a code.') };
 
 }
 
@@ -2426,7 +2513,7 @@ function joinWelcomeEmail_(name, email) {
   const hasPassword = !!(webAccount_(email) || {}).h;
   const intro = [hasPassword
     ? 'Your START membership has been approved! Open START and sign in with ' + email + ' and the password you already created.'
-    : 'Your START membership has been approved! A verification code is being sent separately. Open START, select Create Account and enter ' + email + ' to verify your email and set your password. You can request another code if yours has expired.'];
+    : 'Your START membership has been approved! Open START, enter ' + email + ', then select Set Up Password to receive a verification code. You can request another code if yours has expired.'];
   const html = designedEmail_({ badge: 'Welcome', badgeColor: THEME.blue, title: ['You\'re', 'in'], greeting: `Hi ${first},`, intro,
     extraHtml: '', outro: ['Each week you answer a short check-in there. See you inside!'],
     link: url, buttonText: url ? 'Open START' : '', buttonNote: '', chips: [['', ''], ['', ''], ['', '']], signature: rrSignature_(st) });
@@ -2538,84 +2625,75 @@ function freshScholarList_(ss, force) {
 }
 
 
-/* ---------- 🧹 FRESH START: an empty tracker that matches the website (asks first, backs up first) ----------
- *  1. A full private copy of the tracker is saved next to it ("…backup before fresh start…").
- *  2. Tabs the website does not use are removed: Start here, Dashboard, ChartData, Links, Calendar view,
- *     START Campus Leads, Install steps, Old masterlist, old Google Form tabs.
- *  3. Every row of data is cleared: Scholars, Check-in answers, Campus Lead check-ins, Event attendance,
- *     Events, Join requests, Reminder log, Outreach log. The Schools list and Settings stay (the sign-up form needs them);
- *     only Schools › START Campus Lead is emptied.
- *  4. Website accounts, sign-in codes and sessions, the "already emailed" list and waiting emails are deleted:
- *     everyone (you too) creates their account again; new scholars sign up and you approve them.
- *  5. ① runs: every tab is rebuilt with its headings, dropdowns, formats and look. */
-var FRESH_DROP = ['Start here', 'Dashboard', 'ChartData', 'Links', 'Calendar view', 'START Campus Leads', 'Install steps', 'Old masterlist',
-                  'Google Form answers (not used)', 'Member check-ins', 'Archive', 'Not recognised'];
-var FRESH_CLEAR = () => [TAB.scholars, TAB.mcheckins, TAB.checkins, ATTEND_TAB, TAB.events, JOIN_TAB, TAB.log, TAB.outreach];
-var FRESH_PROPS = /^(WEB_A_|WEB_S_|WEB_C_|WEB_T_|WEB_D_|WEB_J_|WEB_JD_|SENT_LEDGER$|MAIL_QUEUE$|ANSWERS_SEEN$|ANSWERS_BACKUP$|LAST_CHECK$|LAST_REPORT$|PORTALS$|PORTALS_ON$|FOCAL_SYNC$)/;
+/* ---------- 🧹 FRESH START: recreate the database tabs from the current schema ----------
+ * Settings and the school list are the seed for new sign-ups. Every other tab is
+ * removed after a complete private backup, including retired and unknown tabs. */
+var FRESH_KEEP = () => [TAB.settings, TAB.schools];
+var FRESH_PROPS = /^(WEB_A_|WEB_S_|WEB_SUSP_|WEB_C_|WEB_T_|WEB_D_|WEB_J_|WEB_JD_|SENT_LEDGER$|MAIL_QUEUE$|ANSWERS_SEEN$|ANSWERS_BACKUP$|LAST_CHECK$|LAST_REPORT$|PORTALS$|PORTALS_ON$|FOCAL_SYNC$)/;
 
 function freshStart() {
   sheetUser_();                                   // sheet only: never from the website
   requireSetup_();
+  requireLook_();
   const ui = SpreadsheetApp.getUi(), ss = SpreadsheetApp.getActive();
   if (!ensureOwner_('start fresh')) return;
-  const drop = ss.getSheets().map(s => s.getName()).filter(n => FRESH_DROP.indexOf(n) !== -1 || /^Form Responses \d+$/.test(n) || / \(old/.test(n));
+  const drop = ss.getSheets().map(s => s.getName()).filter(n => FRESH_KEEP().indexOf(n) === -1);
   const msg = 'This empties the tracker so you can start again from the website.\n\n' +
     '• A full backup copy is saved first (private, next to this file).\n' +
-    (drop.length ? '• Removed tabs: ' + drop.join(', ') + '\n' : '') +
-    '• Cleared: every scholar, check-in, event, attendance, join request and email log.\n' +
-    '• Kept: the Schools list and Settings.\n' +
+    (drop.length ? '• Delete and rebuild ' + drop.length + ' tabs, including old tabs and all history.\n' : '') +
+    '• Keep: Settings and the Schools list; Campus Lead assignments are cleared.\n' +
+    '• Old masterlist is deleted; automatic approval needs a new masterlist.\n' +
     '• Website accounts are deleted: everyone, you too, creates their account again.\n\n' +
     'Type FRESH START to continue.';
   const r = ui.prompt('🧹 Fresh start', msg, ui.ButtonSet.OK_CANCEL);
   if (r.getSelectedButton() !== ui.Button.OK || r.getResponseText().trim().toUpperCase() !== 'FRESH START') { notify_('Nothing was changed.'); return; }
-  const out = freshStart_(ss, drop);
-  notify_('🧹 Fresh start done.\n\nBackup: ' + out.backup + '\n\nRemoved ' + out.dropped + ' tab(s), cleared ' + out.cleared + ' tab(s), ' + out.props + ' website records.\n\n' +
-          'Next: open the website and create your account again (Create account, with this email). New scholars use "Ask to join START"; approve them on your Region page.');
+  const out = freshStart_(ss);
+  notify_((out.pending ? '⏳ Fresh start tabs recreated. Click ① Set up / fix the tracker again to finish setup.' : '🧹 Fresh start done.') +
+          '\n\nBackup: ' + out.backup + '\n\nDeleted ' + out.dropped + ' old/data tab(s), recreated clean tabs, removed ' + out.props + ' website records.\n\n' +
+          'Next: open the website and create your account again. New scholars use "Ask to join START"; approve them on your Region page.');
 }
 
-function freshStart_(ss, drop) {
-  // 1. backup (the whole file; private: only you)
-  const stamp = Utilities.formatDate(new Date(), CONFIG.timezone, 'yyyy-MM-dd HHmm');
-  const file = DriveApp.getFileById(ss.getId()), copy = file.makeCopy(ss.getName() + ' (backup before fresh start ' + stamp + ')');
-  try { const p = file.getParents(); if (p.hasNext()) copy.moveTo(p.next()); } catch (e) { /* stays in My Drive */ }
+function freshStart_(ss) {
   const lock = docLock_();
   if (!lock.tryLock(30000)) throw new Error('START is busy (someone is saving a check-in). Try again in a minute.');
-  let dropped = 0, cleared = 0, props = 0;
+  let dropped = 0, props = 0, copy;
   try {
-    // 2. tabs the website does not use
-    (drop || []).forEach(n => { const sh = ss.getSheetByName(n); if (sh && ss.getSheets().length > 1) { ss.deleteSheet(sh); dropped++; } });
-    // 3. data rows (headings stay)
-    FRESH_CLEAR().forEach(n => {
+    if (!FRESH_KEEP().every(n => ss.getSheetByName(n)))
+      throw new Error('Settings and Schools must exist before a fresh start. Run ① Set up / fix the tracker first.');
+    // The backup is made while writes are locked, so no check-in can fall between the copy and deletion.
+    const stamp = Utilities.formatDate(new Date(), CONFIG.timezone, 'yyyy-MM-dd HHmm');
+    const file = DriveApp.getFileById(ss.getId());
+    copy = file.makeCopy(ss.getName() + ' (backup before fresh start ' + stamp + ')');
+    try { const p = file.getParents(); if (p.hasNext()) copy.moveTo(p.next()); } catch (e) { /* stays in My Drive */ }
+    if (WEB_CHECKIN) retireForms_(ss); // prevent linked old Forms from recreating response tabs
+    ss.getSheets().map(s => s.getName()).forEach(n => {
+      if (FRESH_KEEP().indexOf(n) !== -1) return;
       const sh = ss.getSheetByName(n);
-      if (!sh || sh.getLastRow() < 2) return;
-      sh.getRange(2, 1, sh.getMaxRows() - 1, sh.getMaxColumns()).clearContent();
-      if (sh.getMaxRows() > 501) sh.deleteRows(502, sh.getMaxRows() - 501);
-      cleared++;
+      if (sh) { ss.deleteSheet(sh); dropped++; }
     });
     const sch = ss.getSheetByName(TAB.schools);
-    if (sch) sch.getRange(2, 4, CONFIG.maxSchools, 1).clearContent();      // START Campus Lead (people) – the list of schools stays
-    // the two answer tabs get exactly the headings the website writes (no leftover "Column 10" from old forms)
-    [[TAB.mcheckins, MEMBER_HEAD_()], [TAB.checkins, LEAD_HEAD_()]].forEach(([n, head]) => {
-      const sh = ss.getSheetByName(n); if (!sh) return;
-      sh.getRange(1, 1, 1, sh.getMaxColumns()).clearContent();
-      sh.getRange(1, 1, 1, head.length).setValues([head]);
-      if (sh.getMaxColumns() > head.length + 1) sh.deleteColumns(head.length + 2, sh.getMaxColumns() - head.length - 1);
-      sh.setFrozenRows(1);
-    });
-    // 4. website accounts, codes, sessions, the sent-email list, waiting emails
+    sch.getRange(2, 4, CONFIG.maxSchools, 1).clearContent();
+    // Accounts, codes, sessions, sent-email ledger and waiting emails belong to the old data.
     const dp = docProps_(), all = dp.getProperties();
     Object.keys(all).forEach(k => { if (FRESH_PROPS.test(k)) { dp.deleteProperty(k); props++; } });
-    dp.setProperty('FRESH_LIST_DONE', String(Date.now()));                 // the Scholars list is new: nothing to move
-    dp.deleteProperty('TABLE_LOOK');                                       // every table gets its look again
+    setAutoApprove_(false); // no masterlist remains to match against
+    dp.setProperty('FRESH_LIST_DONE', String(Date.now()));
+    ['TABLE_LOOK', 'SETUP_DONE', SETUP_KEY, DB_TIDY_KEY].forEach(k => dp.deleteProperty(k));
     removeTriggers_(['sendWaitingEmails', 'refreshPortalsAuto']);
     try { CacheService.getScriptCache().removeAll(['SLOGO_VER', 'WEB_LEADERBOARD']); } catch (e) { /* fine */ }
     MEMBER_CACHE_ = null;
-    SpreadsheetApp.flush();
+    getOrCreate_(ss, TAB.events); // setup only formats Events when its tab exists
+    joinTab_(ss, true);
     refreshJoinViews_(ss);
+    SpreadsheetApp.flush();
   } finally { lock.releaseLock(); }
-  // 5. rebuild every tab's headings, dropdowns and look
-  try { setup(); } catch (e) { Logger.log('Setup after fresh start: ' + e.message); }
-  return { backup: copy.getUrl(), dropped, cleared, props };
+  // Setup resumes safely on the next menu click if Google reaches its execution limit.
+  try { setupFull(); }
+  catch (e) {
+    throw new Error('The old tabs were deleted and the backup is safe at ' + copy.getUrl() +
+      '. Run ① Set up / fix the tracker to finish rebuilding. Setup error: ' + e.message);
+  }
+  return { backup: copy.getUrl(), dropped, props, pending: !!docProps_().getProperty(SETUP_KEY) };
 }
 
 /* ---------- Scholars tab = the sign-up form (same fields, same choices) ----------
@@ -2679,6 +2757,7 @@ function autoApproveOn_() {
 function setAutoApprove_(on) {
   const cell = autoApproveCell_();
   if (cell) cell.setValue(!!on);
-  docProps_().setProperty('AUTO_APPROVE', on ? '1' : '0');
+  try { docProps_().setProperty('AUTO_APPROVE', on ? '1' : '0'); }
+  catch (e) { if (!cell) throw e; Logger.log('Auto-approve backup setting: ' + e.message); }
   return !!on;
 }
