@@ -95,7 +95,7 @@ var REGION_SCHOOLS = {
      'https://spamast.edu.ph', '(082) 272-3725', 'op@spamast.edu.ph', 'SUC'],
     ['AdDU', 'Davao City', 'Ateneo de Davao University', 'Davao City', 'Private',
      'https://www.addu.edu.ph', '(082) 221-2411', 'contactus@addu.edu.ph', 'CHED COD IT; CHED autonomous'],
-    ['UM', 'Davao City', 'The University of Mindanao', 'Davao City (Bolton St.)', 'Private',
+    ['UM Main', 'Davao City', 'The University of Mindanao', 'Davao City (Bolton St.)', 'Private',
      'https://umindanao.edu.ph', '(082) 227-5456', '', 'CHED COE/COD (IT, CpE, EE, ME); CHED autonomous'],
     ['UM Digos', 'Davao del Sur', 'UM Digos College', 'Digos City', 'Private',
      'https://digos.umindanao.edu.ph', '(082) 553-2914', '', 'CHED COD IT; CHED autonomous'],
@@ -204,11 +204,36 @@ function loadSchoolList() {
             '\n\nType your schools in the Schools tab: short name in A, province in B.');
     return;
   }
-  const n = writeSchoolList_(SpreadsheetApp.getActive());
+  const ss = SpreadsheetApp.getActive();
+  mergeUmMainSchool_(ss);
+  const n = writeSchoolList_(ss);
   try { updateDropdown_(); } catch (e) { Logger.log('Dropdown not refreshed: ' + e.message); }
   SpreadsheetApp.getActive().setActiveSheet(SpreadsheetApp.getActive().getSheetByName(TAB.schools));
   if (!n) return;
   notify_(`✅ Added ${n} ${regionProfile_().name} schools\n\nWhat you typed before was kept. Check it against ONSSE's masterlist.`);
+}
+
+// Older trackers used "UM" for the main campus. Keep one Schools row and carry
+// its existing records to the canonical "UM Main" code before refreshing lists.
+function mergeUmMainSchool_(ss) {
+  const sh = ss.getSheetByName(TAB.schools);
+  if (!sh) return false;
+  const rows = sh.getRange(2, 1, CONFIG.maxSchools, LINK_COL).getValues();
+  const old = rows.findIndex(r => String(r[0]).trim() === 'UM');
+  if (old < 0) return false;
+  const main = rows.findIndex(r => String(r[0]).trim() === 'UM Main');
+  if (main >= 0) {
+    const a = rows[old], b = rows[main];
+    if (String(a[3]).trim() && String(b[3]).trim() && String(a[3]).trim() !== String(b[3]).trim())
+      throw new Error('UM and UM Main have different Campus Leads. Resolve the Schools rows before merging them.');
+    // The main-campus row is authoritative; carry over any fields it lacks.
+    [1, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].forEach(i => {
+      if (String(a[i] || '').trim() && !String(b[i] || '').trim()) sh.getRange(main + 2, i + 1).setValue(a[i]);
+    });
+  } else sh.getRange(old + 2, 1).setValue('UM Main');
+  renameSchool_(ss, 'UM', 'UM Main');
+  if (main >= 0) sh.getRange(old + 2, 1, 1, LINK_COL).clearContent();
+  return true;
 }
 
 function writeSchoolList_(ss) {

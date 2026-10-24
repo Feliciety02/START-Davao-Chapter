@@ -192,6 +192,11 @@
   .quest-gems i:nth-child(3) { animation-delay: .36s; }
   .quest-gems i:nth-child(4) { animation-delay: .54s; }
   .quest-gems i:nth-child(5) { animation-delay: .72s; }
+  .splash-install { display:none; margin:22px -4px 0; padding:13px 14px; border:1px solid rgba(18,32,58,.10); border-radius:18px;
+    background:rgba(255,255,255,.88); text-align:left; box-shadow:0 5px 18px rgba(18,32,58,.08); }
+  .splash-install b { display:block; font-size:13px; line-height:1.35; }
+  .splash-install span { display:block; margin-top:3px; font-size:12px; line-height:1.45; color:#4B5B77; }
+  .splash-install .pill { width:100%; margin-top:10px; padding:10px 14px; }
   @keyframes gem-light { 0%,22%,100% { background: #D6EDFC; transform: rotate(45deg) scale(.8); } 40%,60% { background: var(--sun); border-color: #E9A800; transform: rotate(45deg) scale(1.15); } }
   @keyframes sparkle { 0%,100% { opacity: .3; transform: scale(.7) rotate(-15deg); } 50% { opacity: 1; transform: scale(1.2) rotate(15deg); } }
   @media (prefers-reduced-motion: reduce) { .splash-icon::before, .splash-icon::after, .quest-gems i { animation: none; } }
@@ -205,6 +210,8 @@
     <div class="splash-icon"><div id="splashstar"></div></div>
     <div class="brand">START<small>Region 11</small></div>
     <div id="state" role="status" aria-label="Opening START Region 11"><div class="quest-gems" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div>
+    <div class="splash-install" id="splashinstall"><b>Keep START on your phone</b><span id="splashinstalltext"></span>
+      <button class="pill sun" id="splashinstallbutton" type="button" style="display:none">Install START</button></div>
   </div>
 </div>
 
@@ -435,7 +442,7 @@
     }
     draw();
   }
-  function reveal() { frame.classList.add('on'); splash.classList.add('off'); }
+  function reveal() { frame.classList.add('on'); splash.classList.add('off'); setTimeout(showInstallHint, 500); }
   // START did not say "ready": Google may be showing its own error page (often: signed into several Google accounts).
   // Show START anyway, with a small card to try again or open it in the browser.
   function slow() { reveal(); rescue(true); }
@@ -470,23 +477,46 @@
   $('switch').onclick = function () { store.set('start_region', null); frame.classList.remove('on'); frame.src = 'about:blank'; pick(); };
   window.addEventListener('online', function () { if (current && (!frame.classList.contains('on') || $('off'))) open(current); });
 
-  // Install: Android/desktop Chrome give a button; iPhone needs Share › Add to Home Screen
-  var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  // Browsers require the person to approve installation. iPhone uses the Share menu.
+  var appDisplay = window.matchMedia('(display-mode: standalone)');
+  var installedThisVisit = false;
+  function inAppMode() { return installedThisVisit || appDisplay.matches || window.navigator.standalone === true; }
   var ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var android = /android/i.test(navigator.userAgent);
   var deferred = null;
+  if (!inAppMode() && !store.get('start_hint_closed') && (ios || android)) {
+    $('splashinstall').style.display = 'block';
+    $('splashinstalltext').textContent = ios
+      ? 'After START opens, tap Share, then Add to Home Screen.'
+      : 'After START opens, tap Install, or use your browser menu → Install app / Add to Home Screen.';
+  }
   function hint(text, withButton) {
-    if (standalone || store.get('start_hint_closed')) return;
+    if (inAppMode() || store.get('start_hint_closed')) return;
     $('hinttext').textContent = text; $('install').style.display = withButton ? '' : 'none'; $('hint').style.display = 'flex';
   }
+  function showInstallHint() {
+    if (ios) hint('Tap Share, then Add to Home Screen.', false);
+    else if (android) hint(deferred ? 'Add START to your home screen.' : 'Open your browser menu → Install app or Add to Home Screen.', !!deferred);
+    else if (deferred) hint('Add START to your home screen.', true);
+  }
   $('hintx').onclick = function () { $('hint').style.display = 'none'; store.set('start_hint_closed', String(Date.now())); };
-  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; hint('Add START to your home screen.', true); });
-  $('install').onclick = function () {
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); deferred = e;
+    if (inAppMode()) return;
+    if (android && $('splashinstall').style.display !== 'none') $('splashinstallbutton').style.display = '';
+    if (splash.classList.contains('off')) showInstallHint();
+  });
+  function installStart() {
     if (!deferred) return;
-    deferred.prompt();
-    deferred.userChoice.then(function () { deferred = null; $('hint').style.display = 'none'; });
-  };
-  window.addEventListener('appinstalled', function () { $('hint').style.display = 'none'; });
-  if (ios && !standalone) setTimeout(function () { hint('Tap the Share button, then "Add to Home Screen".', false); }, 2500);
+    var prompt = deferred; deferred = null;
+    prompt.prompt();
+    prompt.userChoice.then(function () { $('hint').style.display = 'none'; $('splashinstallbutton').style.display = 'none'; });
+  }
+  $('install').onclick = installStart;
+  $('splashinstallbutton').onclick = installStart;
+  function hideInstallPrompts() { $('hint').style.display = 'none'; $('splashinstall').style.display = 'none'; }
+  window.addEventListener('appinstalled', function () { installedThisVisit = true; hideInstallPrompts(); });
+  if (appDisplay.addEventListener) appDisplay.addEventListener('change', function () { if (inAppMode()) hideInstallPrompts(); });
 
   if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
   pick();

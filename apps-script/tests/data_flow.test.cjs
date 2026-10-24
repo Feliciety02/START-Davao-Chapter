@@ -9,7 +9,7 @@ for (const file of fs.readdirSync(root).filter(name => name.endsWith('.gs')).sor
   vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
 }
 
-// Auto-approval is off even for an exact record, then on only for a unique verified email match.
+// Auto-approval needs one active matching masterlist record. A recorded email must match.
 const old = new Array(11).fill('');
 old[0] = 'Dela Cruz, Ana'; old[1] = 'USeP'; old[2] = 'BS Biology'; old[3] = '2023';
 old[4] = 'ana@example.com'; old[5] = 'Active';
@@ -25,6 +25,12 @@ request[3] = 'impostor@example.com';
 assert.equal(context.autoJoinEligible_({}, request, []), false);
 request[3] = old[4];
 assert.equal(context.autoJoinEligible_({}, request, [[old[0], old[1], '', '', old[4], 'Suspended']]), false);
+const noEmail = old.slice(); noEmail[4] = '';
+context.oldMasterRows_ = () => [{ r: noEmail, at: 2 }];
+assert.equal(context.autoJoinEligible_({}, request, []), true, 'old masterlist records imported without email can match');
+request[7] = 'BS Mathematics';
+assert.equal(context.autoJoinEligible_({}, request, []), false);
+request[7] = old[2];
 context.oldMasterRows_ = () => [{ r: old, at: 2 }, { r: old, at: 3 }];
 assert.equal(context.autoJoinEligible_({}, request, []), false);
 
@@ -49,7 +55,7 @@ assert.equal(sheetToggle, false);
 assert.equal(savedToggle, '0');
 context.setAutoApprove_(true);
 
-// When a same-name legacy row exists, automatic approval must use the uniquely verified row.
+// When another legacy row differs, automatic approval uses the unique matching row.
 const other = old.slice(); other[4] = 'other@example.com'; other[2] = 'BS Mathematics';
 context.oldMasterRows_ = () => [{ r: other, at: 2 }, { r: old, at: 3 }];
 assert.equal(context.autoJoinMasterMatch_({}, request, []).at, 3);

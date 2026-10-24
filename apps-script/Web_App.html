@@ -557,25 +557,81 @@
   .pc .lockbg { width: 100%; height: 100%; display: grid; place-items: center; background: repeating-linear-gradient(135deg, #EAF3FC 0 12px, #E1ECF8 12px 24px); color: #9AA6B8; }
   .pc span { position: absolute; left: 8px; bottom: 8px; background: #fff; border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
   .pc.locked span { color: var(--ink2); }
-  .podium { display: flex; align-items: flex-end; justify-content: center; gap: 12px; margin: 10px 0 20px; }
-  .pod { flex: 1; max-width: 190px; display: flex; flex-direction: column; align-items: center; text-align: center; }
-  .pod .medal { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; background: #fff; box-shadow: 0 4px 0 #D6E4F5; margin-bottom: 6px; font-size: 20px; }
-  .pod .pn { font-weight: 700; font-size: 13px; line-height: 1.25; min-height: 34px; display: flex; align-items: flex-end; }
-  .pod .pv { font-weight: 800; font-size: 20px; margin: 2px 0 6px; }
-  .pod .pb { width: 100%; border-radius: 18px 18px 6px 6px; display: grid; place-items: start center; padding-top: 10px; font-size: 26px; font-weight: 800; color: rgba(18,32,58,.55); }
-  .pod.p1 .pb { height: 120px; background: linear-gradient(180deg, #FFDD00, #FFF3A0); box-shadow: 0 6px 0 #D4B200; }
-  .pod.p2 .pb { height: 90px; background: linear-gradient(180deg, #7CCBFF, #CFE9FF); box-shadow: 0 6px 0 #4FA8E6; }
-  .pod.p3 .pb { height: 70px; background: linear-gradient(180deg, #FFF6BF, #FFFBE3); box-shadow: 0 6px 0 #E8D27A; }
-  .pod.me .pn { color: var(--blue-d); }
-  ul.ranks { list-style: none; margin: 0; padding: 0; }
-  ul.ranks li { display: flex; align-items: center; gap: 12px; padding: 10px 8px; border-radius: 14px; }
-  ul.ranks li + li { margin-top: 2px; }
-  ul.ranks li.me { background: #FFF6BF; box-shadow: inset 0 0 0 1.5px #F5E27A; }
-  ul.ranks .rk { width: 30px; height: 30px; border-radius: 50%; background: var(--ice); display: grid; place-items: center; font-weight: 800; font-size: 13px; flex: none; }
-  ul.ranks li:nth-child(1) .rk { background: #FFDD00; } ul.ranks li:nth-child(2) .rk { background: #7CCBFF; } ul.ranks li:nth-child(3) .rk { background: #FFF6BF; }
-  ul.ranks em { font-style: normal; font-size: 10.5px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; background: var(--navy); color: var(--sun); padding: 1px 8px; border-radius: 999px; margin-left: 6px; }
-  .rbar { height: 8px; border-radius: 999px; background: var(--ice); overflow: hidden; margin-top: 5px; } .rbar i { display: block; height: 100%; background: var(--blue); border-radius: 999px; }
-  .rv { font-weight: 800; width: 48px; text-align: right; } .rs { display: inline-flex; align-items: center; gap: 2px; font-weight: 700; font-size: 13px; color: #E07A00; width: 44px; }
+  /* School ranks: the podium and simple standings from the START game style. */
+  .rank-pagehead { margin:4px 4px 16px; }
+  .rank-pagehead h1 { margin:0; font-size:clamp(26px,3vw,34px); font-weight:800; line-height:1.15; letter-spacing:-.5px; }
+  .rank-pagehead p { margin:5px 0 0; color:var(--ink2); font-size:14px; }
+  .rank-stage { padding:14px 4px 0; margin-bottom:20px; }
+  .rank-podium { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:end; gap:14px; max-width:720px; margin:0 auto; }
+  .rank-pod { min-width:0; display:flex; flex-direction:column; align-items:center; text-align:center; color:var(--navy); }
+  .rank-pod.first { grid-column:2; grid-row:1; }
+  .rank-pod.second { grid-column:1; grid-row:1; }
+  .rank-pod.third { grid-column:3; grid-row:1; }
+  .rank-pod-mark { position:relative; width:64px; height:64px; flex:none; display:grid; place-items:center; margin-bottom:14px; border-radius:50%; background:#fff; box-shadow:0 7px 0 rgba(18,32,58,.12); }
+  .rank-pod.first .rank-pod-mark { width:78px; height:78px; }
+  .rank-pod-mark .slogo { width:80% !important; height:80% !important; }
+  .rank-pod-mark .slogo svg { width:100%; height:100%; }
+  .rank-star { position:absolute; top:-12px; right:-12px; width:34px; height:34px; display:grid; place-items:center; border-radius:50%; background:#fff; color:var(--navy); box-shadow:0 3px 0 rgba(18,32,58,.14); }
+  .rank-star .material-icon { color:#E3B900; font-variation-settings:'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24; }
+  .rank-star svg.ico { width:25px; height:25px; }
+  .rank-pod-name { display:flex; align-items:flex-end; justify-content:center; min-height:3.1em; width:100%; font-size:14px; font-weight:800; line-height:1.25; overflow-wrap:anywhere; }
+  .rank-pod.me .rank-pod-name { color:var(--blue-d); }
+  .rank-pod-score { display:block; margin:5px 0 13px; font-size:23px; font-weight:800; line-height:1.15; }
+  .rank-pod-base { display:block; width:100%; height:110px; padding:12px 4px; border-radius:22px 22px 10px 10px; background:linear-gradient(160deg,#7CCBFF,#D8EFFF); box-shadow:0 8px 0 #4FA8E6; color:rgba(18,32,58,.52); font-size:32px; font-weight:800; }
+  .rank-pod.first .rank-pod-base { height:142px; background:linear-gradient(160deg,#FFDD00,#FFF3A0); box-shadow:0 8px 0 #D4B200; }
+  .rank-pod.third .rank-pod-base { height:92px; background:linear-gradient(160deg,#FFF3B0,#FFFBE3); box-shadow:0 8px 0 #E8D27A; }
+  .rank-stage-empty { max-width:720px; margin:16px auto; padding:18px; border:1.5px dashed rgba(18,32,58,.2); border-radius:18px; background:rgba(255,255,255,.58); font-size:13.5px; }
+  .rank-board { padding:22px 24px; border-radius:30px; }
+  .rank-list { list-style:none; display:grid; gap:4px; margin:0; padding:0; }
+  .rank-item { display:grid; grid-template-columns:42px minmax(0,1fr) 52px 56px; gap:12px; align-items:center; min-width:0; padding:11px 12px; border-radius:16px; }
+  .rank-item.me { background:#FFF6BF; box-shadow:inset 0 0 0 2px #F5DF67; }
+  .rank-position { display:grid; place-items:center; width:42px; height:42px; border-radius:50%; background:#EAF3FC; color:var(--navy); font-size:17px; font-weight:800; }
+  .rank-item.place-1 .rank-position { background:var(--sun); }
+  .rank-item.place-2 .rank-position { background:var(--sky2); }
+  .rank-item.place-3 .rank-position { background:var(--sun-l); }
+  .rank-detail { min-width:0; }
+  .rank-school { display:flex; align-items:center; gap:9px; min-width:0; }
+  .rank-school .slogo { width:28px !important; height:28px !important; }
+  .rank-school .slogo svg { width:100%; height:100%; }
+  .rank-school-name { min-width:0; }
+  .rank-detail b { display:block; font-size:15px; line-height:1.25; overflow-wrap:anywhere; }
+  .rank-detail em { display:inline-block; margin-left:6px; padding:2px 9px; border-radius:999px; background:var(--navy); color:var(--sun); font-size:10px; font-style:normal; font-weight:800; letter-spacing:.4px; text-transform:uppercase; vertical-align:middle; }
+  .rank-detail small { display:block; margin-top:4px; color:var(--ink2); font-size:11px; line-height:1.3; }
+  .rank-progress { height:8px; margin-top:9px; border-radius:99px; background:#EAF3FC; overflow:hidden; }
+  .rank-progress i { display:block; height:100%; border-radius:inherit; background:var(--blue); }
+  .rank-metrics { font-size:19px; font-weight:800; text-align:right; }
+  .rank-streak { display:inline-flex; align-items:center; gap:2px; justify-content:flex-end; color:#E07A00; font-size:13px; font-weight:800; white-space:nowrap; }
+  .rank-board-foot { margin:14px 12px 0; }
+  @media(max-width:560px) {
+    .rank-pagehead { margin-bottom:12px; }
+    .rank-stage { padding:8px 0 0; }
+    .rank-podium { gap:8px; }
+    .rank-pod-mark { width:54px; height:54px; margin-bottom:12px; font-size:23px; }
+    .rank-pod.first .rank-pod-mark { width:68px; height:68px; }
+    .rank-star { top:-10px; right:-11px; width:30px; height:30px; }
+    .rank-star svg.ico { width:22px; height:22px; }
+    .rank-pod-name { min-height:3.8em; font-size:13px; }
+    .rank-pod-score { margin:4px 0 11px; font-size:21px; }
+    .rank-pod-base { height:82px; border-radius:17px 17px 8px 8px; font-size:27px; }
+    .rank-pod.first .rank-pod-base { height:108px; }
+    .rank-pod.third .rank-pod-base { height:72px; }
+    .rank-board { padding:18px 14px; }
+    .rank-item { grid-template-columns:38px minmax(0,1fr) 46px 38px; gap:8px; padding:13px 5px; }
+    .rank-position { width:38px; height:38px; font-size:15px; }
+    .rank-detail b { font-size:14px; }
+    .rank-school { gap:7px; }
+    .rank-school .slogo { width:24px !important; height:24px !important; }
+    .rank-detail em { font-size:9px; padding:2px 6px; margin-left:3px; }
+    .rank-progress { height:7px; margin-top:7px; }
+    .rank-metrics { font-size:17px; }
+    .rank-streak { font-size:12px; }
+    .rank-streak svg.ico { width:14px; height:14px; }
+  }
+  @media(max-width:370px) {
+    .rank-item { grid-template-columns:34px minmax(0,1fr) 42px 34px; gap:6px; }
+    .rank-position { width:34px; height:34px; }
+    .rank-detail b { font-size:12.5px; }
+  }
   .mehead { display: flex; align-items: center; gap: 18px; }
   .av.big { width: 78px; height: 78px; font-size: 26px; box-shadow: 0 0 0 5px #FFDD00; }
   .lvline { display: flex; align-items: center; gap: 6px; font-weight: 700; margin-top: 8px; color: var(--blue-d); }
@@ -622,7 +678,6 @@
     .card.goal { gap: 14px; } .goalring svg { width: 84px; height: 84px; }
     .pcgrid { grid-template-columns: 1fr 1fr; gap: 10px; }
     .badges { grid-template-columns: 1fr 1fr; gap: 10px; }
-    .podium { gap: 8px; } .pod .pn { font-size: 11.5px; } .pod .pv { font-size: 16px; }
     .mehead { gap: 14px; } .av.big { width: 62px; height: 62px; font-size: 21px; }
     .path .node { transform: none !important; }
     .path .node:nth-child(4n+2) { transform: translateX(40px) !important; } .path .node:nth-child(4n) { transform: translateX(-40px) !important; }
@@ -642,20 +697,7 @@
   .postcard .stamp { position: absolute; top: 10px; right: 12px; z-index: 3; padding: 5px; background: #fff; border-radius: 50%; transform: rotate(10deg);
     box-shadow: 0 6px 14px rgba(18,32,58,.25); outline: 2px dashed #7CCBFF; outline-offset: -3px; animation: stampIn .5s cubic-bezier(.2,1.6,.4,1) both .25s; }
   @keyframes stampIn { from { transform: rotate(-25deg) scale(1.8); opacity: 0; } to { transform: rotate(10deg) scale(1); opacity: 1; } }
-  .pod .medal { position: relative; display: grid; place-items: center; margin: 0 auto 8px; background: none !important; box-shadow: none !important; width: auto !important; height: auto !important; }
-  .pod .medal .slogo.big:not(.crest) { box-shadow: 0 0 0 4px #fff, 0 6px 0 4px rgba(18,32,58,.12); }
-  .pod.p1 .medal .slogo.big:not(.crest) { box-shadow: 0 0 0 4px #FFDD00, 0 7px 0 4px #D4B200; }
-  .pod .crown { position: absolute; top: -26px; left: 50%; transform: translateX(-50%) rotate(-8deg); z-index: 2; }
-  .pod .rkn { position: absolute; bottom: -6px; right: -6px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font: 800 12px Poppins, sans-serif;
-    background: var(--navy); color: #FFDD00; border: 2px solid #fff; }
-  .pod.p1 .rkn { background: #FFDD00; color: var(--navy); }
-  .rlogo { position: relative; flex: none; margin-right: 4px; }
-  .ranks li.gap { justify-content: center; padding: 0; min-height: 0; color: #9AA6B8; border: 0; background: none; }
-  .ranks li.small { opacity: .8; }
   .muted.sm, p.sm { font-size: 13px; } .center { text-align: center; }
-  .rlogo .rkn { position: absolute; bottom: -5px; right: -7px; min-width: 21px; height: 21px; padding: 0 4px; border-radius: 999px; display: grid; place-items: center;
-    font: 800 11px Poppins, sans-serif; background: #E7EBF1; color: var(--navy); border: 2px solid #fff; }
-  .rlogo.r1 .rkn { background: #FFDD00; } .rlogo.r2 .rkn { background: #7CCBFF; } .rlogo.r3 .rkn { background: #FFF1A8; }
   .bar .blogo { display: grid; place-items: center; margin: 8px 0 2px; }
   .avwrap { position: relative; display: inline-block; flex: none; }
   .avwrap .avsch { position: absolute; right: -8px; bottom: -6px; padding: 2px; background: #fff; border-radius: 50%; }
@@ -1041,6 +1083,139 @@
   .auth.register .actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .auth.register .actions .next { width:100%; }
 }
+
+  /* Profile / Me: mobile-first arrangement; all existing actions preserved */
+  .me-profile-card { padding: 22px 24px; gap: 22px; min-width: 0; }
+  .me-profile-card .grow { min-width: 0; }
+  .me-profile-card h2 { display:block; font-size: clamp(18px,2.1vw,24px); font-weight: 800; line-height:1.25; letter-spacing:-.35px; overflow-wrap:anywhere; }
+  .me-profile-card .muted { margin-top:5px; font-size:13px; overflow-wrap:anywhere; }
+  .me-settings { padding: 8px 18px; overflow:hidden; }
+  .me-settings .linkrow { display:flex; align-items:center; gap:16px; min-height:72px; padding:13px 8px; border-radius:0; font-size:14px; font-weight:700; line-height:1.4; }
+  .me-settings .linkrow + .linkrow { border-top:1px solid #E7EDF5; }
+  .me-settings .linkrow > span:nth-child(2) { flex:1; min-width:0; }
+  .me-settings .me-action-icon { flex:0 0 46px; height:46px; border-radius:14px; display:grid; place-items:center; background:#EAF3FC; color:#12203A; }
+  .me-settings .me-action-chevron { flex:0 0 20px; display:grid; place-items:center; color:#66748C; }
+  .me-settings .linkrow.out { color:#B3261E; }
+  .me-settings .linkrow.out .me-action-icon { background:#FFF0EF; color:#B3261E; }
+  .me-settings .linkrow.out .me-action-chevron { color:#B3261E; }
+  .me-settings .linkrow:focus-visible { outline:3px solid var(--blue); outline-offset:-3px; border-radius:14px; }
+  @media (max-width:860px) {
+    .me-profile-card { padding:19px 18px; gap:16px; border-radius:26px; }
+    .me-profile-card .av.big { width:60px; height:60px; font-size:20px; }
+    .me-profile-card h2 { font-size:18px; }
+    .me-settings { padding:6px 14px; border-radius:26px; }
+    .me-settings .linkrow { min-height:72px; gap:14px; padding:12px 4px; font-size:14px; }
+    .me-settings .me-action-icon { flex-basis:44px; height:44px; }
+  }
+  @media (max-width:360px) {
+    .me-profile-card { gap:12px; padding:16px 14px; }
+    .me-profile-card .av.big { width:52px; height:52px; font-size:18px; }
+    .me-profile-card h2 { font-size:16px; }
+    .me-settings .linkrow { gap:10px; font-size:13px; }
+  }
+
+/* START Region XI — light floating mobile navigation, preserving existing tabs and JS */
+@media (max-width: 860px) {
+  nav.bottom {
+    left: 12px;
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    padding: 7px;
+    gap: 3px;
+    background: rgba(255,255,255,.97);
+    border: 1px solid rgba(255,255,255,.95);
+    border-radius: 26px;
+    box-shadow: 0 12px 30px rgba(18,32,58,.15), 0 2px 7px rgba(18,32,58,.06);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+  nav.bottom .tab {
+    min-height: 65px;
+    padding: 8px 1px 7px;
+    gap: 4px;
+    background: transparent;
+    border-radius: 20px;
+    color: #60718E;
+    font-size: clamp(9.5px, 2.7vw, 11.5px);
+    font-weight: 600;
+    box-shadow: none;
+  }
+  nav.bottom .tab .ic,
+  nav.bottom .tab:not([aria-current="page"]) .ic,
+  nav.bottom .tab .material-icon {
+    color: #60718E;
+  }
+  nav.bottom .tab:not([aria-current="page"]):hover {
+    background: #F0F6FF;
+    color: #12203A;
+  }
+  nav.bottom .tab[aria-current="page"] {
+    background: linear-gradient(145deg, #FFEE73 0%, #FFF7B7 75%, #FFFBE0 100%);
+    color: #12203A;
+    font-weight: 800;
+    box-shadow: inset 0 -3px 0 #FFDD00;
+  }
+  nav.bottom .tab[aria-current="page"] .ic,
+  nav.bottom .tab[aria-current="page"] .material-icon { color: #12203A; }
+  nav.bottom .tab .dot {
+    background: #0099FF;
+    box-shadow: 0 0 0 2px #fff;
+  }
+  nav.bottom .tab[aria-current="page"] .dot { box-shadow: 0 0 0 2px #FFF7B7; }
+  nav.bottom .tab:focus-visible { outline: 2px solid #0099FF; outline-offset: -2px; }
+}
+
+  /* FIX: consistent check-in card corners and evenly inset landscape artwork. */
+  .heroc, .heroc.done, .heroc.late {
+    border-radius: 28px;
+    overflow: hidden;
+  }
+  .heroc.done::after { display: none; }
+  @media (max-width: 860px) {
+    .heroc.done { padding: 20px; }
+    .heroc.done .postcard {
+      display: block;
+      position: relative;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      margin: 18px 0 0;
+      transform: none;
+      aspect-ratio: 300 / 190;
+      border: 5px solid #fff;
+      border-radius: 22px;
+      overflow: hidden;
+    }
+  }
+
+  /* One START treatment for native dropdowns across registration and RR tools. */
+  select:not([multiple]) {
+    appearance: none;
+    -webkit-appearance: none;
+    min-height: 44px;
+    padding-right: 42px !important;
+    border: 1.5px solid #D5E3F2;
+    border-radius: 14px;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18'%3E%3Cpath d='m4 7 5 5 5-5' fill='none' stroke='%2312203A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    color: var(--navy);
+    font-family: Poppins, 'Segoe UI', Arial, sans-serif;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+  select:not([multiple]):focus {
+    border-color: var(--blue-d);
+    outline: 3px solid rgba(0,153,255,.18);
+    outline-offset: 1px;
+  }
+  select:not([multiple]):disabled {
+    background-color: #F4F6F9;
+    color: #8895A9;
+    cursor: default;
+  }
+  select option { background: #fff; color: var(--navy); }
 </style>
 </head>
 <body>
@@ -1103,8 +1278,10 @@ function emo(t) { var m = String(t || '').match(/^(\S+)\s+(.*)$/); return m && !
  * email → code from email → create a password (new account)
  * password → "Forgot password?" → code → new password
  */
-var AUTH = { step: 'choose', mode: '', purpose: 'new', ticket: '', joinStage: 0 };
+var AUTH = { step: 'choose', mode: '', purpose: 'new', ticket: '', joinStage: 0, busy: false, codeUntil: 0, codeTimer: null, readyNeedsSignIn: false, setupTo: '' };
 function showSignIn(note) {
+  AUTH.busy = false; AUTH.mode = 'create'; AUTH.purpose = 'new'; AUTH.ticket = ''; AUTH.readyNeedsSignIn = false; AUTH.setupTo = '';
+  if (AUTH.codeTimer) { clearInterval(AUTH.codeTimer); AUTH.codeTimer = null; }
   S.data = null; $('acct').style.display = 'none'; $('nav').innerHTML = ''; $('nav2').innerHTML = '';
   document.body.classList.add('out');
   var field = function (id, label, type, extra) {
@@ -1117,15 +1294,17 @@ function showSignIn(note) {
       '<div class="right">' +
         '<div class="pane" id="p-choose" style="display:none"></div>' +
         '<div class="pane" id="p-email">' + field('em', 'Email', 'email', 'autocomplete="username" inputmode="email"') +
-          '<p class="hint" id="emhint">Enter your Gmail address. We’ll check whether you’re already on the START scholar list.</p></div>' +
+          '<p class="hint" id="emhint"></p></div>' +
         '<div class="pane" id="p-password">' + field('pw', 'Password', 'password', 'autocomplete="current-password"') +
           '<label class="show"><input type="checkbox" data-show="pw"> Show password</label>' +
           '<label class="show"><input type="checkbox" class="keepme" checked> Stay signed in on this device</label>' +
-          '<p class="hint switch"><button type="button" class="linkish" id="setup-password">Set up or reset password</button> · We’ll email you a verification code.</p></div>' +
+          '<p class="hint switch"><button type="button" class="linkish" id="setup-password">Set up or reset password</button></p></div>' +
         '<div class="pane" id="p-code">' + field('cd', '6-digit code', 'text', 'inputmode="numeric" autocomplete="one-time-code" maxlength="12"') +
-          '<p class="hint">Check Spam or Promotions. <button class="linkish" id="again">Resend code</button> · <button class="linkish" id="codehelp">Still no code?</button></p>' +
-          '<div class="joinbox" id="joinbox" style="display:none"><b>No code after 2 minutes?</b> Search your inbox, Spam and Promotions for "START", then send a new code. ' +
+          '<p class="hint"><button class="linkish" id="again">Resend code</button> · <button class="linkish" id="codehelp">Still no code?</button></p>' +
+          '<div class="joinbox" id="joinbox" style="display:none"><b>No code after 2 minutes?</b> Search your inbox, Spam and Promotions for "START", then resend the code. ' +
           'Still nothing? Message your Campus Lead or Regional Representative.<button class="linkish" id="joinlink" hidden></button></div></div>' +
+        '<div class="pane" id="p-welcome">' +
+          '<p class="hint">We’ll send a code to <b id="welcome-email"></b>. If that address is wrong, ask your Regional Representative to update your account.</p></div>' +
         '<div class="pane" id="p-join"><div class="join-progress" id="joinprogress" aria-live="polite"><strong id="joincount"></strong><span id="joinlabel"></span><i></i></div>' +
           '<section class="join-step" data-join-step="0"><h2>Your name</h2><p>Use the name on your DOST scholarship record.</p>' +
             '<div class="jrow3">' + field('jln', 'Last name', 'text', 'autocomplete="family-name" maxlength="60"') + field('jfn', 'First name', 'text', 'autocomplete="given-name" maxlength="60"') +
@@ -1139,14 +1318,16 @@ function showSignIn(note) {
             '<div class="field sel" id="f-jc"><select id="jc"><option value="">Choose</option></select><label for="jc">DOST scholarship</label><span class="field-error" aria-live="polite"></span></div></div>' +
             '<div class="field sel" id="f-jprov"><select id="jprov"><option value="">Choose your province</option></select><label for="jprov">Province</label><span class="field-error" aria-live="polite"></span></div>' +
             '<div class="field sel" id="f-jcity"><select id="jcity" disabled><option value="">Choose your province first</option></select><label for="jcity">City or municipality</label><span class="field-error" aria-live="polite"></span></div>' +
-            '<div class="join-note">After you submit, START will email a code if your record qualifies. Other requests go to your Regional Representative for review.</div></section></div>' +
+            '<div class="join-note">If your record qualifies for automatic approval, you’ll confirm your email before START sends a code. Other requests go to your Regional Representative for review.</div></section></div>' +
         '<div class="pane" id="p-joined"><div class="joined">' + startLogo(84) + '<p id="joinedt"></p></div></div>' +
+        '<div class="pane" id="p-pending"><div class="join-note">' + ico('clock', 22) + ' <span id="pending-note"></span></div></div>' +
         '<div class="pane" id="p-newpass">' + field('np', 'New password', 'password', 'autocomplete="new-password"') +
           field('np2', 'Confirm password', 'password', 'autocomplete="new-password"') +
           '<div class="pwmeter" id="pwm"><i></i><span></span></div>' +
           '<p class="hint">Use 8 or more characters. A short phrase is easy to remember and hard to guess, like <i>kape sa Samal 7</i>.</p>' +
           '<label class="show"><input type="checkbox" data-show="np,np2"> Show password</label>' +
           '<label class="show"><input type="checkbox" class="keepme" checked> Stay signed in on this device</label></div>' +
+        '<div class="pane" id="p-ready"><div class="joined">' + startLogo(84) + '<p>Your weekly check-in and school updates are waiting.</p></div></div>' +
         '<p class="statusnote" id="authstatus" role="status" aria-live="polite"></p>' +
         '<div class="err" id="err" role="alert"><span>ⓘ</span><span id="errt"></span></div>' +
         '<div class="actions"><button class="linkish" id="alt"></button><button class="next" id="next">Next</button></div>' +
@@ -1167,7 +1348,7 @@ function showSignIn(note) {
     var sc = !v ? 0 : v.length < 8 ? 1 : (v.length >= 14 || (v.length >= 10 && kinds >= 3)) ? 3 : 2;
     $('pwm').className = 'pwmeter s' + sc; $('pwm').querySelector('span').textContent = ['', 'Too short', 'Okay', 'Strong'][sc];
   };
-  $('again').onclick = function () { begin(AUTH.purpose === 'reset' ? 'reset' : '', true); };
+  $('again').onclick = function () { if (!this.disabled) begin(AUTH.purpose === 'reset' ? 'reset' : 'setup', true); };
   $('codehelp').onclick = function () { $('joinbox').style.display = ''; };
   $('who').onclick = function () { go(AUTH.mode === 'signin' ? 'signin' : 'email'); };
   [].forEach.call(document.querySelectorAll('[data-show]'), function (c) {
@@ -1185,34 +1366,38 @@ function go(step) {
   var email = $('em').value.trim(), reset = AUTH.purpose === 'reset';
   document.querySelector('.auth').classList.toggle('register', step === 'join');
   var show = { signin: ['email', 'password'] }[step] || [step];
-  ['choose', 'email', 'password', 'code', 'newpass', 'join', 'joined'].forEach(function (p) { $('p-' + p).style.display = show.indexOf(p) !== -1 ? '' : 'none'; });
+  ['choose', 'email', 'password', 'code', 'newpass', 'join', 'joined', 'welcome', 'pending', 'ready'].forEach(function (p) { $('p-' + p).style.display = show.indexOf(p) !== -1 ? '' : 'none'; });
   $('joinbox').style.display = 'none';
-  $('emhint').textContent = reset
-    ? 'Enter your email to request a password-reset code.'
-    : 'Enter your email to sign in or register.';
-  $('emhint').style.display = step === 'signin' ? 'none' : '';
+  $('emhint').textContent = '';
+  $('emhint').style.display = 'none';
   $('p-password').style.marginTop = step === 'signin' ? '16px' : '';
   if ($('tosignin')) $('tosignin').onclick = function () { AUTH.mode = 'signin'; go('signin'); };
   var T = {
     choose:   ['Welcome to START', 'Sign in, or create your account if this is your first time.', '', null],
-    signin:   ['Welcome back', 'Enter your password to continue to START ' + REGION, 'Forgot password?', function () { if (!$('em').value.trim()) { say('Enter your email first'); return; } AUTH.mode = 'reset'; AUTH.purpose = 'reset'; begin('reset'); }],
-    email:    reset ? ['Reset password', 'Enter your email to request a new verification code.', 'Back', function () { AUTH.purpose = 'new'; go('email'); }]
+    signin:   ['Welcome Back!', 'Enter your password to continue to START ' + REGION, 'Forgot password?', function () { if (!$('em').value.trim()) { say('Enter your email first'); return; } AUTH.mode = 'reset'; AUTH.purpose = 'reset'; begin('reset'); }],
+    email:    reset ? ['Reset password', 'Enter your account email to get a code.', 'Back', function () { AUTH.purpose = 'new'; go('email'); }]
                     : ['Welcome to START', 'Enter your email to continue.', '', null],
     code:     [reset ? 'Reset password' : 'Verify your email', 'Enter the code sent to ' + email + '.', 'Use another email', function () { go('email'); }],
-    newpass:  [reset ? 'Set a new password' : 'Set up your password', 'Enter a new password and confirm it. You’ll enter START automatically.', '', null],
+    welcome:  ['Welcome to START!', 'Set up your password to continue.', 'Use another email', function () { go('email'); }],
+    newpass:  [reset ? 'Set a new password' : 'Set up your password', '', '', null],
     join:     ['Register for START', 'A few details help us find your scholar record.', 'Back', function () { go('email'); }],
+    pending:  ['Registration pending', '', 'Use another email', function () { go('email'); }],
     joined:   [AUTH.sorry ? 'Thank you!' : 'Request received', '', 'Use another email', function () { AUTH.purpose = 'new'; go('email'); }],
+    ready:    ['You’re all set!', AUTH.readyNeedsSignIn ? 'Sign in with your new password.' : '', '', null],
   }[step];
-  $('next').textContent = { join: 'Continue with registration', joined: 'Use another email', signin: 'Sign in', email: reset ? 'Send reset code' : 'Continue', newpass: reset ? 'Save password' : 'Create password' }[step] || 'Next';
+  $('next').textContent = { join: 'Continue with registration', joined: 'Use another email', signin: 'Sign in', email: reset ? 'Send reset code' : 'Continue', welcome: 'Set Up Password', pending: 'Check approval', ready: AUTH.readyNeedsSignIn ? 'Sign In' : 'Go to Dashboard', newpass: reset ? 'Save password' : 'Create password' }[step] || 'Next';
   $('next').style.display = step === 'choose' ? 'none' : '';
   $('h').textContent = T[0]; $('lede').textContent = T[1];
   $('alt').textContent = T[2]; $('alt').style.visibility = T[2] ? 'visible' : 'hidden'; $('alt').onclick = T[3];
-  $('who').style.display = ['choose', 'email', 'signin'].indexOf(step) !== -1 ? 'none' : 'inline-flex';
+  $('who').style.display = ['choose', 'email', 'signin', 'ready'].indexOf(step) !== -1 ? 'none' : 'inline-flex';
   $('whoe').textContent = email; $('av').textContent = email.charAt(0).toUpperCase();
+  if (step === 'welcome') $('welcome-email').textContent = AUTH.setupTo ? 'your main START email (' + AUTH.setupTo + ')' : email;
+  if (step === 'pending') $('pending-note').textContent = 'Your Regional Representative is reviewing your request. Return here to check for a decision.';
   say('');
   if (step === 'join') renderJoinStage();
   var focus = { email: 'em', signin: email ? 'pw' : 'em', code: 'cd', newpass: 'np', join: 'jln' }[step];
   if (step !== 'email' && step !== 'signin') ['pw', 'cd', 'np', 'np2'].forEach(function (id) { $(id).value = ''; });
+  if (step === 'code') showCodeCooldown();
   setTimeout(function () { try { $(focus).focus(); } catch (e) {} }, 30);
 }
 // Errors under the box, like Google's
@@ -1234,15 +1419,36 @@ function say(t, ok) {
   }
   $('errt').textContent = t; e.classList.add('on');
 }
-function busy(on) { $('next').disabled = on; }
+function busy(on) {
+  if (AUTH.busy === !!on) return;
+  AUTH.busy = !!on;
+  var button = $('next'); if (!button) return;
+  if (on) { button.dataset.idleLabel = button.textContent; button.textContent = 'Working…'; }
+  else if (button.dataset.idleLabel) { button.textContent = button.dataset.idleLabel; delete button.dataset.idleLabel; }
+  button.disabled = !!on; button.setAttribute('aria-busy', String(!!on));
+}
+function showCodeCooldown() {
+  var button = $('again'); if (!button) return;
+  if (AUTH.codeTimer) clearInterval(AUTH.codeTimer);
+  var update = function () {
+    var left = Math.max(0, Math.ceil((AUTH.codeUntil - Date.now()) / 1000));
+    button.disabled = left > 0; button.textContent = left ? 'Resend in ' + left + 's' : 'Resend code';
+    if (!left && AUTH.codeTimer) { clearInterval(AUTH.codeTimer); AUTH.codeTimer = null; }
+  };
+  update(); if (button.disabled) AUTH.codeTimer = setInterval(update, 1000);
+}
 // "This is my own device": unticked on a shared or lab computer = signed out after 12 hours
 function keepMe() { var b = document.querySelector('#p-' + AUTH.step + ' .keepme'); return !b || b.checked; }
 function next() {
+  if (AUTH.busy) return;
   if (AUTH.step === 'email') return begin(AUTH.mode === 'reset' ? 'reset' : '');
   if (AUTH.step === 'signin') return password();
+  if (AUTH.step === 'welcome') return begin('setup');
   if (AUTH.step === 'code') return code();
   if (AUTH.step === 'newpass') return newPassword();
   if (AUTH.step === 'join') return joinNext();
+  if (AUTH.step === 'pending') return checkRegistration();
+  if (AUTH.step === 'ready') { if (AUTH.readyNeedsSignIn) return go('signin'); document.body.classList.remove('out'); return load(); }
   if (AUTH.step === 'joined') { AUTH.mode = 'create'; AUTH.purpose = 'new'; return go('email'); }
 }
 // Not on the list yet: ask to join (the RR adds them, they get a "You're in" email)
@@ -1323,14 +1529,42 @@ function joinSend() {
   var name = v('jln') + ', ' + v('jfn') + (v('jmi') ? ' ' + v('jmi').replace(/\.$/, '') + '.' : '');
   say('');
   busy(true);
-  call('webJoinRequest', S.email || $('em').value.trim(), name, v('js'), '',
+  var email = S.email || $('em').value.trim();
+  call('webJoinRequest', email, name, v('js'), '',
        { last: v('jln'), first: v('jfn'), mi: v('jmi'), program: v('jp'), year: v('jy'), awarded: v('jya'), kind: v('jc'), city: v('jcity'), province: v('jprov') }).then(function (r) {
     busy(false);
-    if (!r || !r.ok) { say((r && r.msg) || 'Could not send. Try again.'); return; }
-    if (r.onList || r.auto) { AUTH.mode = 'create'; AUTH.purpose = 'new'; return begin(''); }   // on the list now: straight to the code
-    AUTH.sorry = !!r.sorry; go('joined');
-    $('joinedt').innerHTML = r.sorry ? '<span class="sorry">' + esc(r.msg).replace('Thank you for your interest in START!', '<b>Thank you for your interest in START!</b><br>') + '</span>' : esc(r.msg);
-  }).catch(function () { busy(false); say('Could not reach START. Try again.'); });
+    if (!r || !r.ok) return checkRegistration((r && r.msg) || 'We could not confirm your registration. Check your connection, then try again.');
+    S.email = email; keep('start_email', email);
+    if (r.onList || r.auto) { AUTH.mode = 'create'; AUTH.purpose = 'new'; AUTH.setupTo = ''; go(r.hasPassword ? 'signin' : 'welcome'); return; }
+    if (r.accessCheck) { showAccessCheck(r.msg); return; }
+    if (r.pending) { go('pending'); return; }
+    if (r.sorry) { AUTH.sorry = true; go('joined');
+      $('joinedt').innerHTML = '<span class="sorry">' + esc(r.msg).replace('Thank you for your interest in START!', '<b>Thank you for your interest in START!</b><br>') + '</span>'; return; }
+    return checkRegistration('We could not confirm your registration result. Check your connection and use your email to check its status.');
+  }).catch(function () { busy(false); checkRegistration('We could not confirm your registration. Check your connection, then try again.'); });
+}
+function checkRegistration(fallback) {
+  var email = S.email || $('em').value.trim();
+  busy(true); say('');
+  return call('webJoinStatus', email).then(function (r) {
+    busy(false);
+    if (!r || !r.ok) { say(fallback || 'Could not check the status. Try again in a moment.'); return; }
+    if (r.state === 'setup' || r.state === 'password') {
+      S.email = email; keep('start_email', email); AUTH.purpose = 'new'; AUTH.setupTo = '';
+      go(r.state === 'setup' ? 'welcome' : 'signin'); return;
+    }
+    if (r.state === 'pending') { go('pending'); say('Status checked just now.', true); return; }
+    if (r.state === 'access-check') { showAccessCheck(); return; }
+    if (r.state === 'declined') { go('pending'); $('h').textContent = 'Registration not approved'; $('pending-note').textContent = 'Contact your Regional Representative if your details need correcting.'; $('next').textContent = 'Check again'; return; }
+    if (r.state === 'noteligible') { AUTH.sorry = true; go('joined'); $('joinedt').textContent = 'This registration does not meet the current START membership requirements. Contact your Regional Representative if you think this is a mistake.'; return; }
+    say(fallback || 'We could not find a registration for this email. Check the address and try again.');
+  }).catch(function () { busy(false); say(fallback || 'Could not check the status. Check your connection and try again.'); });
+}
+function showAccessCheck(message) {
+  go('pending');
+  $('h').textContent = 'Account needs a check';
+  $('pending-note').textContent = message || 'Please contact your Regional Representative to check the Scholars sheet. You do not need to register again.';
+  $('next').textContent = 'Check again';
 }
 function begin(purpose, again) {
   var email = $('em').value.trim();
@@ -1342,12 +1576,15 @@ function begin(purpose, again) {
     S.email = email; keep('start_email', email);
     AUTH.purpose = r.purpose || 'new';
     if (r.mode === 'password') { AUTH.mode = 'signin'; go('signin'); return; }
-    if (r.mode === 'join') { AUTH.purpose = 'new'; AUTH.mode = 'create'; joinOpen(); say((r.note || 'This email isn\'t on the START list yet. Fill this in once to join.') + ' Use the name on your DOST scholarship.', true); return; }
+    if (r.mode === 'setup') { AUTH.mode = 'create'; AUTH.setupTo = r.to || ''; go('welcome'); return; }
+    if (r.mode === 'join') { AUTH.purpose = 'new'; AUTH.mode = 'create'; joinOpen(); return; }
+    if (r.mode === 'pending') { go('pending'); return; }
+    if (r.mode === 'access-check') { showAccessCheck(r.msg); return; }
     if (r.mode === 'joined') { AUTH.sorry = !!r.sorry; go('joined'); $('joinedt').innerHTML = r.sorry ? '<span class="sorry">' + esc(r.msg) + '</span>' : esc(r.msg); return; }
+    AUTH.codeUntil = Date.now() + (Number(r.retryAfter) || 60) * 1000;
     go('code');
-    var where = r.to ? 'your main START email, ' + r.to : email;
-    if (r.recent) say('A code was sent to ' + where + ' less than a minute ago. Give it a minute, and check Spam and Promotions.', true);
-    else say((again ? 'A new code is on its way to ' : 'We emailed a 6-digit code to ') + where + '. It can take a minute. Check Spam and Promotions too.', true);
+    if (r.recent) say('A code was sent less than a minute ago. Check Spam or Promotions if needed.', true);
+    else say((again ? 'New code requested.' : 'Code sent.') + ' It can take a minute. Check Spam or Promotions if needed.', true);
   }).catch(function () { busy(false); say('Could not reach START. Try again.'); });
 }
 function password() {
@@ -1381,13 +1618,17 @@ function newPassword() {
   call('webSetPassword', AUTH.ticket, a, keepMe()).then(function (r) {
     busy(false);
     if (!r || !r.ok) { if (r && r.restart) { go('email'); } say((r && r.msg) || 'Could not save the password'); return; }
-    if (r.pending) {
-      S.token = null; keep('start_token', null); AUTH.sorry = false; go('joined');
-      $('joinedt').textContent = r.msg || 'Password saved. Your account is ready.';
-      return;
-    }
-    signedIn(r.token);
-  }).catch(function () { busy(false); say('Could not reach START. Try again.'); });
+    AUTH.readyNeedsSignIn = !!r.signIn;
+    S.token = r.token || null; S.later = false; keep('start_token', S.token); go('ready');
+  }).catch(function () {
+    busy(false);
+    if (AUTH.purpose !== 'new') { say('Could not confirm the password change. Return to sign-in and check your account before trying again.'); return; }
+    call('webJoinStatus', S.email || $('em').value.trim()).then(function (state) {
+      if (state && state.ok && state.state === 'password') {
+        AUTH.readyNeedsSignIn = true; S.token = null; keep('start_token', null); go('ready');
+      } else say('Could not confirm that your password was saved. Check your connection before trying again.');
+    }).catch(function () { say('Could not confirm that your password was saved. Check your connection before trying again.'); });
+  });
 }
 function signedIn(token) { S.token = token; S.later = false; keep('start_token', token); document.body.classList.remove('out'); load(); }
 
@@ -1435,10 +1676,13 @@ function changePassword() {
 }
 function signOutAll() {
   var t = S.token;
-  if (t) call('webSignOutAll', t).catch(function () {});
-  S.token = null; keep('start_token', null);
-  var l = $('lesson'); if (l) l.remove();
-  showSignIn('Signed out on all your devices.');
+  if (!t) return showSignIn('Please sign in again to sign out of all devices.');
+  call('webSignOutAll', t).then(function (r) {
+    if (!r || !r.ok) { banner((r && r.msg) || 'Could not sign out of all devices. Try again.', 'warn'); return; }
+    S.token = null; keep('start_token', null);
+    var l = $('lesson'); if (l) l.remove();
+    showSignIn('Signed out on all your devices.');
+  }).catch(function () { banner('Could not reach START. Try again to sign out of all devices.', 'warn'); });
 }
 function signOut() {
   var t = S.token; S.token = null; keep('start_token', null);
@@ -1453,6 +1697,7 @@ function load(fresh) {
   return call('webLoad', S.token, fresh === true).then(function (d) {
     if (!d || !d.ok) { S.token = null; keep('start_token', null); showSignIn(d && d.msg); return; }
     S.data = d; document.body.classList.remove('out');
+    if (fresh === true) VA.list = null;
     loadLogos(d);
     showAccount(d);
     var v = views(d), saved = keep('start_tab');
@@ -1552,8 +1797,8 @@ function draw() {
     if (S.viewAs) return;
     var on = b.getAttribute('data-auto') === 'on';
     var go = function () { b.disabled = true; call('webAdminAction', S.token, 'auto-approve', on ? 'on' : 'off').then(function (r) {
-      $('joinmsg').textContent = (r && r.msg) || ''; if (r && r.ok) setTimeout(function () { load(true); }, 700); else b.disabled = false; }).catch(function () { b.disabled = false; }); };
-    if (on) askSure('Turn on auto-approve?', 'Only requests matching one active old masterlist record by email, name, school, program, and award year will be added automatically. Records without an email wait for your review.', go);
+      $('joinmsg').textContent = (r && r.msg) || 'Could not change auto-approve. Try again.'; if (r && r.ok) setTimeout(function () { load(true); }, 700); else b.disabled = false; }).catch(function () { b.disabled = false; $('joinmsg').textContent = 'Could not reach START. Try again.'; }); };
+    if (on) askSure('Turn on auto-approve?', 'Only requests matching one active old masterlist record by name, school, program, and award year will be added automatically. If the record has an email, it must match too. The scholar confirms their email before setting a password.', go);
     else go();
   }; });
   [].forEach.call(document.querySelectorAll('[data-jask]'), function (b) { b.onclick = function () { var box = $('jask' + b.getAttribute('data-jask')); box.style.display = box.style.display ? '' : 'none'; if (!box.style.display) box.querySelector('input').focus(); }; });
@@ -1798,27 +2043,37 @@ function loadCards() {
 
 /* ---------- Ranks: schools this week ---------- */
 function ranksView(d) {
-  var list = d.ranks || [], ranked = list.filter(function (s) { return s.rank; });
-  if (!list.length) return page('Ranks', '', '<div class="card">' + startLogo(56) + '<p class="muted">Ranks appear once member check-ins start.</p></div>');
-  var top = ranked.filter(function (s) { return s.rank <= 3; }), podium = [top[1], top[0], top[2]].filter(Boolean).map(function (s) {
-    return '<div class="pod p' + s.rank + (s.me ? ' me' : '') + '"><div class="medal">' + (s.rank === 1 ? '<span class="crown">' + startLogo(34) + '</span>' : '') + schoolBadge(s.name, s.rank === 1 ? 72 : 60, 'big') + '<span class="rkn">' + s.rank + '</span></div><div class="pn">' + esc(s.name) + '</div>' +
-      '<div class="pv">' + s.rate + '%</div><div class="pb"><b>' + s.rank + '</b></div></div>';
+  var list = d.ranks || [], top = list.filter(function (s) { return s.rank && s.rank <= 3; });
+  var places = { 1: 'first', 2: 'second', 3: 'third' };
+  var podium = top.map(function (s) {
+    return '<div class="rank-pod ' + places[s.rank] + (s.me ? ' me' : '') + '" role="group" aria-label="' +
+      esc('Rank ' + s.rank + ': ' + s.name + ', ' + s.rate + ' percent, ' + s.answered + ' of ' + s.members + ' members checked in') + '">' +
+      '<span class="rank-pod-mark" aria-hidden="true">' + schoolBadge(s.name, s.rank === 1 ? 64 : 52) +
+      (s.rank === 1 ? '<span class="rank-star">' + ico('star', 25) + '</span>' : '') + '</span>' +
+      '<b class="rank-pod-name">' + esc(s.name) + '</b><strong class="rank-pod-score">' + s.rate + '%</strong>' +
+      '<span class="rank-pod-base" aria-hidden="true">' + s.rank + '</span></div>';
   }).join('');
-  var row = function (s, gap) {
-    return (gap ? '<li class="gap">' + ico('more', 18) + '</li>' : '') +
-      '<li class="' + (s.me ? 'me' : '') + (s.small ? ' small' : '') + '"><span class="rlogo r' + (s.rank || 0) + '">' + schoolBadge(s.name, 40) + (s.rank ? '<span class="rkn">' + s.rank + '</span>' : '') + '</span><div class="grow"><b>' + esc(s.name) + (s.me ? ' <em>you</em>' : '') + '</b>' +
-      (s.small ? '<div class="muted sm">Ranked once it has ' + 3 + ' members</div>' : '<div class="rbar"><i style="width:' + s.rate + '%"></i></div>') + '</div>' +
-      '<span class="rv">' + (s.small ? s.answered + '/' + s.members : s.rate + '%') + '</span><span class="rs">' + ico('flame', 16) + s.streak + '</span></li>';
-  };
-  var rows = list.map(function (s, i) { var prev = list[i - 1]; return row(s, prev && prev.rank && s.rank && s.rank > prev.rank + 1); }).join('');
-  var more = d.ranksHidden ? '<p class="muted center sm">+ ' + d.ranksHidden + ' more school' + (d.ranksHidden === 1 ? '' : 's') + ' in the region. Every check-in moves your school up.</p>' : '';
-  return page('School ranks', 'Members who checked in this week', (podium ? '<div class="podium">' + podium + '</div>' : '') + '<div class="card"><ul class="ranks">' + rows + '</ul>' + more + '</div>');
+  var stage = '<section class="rank-stage" aria-label="This week\'s top schools">' +
+    (podium ? '<div class="rank-podium">' + podium + '</div>' : '<div class="rank-stage-empty">The podium opens when a school has at least 3 members.</div>') + '</section>';
+  var rows = list.map(function (s) {
+    var rate = Math.max(0, Math.min(100, Number(s.rate) || 0));
+    return '<li class="rank-item' + (s.me ? ' me' : '') + (s.small ? ' small' : '') + (s.rank && s.rank <= 3 ? ' place-' + s.rank : '') + '">' +
+      '<span class="rank-position">' + (s.rank || '—') + '</span>' +
+      '<div class="rank-detail"><div class="rank-school">' + schoolBadge(s.name, 28) + '<b class="rank-school-name">' + esc(s.name) + (s.me ? '<em>Your school</em>' : '') + '</b></div>' +
+      (s.small ? '<small>Needs 3 members to enter the rankings</small>' : '<div class="rank-progress" role="meter" aria-label="' + esc(s.name) + ' check-in rate" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + rate + '"><i style="width:' + rate + '%"></i></div>') + '</div>' +
+      '<strong class="rank-metrics">' + (s.small ? s.answered + '/' + s.members : s.rate + '%') + '</strong>' +
+      '<span class="rank-streak" title="' + s.streak + ' week streak">' + ico('flame', 18) + s.streak + '</span></li>';
+  }).join('');
+  var more = d.ranksHidden ? '<p class="muted sm rank-board-foot">' + d.ranksHidden + ' other school' + (d.ranksHidden === 1 ? '' : 's') + ' are hidden from this view. Keep checking in to move your school up.</p>' : '';
+  var board = '<section class="card rank-board" aria-label="School standings">' +
+    (rows ? '<ol class="rank-list">' + rows + '</ol>' : '<p class="muted sm">Schools will appear here once they join the tracker.</p>') + more + '</section>';
+  return '<header class="rank-pagehead"><h1>School ranks</h1><p>Members who checked in this week</p></header>' + stage + board;
 }
 
 /* ---------- Me: level, XP, badges, shortcuts ---------- */
 function meView(d) {
   var m = d.member, g = m && m.game, name = d.me.name || d.me.email;
-  var head = '<div class="card mehead"><span class="avwrap"><span class="av big">' + esc(initials(name)) + '</span>' + (m ? '<span class="avsch">' + schoolBadge(m.school, 34) + '</span>' : '') + '</span><div class="grow"><h2 style="margin:0">' + esc(name) + '</h2><div class="muted">' + esc(d.me.email) + '</div>' + (m ? '<div class="mesch">' + schoolLine(m.school, 20) + '</div>' : '') +
+  var head = '<div class="card mehead me-profile-card"><span class="avwrap"><span class="av big">' + esc(initials(name)) + '</span></span><div class="grow"><h2 style="margin:0">' + esc(name) + '</h2><div class="muted">' + esc(d.me.email) + '</div>' + (m ? '<div class="mesch">' + schoolLine(m.school, 20) + '</div>' : '') +
     (g ? '<div class="lvline">' + ico('shield', 18) + ' Level ' + g.level.n + ' · ' + esc(g.level.title) + '</div><div class="xpbar"><i><s style="width:' + g.level.pct + '%"></s></i>' +
       '<div class="xpl"><span>' + g.xp + ' XP</span><span>' + (g.level.to ? (g.level.to - g.xp) + ' XP to ' + esc(g.level.next) : 'Top level!') + '</span></div></div>' : '') + '</div></div>';
   var stats = g ? tiles([['Check-ins', String(g.checkins), 'sky', false, 'check'], ['Best streak', g.best + ' <small>week' + (g.best === 1 ? '' : 's') + '</small>', 'navy', false, 'flame'], ['Events joined', String(g.events), 'sunl', false, 'events']]) : '';
@@ -1834,10 +2089,10 @@ function meView(d) {
   var more = views(d).filter(function (x) { return ['lead', 'admin', 'events'].indexOf(x.id) !== -1 && bar.indexOf(x.id) === -1; }).map(function (x) {
     return '<button class="linkrow" data-go="' + x.id + '">' + ico(x.ic, 24) + '<span>' + esc(x.label) + '</span>' + ico('arrow', 18) + '</button>'; }).join('');
   var rr = d.rrEmail && !d.admin ? '<a class="linkrow phoneonly" href="mailto:' + esc(d.rrEmail) + '">' + ico('mail', 20) + '<span>Message ' + esc(d.rr || 'your RR') + '</span>' + ico('arrow', 18) + '</a>' : '';
-  var acct = rr + '<button class="linkrow" onclick="changePassword()">' + ico('key', 20) + '<span>Change password</span>' + ico('arrow', 18) + '</button>' +
-    '<button class="linkrow" onclick="signOutAll()">' + ico('devices', 20) + '<span>Sign out of all devices</span>' + ico('arrow', 18) + '</button>' +
-    '<button class="linkrow out" onclick="signOut()">' + ico('logout', 20) + '<span>Sign out</span></button>';
-  return page('Me', '', head + stats + badges + (more ? '<div class="card links2 phoneonly">' + more + '</div>' : '') + (S.viewAs ? '' : '<div class="card links2">' + acct + '</div>'));
+  var acct = rr + '<button class="linkrow" onclick="changePassword()">' + '<span class="me-action-icon">' + ico('key', 21) + '</span><span>Change password</span><span class="me-action-chevron">' + ico('arrow', 18) + '</span></button>' +
+    '<button class="linkrow" onclick="signOutAll()">' + '<span class="me-action-icon">' + ico('devices', 21) + '</span><span>Sign out of all devices</span><span class="me-action-chevron">' + ico('arrow', 18) + '</span></button>' +
+    '<button class="linkrow out" onclick="signOut()">' + '<span class="me-action-icon">' + ico('logout', 21) + '</span><span>Sign out</span><span class="me-action-chevron">' + ico('arrow', 18) + '</span></button>';
+  return page('Me', '', head + stats + badges + (more ? '<div class="card links2 phoneonly">' + more + '</div>' : '') + (S.viewAs ? '' : '<div class="card links2 me-settings">' + acct + '</div>'));
 }
 
 /* ---------- RR quick actions ---------- */
@@ -1847,18 +2102,19 @@ function joinCard(list, auto) {
   var sw = '<button class="aaswitch" data-auto="' + (auto ? 'off' : 'on') + '" aria-pressed="' + !!auto + '" title="Auto-approve clear sign-ups">' +
     '<span class="sw"><i></i></span><span>Auto-approve ' + (auto ? 'ON' : 'OFF') + '</span></button>';
   var intro = auto
-    ? 'Requests with one exact old masterlist match, including the email, are added automatically. The requests below still need your review.'
+    ? 'Requests with one exact active old masterlist match are added automatically. A recorded email must match. The requests below still need your review.'
     : 'Review each new sign-up here, then approve, ask for details, or decline.';
-  if (!list.length) return '<div class="card joinfirst none"><div class="joinhero"><div><h2>Join requests <span class="cnt">0</span></h2><p class="muted sm">New scholar requests appear here for review.</p></div>' + sw + '</div>' +
+  if (!list.length) return '<div class="card joinfirst none"><div class="joinhero"><div><h2>Join requests <span class="cnt">0</span></h2></div>' + sw + '</div>' +
     '<div class="joinempty"><b>No scholars are waiting right now.</b><span class="muted sm">' +
-    (auto ? 'Auto-approve is on, so exact old masterlist matches, including email, are added automatically. Requests that need review will still appear here.'
+    (auto ? 'Auto-approve is on, so exact active old masterlist matches are added automatically. Requests that need review will still appear here.'
           : 'When a scholar requests to join START, the request will appear here for your decision.') +
     '</span></div><div class="qamsg" id="joinmsg"></div></div>';
-  var schools = (S.data && S.data.admin && S.data.admin.schools || []).map(function (x) { return x.name; });
+  var schools = (S.data && S.data.admin && S.data.admin.scholarChoices && S.data.admin.scholarChoices.schools) || [];
   var cls = { 'Eligible': 'ok', 'Needs review': 'rev', 'Not eligible': 'no' };
   var order = { 'Eligible': 0, 'Needs review': 1, 'Not eligible': 2 };
-  list = list.slice().sort(function (a, b) { return (order[a.elig] || 1) - (order[b.elig] || 1); });
-  return '<div class="card joinfirst"><div class="joinhero"><div><h2>Join requests <span class="cnt">' + list.length + '</span></h2><p class="muted sm">New scholar requests waiting for your decision.</p></div>' + sw + '</div>' +
+  var rank = function (j) { return Object.prototype.hasOwnProperty.call(order, j.elig) ? order[j.elig] : 1; };
+  list = list.slice().sort(function (a, b) { return rank(a) - rank(b); });
+  return '<div class="card joinfirst"><div class="joinhero"><div><h2>Join requests <span class="cnt">' + list.length + '</span></h2></div>' + sw + '</div>' +
     '<div class="joinhint"><b>' + (auto ? 'Auto-approve is on.' : 'What to do here:') + '</b> ' + intro + '</div>' +
     '<ul class="list joins">' + list.map(function (j) {
       var facts = [
@@ -1898,7 +2154,7 @@ function joinHistoryCard(list) {
   };
   var pane = function(title, rows) { return '<section class="jhistgroup"><div class="jhisthead"><h3>' + title + '</h3><b class="jhistcount">' + rows.length + '</b></div>' +
     (rows.length ? '<ul class="jhistlist">' + rows.map(item).join('') + '</ul>' : '<p class="muted sm jhistempty">No ' + title.toLowerCase() + ' requests yet.</p>') + '</section>'; };
-  return '<div class="card jhistory"><h2>Decision history</h2><p class="muted sm jhistintro">Approved and declined requests stay here for reference.</p>' +
+  return '<div class="card jhistory"><h2>Decision history</h2>' +
     (approved.length || declined.length ? '<div class="jhistorygroups">' + pane('Approved', approved) + pane('Declined', declined) + '</div>' :
       '<p class="muted sm jhistempty">Decisions will appear here after you review a join request.</p>') + '</div>';
 }
@@ -1968,7 +2224,7 @@ var SCHOOL_LOGO_IDS = {
   'UIC': '1OcZyepXoXsI1CAxBJsobTI2mL-J5Bvh8',
   'UM Digos': '1jgb7HpJLdU7bJOZISX8iN1CZtOimPUd0',
   'UM Tagum': '1Z67UteJuFSU7icLmILPcsfdBYicCO6Nf',
-  'UM': '16cneRL3jFIxEE7kZ0FEW-ZD0LGPlEwN4',
+  'UM Main': '16cneRL3jFIxEE7kZ0FEW-ZD0LGPlEwN4',
   'UP Mindanao': '13Ix7GaVFHFyyirhLFSMyjG7ZXwKp-gaO',
   'USeP': '1oswk1ChvneZmi009YopZ-QYgFjnSYp6z'
 };
@@ -1991,11 +2247,26 @@ function schoolInitials(name) {
   return n.split(/\s+/).filter(function (w) { return /^[A-Z]/.test(w) && !/^(Of|De|Del|The|And)$/.test(w); }).map(function (w) { return w[0]; }).join('').slice(0, 3) || first.slice(0, 2).toUpperCase();
 }
 var CREST = [['#12203A', '#FFDD00'], ['#0099FF', '#FFFFFF'], ['#FFDD00', '#12203A'], ['#7CCBFF', '#12203A']];
+var SCHOOL_LOGO_ALIASES = {
+  'Ateneo de Davao University': 'AdDU',
+  'University of Southeastern Philippines': 'USeP',
+  'USeP Obrero': 'USeP',
+  'University of the Philippines Mindanao': 'UP Mindanao',
+  'Davao del Norte State College': 'DNSC',
+  'Davao Oriental State University': 'DOrSU',
+  'Davao del Sur State College': 'DSSC',
+  'Davao de Oro State College': 'DdOSC',
+  'Southern Philippines Agri-Business and Marine and Aquatic School of Technology': 'SPAMAST',
+  'University of the Immaculate Conception': 'UIC',
+  'Cor Jesu College': 'CJC',
+  'UM Digos College': 'UM Digos',
+  'UM Tagum College': 'UM Tagum'
+};
 function schoolLogoKey(name) {
   var n = String(name || '').trim();
-  // The roster may say UM Main, while the supplied main-campus logo is keyed as UM.
-  if (/^UM(?:\s+Main)?$/i.test(n) || /^(?:The\s+)?University of Mindanao(?:\s*[—–-]\s*UM Main)?$/i.test(n)) return 'UM';
-  return n;
+  // Older records saying UM use the same main-campus logo.
+  if (/^UM(?:\s+Main)?$/i.test(n) || /^(?:The\s+)?University of Mindanao(?:\s*[—–-]\s*UM Main)?$/i.test(n)) return 'UM Main';
+  return SCHOOL_LOGO_ALIASES[n] || n;
 }
 function schoolBadge(name, size, cls) {
   size = size || 32;
@@ -2169,9 +2440,9 @@ function card(title, inner, more) { return inner ? '<div class="card"><h2>' + es
 function pill(text, tone) { return text ? '<span class="pill p-' + (tone || 'grey') + '">' + esc(text) + '</span>' : ''; }
 function weeks(n) { return n + ' week' + (n === 1 ? '' : 's'); }
 function pair(a, b) { return a && b ? '<div class="grid2">' + a + b + '</div>' : (a || b || ''); }
-var HERO_BADGE = { '': 'This week', late: 'Late check-in', done: 'All set' };
+var HERO_BADGE = { '': 'This week', late: 'Late check-in', done: '' };
 function hero(cls, icon, title, sub, button) {
-  return '<div class="heroc ' + cls + '"><span class="sp sp1">' + ico('spark', 22) + '</span><span class="badge">✦ ' + esc(HERO_BADGE[cls] || 'Check-in') + '</span>' +
+  return '<div class="heroc ' + cls + '"><span class="sp sp1">' + ico('spark', 22) + '</span>' + (HERO_BADGE[cls] ? '<span class="badge">✦ ' + esc(HERO_BADGE[cls]) + '</span>' : '') +
     '<span class="peek" aria-hidden="true"><span class="ge"><i></i></span><span class="ge"><i></i></span></span>' +
     '<h3>' + esc(title) + '</h3><p>' + esc(sub) + '</p>' + (button || '') + postcard() + '</div>';
 }
@@ -2253,10 +2524,11 @@ function startCalendarView(list) {
   var eventsOn=choices.filter(function(x){return dayKey(x.d)===pick;}).map(function(x){return x.e;});
   var sel=new Date(pick+'T12:00:00');
   var label=isNaN(sel.getTime())?'Selected day':sel.toLocaleDateString('en-PH',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-  var upcoming=(list||[]);
+  var upcoming=(list||[]).filter(function(e){var d=startCalDate(e);return !d || dayKey(d)!==pick;});
+  var calendars=calButtons();
   return '<div class="card startcal"><div class="startcal-head"><h2>'+month.toLocaleDateString('en-PH',{month:'long',year:'numeric'})+'</h2><div class="startcal-controls"><button type="button" data-calnav="-1" aria-label="Previous month">‹</button><button type="button" data-calnav="today">Today</button><button type="button" data-calnav="1" aria-label="Next month">›</button></div></div><div class="startcal-grid">'+days+'</div><div class="startcal-selection">'+esc(label)+'</div>'+(eventsOn.length?eventCards(eventsOn,true):'<p class="muted sm">No START events scheduled for this day.</p>')+'</div>' +
-    '<div class="sech">Upcoming START events</div>' + (upcoming.length?eventCards(upcoming,true):'<div class="card"><p class="muted">No upcoming events available.</p></div>') +
-    card('Google Calendar',calButtons()?'<p class="muted" style="margin:0">Subscribe to a START calendar to see new events as they are published.</p>'+calButtons():'No Google Calendar subscription is available yet.');
+    (upcoming.length ? '<div class="sech">' + (eventsOn.length ? 'Other upcoming START events' : 'Upcoming START events') + '</div>' + eventCards(upcoming,true) : '') +
+    (calendars ? card('Google Calendar', calendars) : '');
 }
 function eventsView(d) {
   var list = Array.isArray(d.calendarEvents) ? d.calendarEvents : (d.admin ? d.admin.events : d.lead && d.lead.length ? d.lead[0].events : d.member ? d.member.events : []);
@@ -2288,8 +2560,8 @@ function leadView(d) {
   return page(s.school, { school: s.school, role: 'Campus Lead' }, pick + act +
     tiles([['Streak', s.streak + ' <small>' + (s.streak === 1 ? 'week' : 'weeks') + '</small>', 'navy', false, 'flame', 'Your school\'s weeks in a row'],
            s.answers ? ['Members answered', s.answered + ' <small>of ' + s.members + '</small>', 'sky', false, 'user'] : ['Scholars', s.active + ' <small>active</small>', 'sky', false, 'user'],
-           s.done ? ['Your check-in', 'Done', 'sunl', true, 'check'] : ['Due', esc(s.due), 'sunl', true, 'clock']]) +
-    weekChart(s.weekly, 'Weekly check-in rate · ' + s.school) + card('To do', todo) + (members ? card('Members', members) : ''));
+           s.done ? ['Your check-in', 'Done', 'sunl', true, 'check'] : (act ? null : ['Due', esc(s.due), 'sunl', true, 'clock'])]) +
+    weekChart(s.weekly, 'Weekly check-in rate · ' + s.school) + (todo ? card('To do', todo) : '') + (members ? card('Members', members) : ''));
 }
 
 // Keep the RR's search and filters when a record is saved and the roster reloads.
@@ -2304,6 +2576,7 @@ function rrFilter() {
     el.style.display = hit ? '' : 'none'; if (hit) shown++;
   });
   if ($('rrshown')) $('rrshown').textContent = String(shown);
+  if ($('rrmeta')) $('rrmeta').style.display = (term || ROSTER_UI.status !== 'All' || ROSTER_UI.school !== 'All' || ROSTER_UI.checkin !== 'All') ? '' : 'none';
   if ($('rr-empty')) $('rr-empty').style.display = shown ? 'none' : 'block';
 }
 function scholarManagementCard(a) {
@@ -2314,13 +2587,13 @@ function scholarManagementCard(a) {
   var schoolNames = (a.scholarChoices && a.scholarChoices.schools || []).slice().sort();
   if (schoolNames.indexOf(ROSTER_UI.school) === -1) ROSTER_UI.school = 'All';
   if (!a.memberCheckins) ROSTER_UI.checkin = 'All';
-  return '<div class="card rrroster"><h2>Scholar roster</h2><p class="muted sm roster-intro">Find a scholar, update their details, or manage access.</p>' +
+  return '<div class="card rrroster"><h2>Scholar roster</h2>' +
     '<div class="rrtools"><input id="rrsearch" class="rrsearch" type="search" value="' + esc(ROSTER_UI.search) + '" placeholder="Search name, email, school, or program" aria-label="Search scholars">' +
       '<select id="rrschool" aria-label="Filter by school"><option value="All">All schools</option>' + schoolNames.map(function(n){return '<option value="' + esc(n) + '"' + (ROSTER_UI.school === n ? ' selected' : '') + '>' + esc(n) + '</option>';}).join('') + '</select>' +
       (a.memberCheckins ? '<select id="rrcheckin" aria-label="Filter by check-in"><option value="All">All check-ins</option><option value="Pending"' + (ROSTER_UI.checkin === 'Pending' ? ' selected' : '') + '>Not checked in</option><option value="Submitted"' + (ROSTER_UI.checkin === 'Submitted' ? ' selected' : '') + '>Checked in</option></select>' : '<span></span>') + '</div>' +
     '<div class="rrfilters" role="group" aria-label="Filter by status">' + ['All','Active','On leave','Suspended','Graduated','Dropped','Other'].filter(function(x){return x === 'All' || counts[x];}).map(function(x){
       return '<button type="button" data-rrfilter="' + x + '" aria-pressed="' + (ROSTER_UI.status === x) + '">' + x + ' (' + (x === 'All' ? list.length : counts[x]) + ')</button>'; }).join('') + '</div>' +
-    '<div class="rrmeta"><span>Showing <b id="rrshown">' + list.length + '</b> of ' + list.length + '</span><span>Changes are saved to the Scholars sheet.</span></div>' +
+    '<div class="rrmeta" id="rrmeta"><span>Showing <b id="rrshown">' + list.length + '</b> of ' + list.length + '</span></div>' +
     '<div class="rrlist">' + list.map(function(p){ var cls = p.status === 'Active' ? 'active' : p.status === 'Suspended' ? 'suspended' : 'other';
       var target = p.status === 'Active' ? 'Suspended' : p.status === 'Suspended' ? 'Active' : '';
       var status = counts.hasOwnProperty(p.status) ? p.status : 'Other';
@@ -2388,14 +2661,9 @@ function dataQualityCard(a) {
       '<p class="muted sm">No missing required scholar fields, duplicate emails, broken school counts, or calendar sync errors found.</p>') + '</div>';
 }
 function rrScholarsView(d) {
-  var a = d.admin, list = a.scholars || [], active = list.filter(function(p){return p.status === 'Active';}).length;
-  var t = a.totals || {};
-  var summary = tiles([
-    ['Scholars', String(list.length), 'navy', false, 'user'],
-    ['Active', String(active), 'sky', false, 'check'],
-    ['Checked in this week', a.memberCheckins ? t.answered + ' <small>of ' + t.members + '</small>' : '—', 'sunl', false, 'pen']]);
+  var a = d.admin;
   return page('Scholars', 'Manage accounts and see who has checked in',
-    summary + dataQualityCard(a) + joinCard(a.joins, a.autoApprove) + scholarManagementCard(a) + joinHistoryCard(a.joinHistory));
+    dataQualityCard(a) + joinCard(a.joins, a.autoApprove) + scholarManagementCard(a) + joinHistoryCard(a.joinHistory));
 }
 function rrSchoolsView(d) {
   var a = d.admin, rows = (a.schools || []).slice().sort(function(x,y){return x.name.localeCompare(y.name);});
@@ -2406,7 +2674,7 @@ function rrSchoolsView(d) {
       '<td data-l="Help">' + (s.help ? pill(s.help + ' asked', 'red') : '—') + '</td>' +
       '<td data-l="Streak">' + esc(s.streak || 0) + '</td></tr>';}).join('') + '</tbody></table></div>';
   return page('Schools', 'Campus Leads and participation across the region',
-    viewAsCard() + card('School performance', table));
+    viewAsCard() + card('This week by school', table));
 }
 function adminView(d) {
   var a = d.admin, t = a.totals;
@@ -2419,7 +2687,7 @@ function adminView(d) {
     ['Asked for help', String(t.help || 0), 'sunl', false, 'hand']]);
   var tracker = a.tracker ? '<div class="links"><a class="pillbtn light sm" href="' + esc(a.tracker) + '" target="_blank" rel="noopener">Open Google Sheets ' + ico('external',16) + '</a></div>' : '';
   return page(d.me.first, 'Spot wins and support schools.',
-    summary + attentionCard(a) + dataQualityCard(a) +
+    summary + attentionCard(a) +
     card('Asked for help', help) + weekChart(a.weekly, 'Weekly check-in rate · region') +
     quickActions() + tracker, true);
 }
@@ -2596,7 +2864,8 @@ function forward() {
       if (r && r.signedOut) { closeCheckin(); signOut(); return; }
       $('ckmsg').textContent = (r && r.msg) || 'Not sent. Try again.'; $('ckgo').disabled = false; $('ckgo').textContent = 'Submit'; return;
     }
-    S.data.member = r.member; won(r.member);
+    if (r.member) { S.data.member = r.member; won(r.member); }
+    else { closeCheckin(); load(true).then(function () { banner(r.already ? 'Your check-in was already submitted.' : 'Your check-in was saved. Thank you!', 'ok'); }); }
   }).catch(function () {
     // no connection: the answers stay on this phone and are sent by themselves when it is back online
     if (keepPending(CK.a)) {
@@ -2628,9 +2897,9 @@ function sendPending() {
   call('webSubmitCheckin', S.token, p.a).then(function (r) {
     SENDING = false;
     if (r && r.signedOut) return;
-    dropPending();
-    if (r && r.ok) { S.data.member = r.member; draw(); banner('Your check-in was sent. Thank you!', 'ok'); }
-    else banner('Your saved check-in could not be sent: ' + ((r && r.msg) || 'please answer again.'), 'warn');
+    if (r && r.ok) { dropPending(); if (r.member) { S.data.member = r.member; draw(); } else load(true);
+      banner(r.already ? 'Your check-in was already submitted.' : 'Your check-in was sent. Thank you!', 'ok'); }
+    else banner('Your saved check-in is still on this device: ' + ((r && r.msg) || 'please try again.'), 'warn');
   }).catch(function () { SENDING = false; });                 // still offline: try again later
 }
 function banner(text, tone) {

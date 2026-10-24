@@ -336,6 +336,7 @@ function setupSteps_(ss) {
     ['Campus Lead check-in form',  () => { if (WEB_CHECKIN) ensureCheckinTabs_(ss); else buildForm_(ss); }],
     ['Scholars tab',          () => buildScholars_(ss)],
     ['Schools tab',           () => buildSchools_(ss)],
+    ['Use UM Main for the main campus', () => mergeUmMainSchool_(ss)],
     ['Data flow schema',      () => { ensureDataFlowSchema_(ss); captureWeeklyRoster_(ss); }],
     ['Dashboard tab',         () => buildDashboard_(ss)],
     ['Links tab',             () => buildLinks_(ss)],
@@ -400,6 +401,7 @@ function quickFix_() {
   };
   migrateTabs_(ss);
   if (DB_MODE && tidyToDatabase_(ss) === 'later') return;
+  if (mergeUmMainSchool_(ss)) done.push('UM merged into UM Main');
   if (!DB_MODE) step('Start here guide', () => { buildStartHere_(ss); });
   step('Region (Settings drop-down, provinces)', () => { askRegionIfMissing_(); applyRegion_(ss); });
   step('Emails in Schools read from Scholars', () => setSchoolEmailFormula_(ss.getSheetByName(TAB.schools)));
