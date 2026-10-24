@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "START Scholar Portal",
-  "short_name": "START",
-  "description": "Weekly check-ins, your school and START events for DOST-SEI START scholars, Campus Leads and RRs.",
+  "name": "START Region XI · Davao",
+  "short_name": "START XI",
+  "description": "Weekly check-ins, schools and events for DOST-SEI START scholars, Campus Leads and Regional Representatives in Davao.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
