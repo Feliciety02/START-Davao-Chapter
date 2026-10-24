@@ -691,8 +691,9 @@
   .joins .grow { min-width: 0; } .joins .muted, .joins .plan { overflow-wrap: anywhere; }
   @media (max-width: 400px) { .joins li > .bubble { display: none; } .jtools .pillbtn { flex: 1 1 auto; } }
   .joins li { align-items: flex-start; }
-  .card.joinfirst { box-shadow: 0 0 0 3px #FFDD00, var(--shadow); } .card.joinfirst.none { box-shadow: var(--shadow); }
-  .card.joinfirst > h2 { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .card.joinfirst { box-shadow: var(--shadow); }
+  .joinhero h2 { display:flex; align-items:center; gap:8px; text-transform:uppercase; letter-spacing:.9px; font-size:15px; font-weight:800; line-height:1.3; }
+  .joinhero h2::before { content:''; width:4px; height:15px; border-radius:4px; background:var(--sun); flex:none; }
   .aaswitch { display: inline-flex; align-items: center; gap: 8px; border: 0; background: #EEF2F7; border-radius: 999px; padding: 5px 12px 5px 5px; font: 700 12px Poppins, Arial, sans-serif; color: var(--navy); cursor: pointer; letter-spacing: 0; text-transform: none; }
   .aaswitch .sw { width: 38px; height: 22px; border-radius: 99px; background: #CBD3DE; position: relative; transition: background .2s; }
   .aaswitch .sw i { position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: left .2s; }
@@ -773,13 +774,21 @@
   .joingrid span { display: block; background: #F5F8FC; border-radius: 14px; padding: 9px 11px; font-size: 12.5px; line-height: 1.45; color: var(--navy); }
   .joingrid b { display: block; margin-bottom: 2px; font-size: 11px; letter-spacing: .5px; text-transform: uppercase; color: var(--ink2); }
   .jnote { margin-top: 8px; padding: 10px 12px; border-radius: 14px; background: #FFFBE7; font-size: 13px; line-height: 1.5; color: var(--navy); }
-  .jhistory { margin-top: 14px; }
-  .jhistorygroups { display: grid; gap: 12px; }
-  .jhistgroup { border: 1px solid #E6ECF3; border-radius: 18px; padding: 14px 16px; background: #FBFCFE; }
-  .jhisthead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-  .jhisthead h3 { margin: 0; font-size: 15px; }
-  .jhistgroup ul.list li { padding: 12px 0; }
-  .jhistempty { margin: 0; }
+  .jhistintro { margin: -4px 0 16px; }
+  .jhistorygroups { display: grid; gap: 18px; }
+  .jhisthead { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+  .jhisthead h3 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; }
+  .jhistcount { display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--sun); color: var(--navy); font-size: 12px; }
+  .jhistlist { list-style: none; margin: 0; padding: 0; }
+  .jhistrow { display: flex; align-items: flex-start; gap: 12px; min-width: 0; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .jhistrow:last-child { border-bottom: 0; }
+  .jhistbody { min-width: 0; flex: 1; }
+  .jhisttop { display: flex; align-items: baseline; justify-content: space-between; gap: 4px 16px; flex-wrap: wrap; }
+  .jhisttop b { font-size: 14px; }
+  .jhiststatus { color: var(--ink2); font-size: 12px; font-weight: 600; }
+  .jhistmail { font-size: 12.5px; color: var(--ink2); overflow-wrap: anywhere; }
+  .jhistmeta { margin-top: 4px; font-size: 12px; color: var(--navy2); overflow-wrap: anywhere; }
+  .jhistempty { margin: 6px 0 0; }
   @media (max-width: 620px) { .joingrid { grid-template-columns: 1fr; } .joinhero { align-items: stretch; } .aaswitch { width: fit-content; } }
   .pwmeter { display: flex; align-items: center; gap: 10px; margin: 2px 0 6px; min-height: 18px; }
   .pwmeter i { flex: 1; height: 6px; border-radius: 99px; background: #E7EBF1; position: relative; overflow: hidden; }
@@ -983,6 +992,55 @@
 #ptr.refreshing i { animation:ptrspin .75s linear infinite; }
 @keyframes ptrspin { to { transform:rotate(360deg); } }
 @media(prefers-reduced-motion:reduce){ #ptr.refreshing i {animation:none;border-top-color:#0099FF;} }
+
+/* Auth forms: visible labels and one registration section at a time. */
+.auth .right { padding-top: 20px; }
+.auth .field { display:flex; flex-direction:column; gap:6px; margin:0 0 16px; }
+.auth .field label, .auth .field.sel label {
+  order:-1; position:static !important; max-width:none; padding:0; background:none;
+  color:var(--navy2); font-size:13px !important; font-weight:700; line-height:1.35;
+  white-space:normal; overflow:visible; pointer-events:auto;
+}
+.auth .field input, .auth .field.sel select { min-height:52px; height:auto; padding:12px 14px; border-radius:14px; font-size:15px; }
+.auth .field input:focus, .auth .field.sel select:focus { border-color:var(--blue-d); outline:3px solid rgba(0,153,255,.16); }
+.auth .field.bad input, .auth .field.bad select { border-color:var(--r-fg); outline:2px solid rgba(161,38,27,.12); }
+.auth .field .field-error { color:var(--r-fg); font-size:12.5px; font-weight:600; line-height:1.4; }
+.auth .field .field-error:empty { display:none; }
+.auth .pane .field + .field { margin-top:0; }
+.auth .hint { line-height:1.5; }
+.auth .actions { margin-top:22px; }
+.auth .next { min-height:46px; }
+.auth .statusnote { margin:14px 0 0; padding:10px 12px; border-radius:12px; background:var(--ice); color:var(--navy2); font-size:13px; line-height:1.45; }
+.auth .statusnote:empty { display:none; }
+.auth.register { display:block; max-width:720px; padding:32px 38px; }
+.auth.register .left { display:flex; flex-wrap:wrap; align-items:center; gap:0 16px; }
+.auth.register .left .brandrow { width:100%; }
+.auth.register .left h1 { margin:16px 0 4px; width:100%; }
+.auth.register .left .lede { width:100%; }
+.auth.register .left .postcard { display:none; }
+.auth.register .right { padding-top:22px; }
+.auth .join-progress { margin-bottom:22px; }
+.auth .join-progress strong { display:block; font-size:14px; }
+.auth .join-progress span { display:block; margin-top:3px; color:var(--ink2); font-size:12.5px; }
+.auth .join-progress i { display:block; height:8px; margin-top:10px; border-radius:99px; background:var(--ice); overflow:hidden; }
+.auth .join-progress i::before { content:''; display:block; width:var(--join-progress,33%); height:100%; background:var(--blue); border-radius:99px; transition:width .2s; }
+.auth .join-step h2 { margin:0 0 4px; font-size:19px; line-height:1.25; }
+.auth .join-step > p { margin:0 0 20px; color:var(--ink2); font-size:13.5px; }
+.auth .join-step[hidden] { display:none !important; }
+.auth .jrow3 { grid-template-columns:minmax(0,1fr) minmax(0,1fr) 90px; gap:12px; }
+.auth .jrow { gap:12px; }
+.auth .jrow3 .field, .auth .jrow .field { margin-bottom:16px !important; }
+.auth .join-note { margin-top:4px; padding:12px 14px; border-radius:14px; background:var(--ice); font-size:13px; line-height:1.5; }
+@media(max-width:860px) { .auth .right { padding-top:22px; } .auth .left .postcard { display:none; } }
+@media(max-width:600px) {
+  .auth.register { padding:28px 20px; }
+  .auth .jrow3 { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+  .auth .jrow { grid-template-columns:1fr; gap:0; }
+  .auth .jrow3 .field:nth-child(1) { grid-column:1 / -1; }
+  .auth .jrow3 .field:nth-child(3) { grid-column:2; }
+  .auth.register .actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .auth.register .actions .next { width:100%; }
+}
 </style>
 </head>
 <body>
@@ -1045,12 +1103,12 @@ function emo(t) { var m = String(t || '').match(/^(\S+)\s+(.*)$/); return m && !
  * email → code from email → create a password (new account)
  * password → "Forgot password?" → code → new password
  */
-var AUTH = { step: 'choose', mode: '', purpose: 'new', ticket: '' };
+var AUTH = { step: 'choose', mode: '', purpose: 'new', ticket: '', joinStage: 0 };
 function showSignIn(note) {
   S.data = null; $('acct').style.display = 'none'; $('nav').innerHTML = ''; $('nav2').innerHTML = '';
   document.body.classList.add('out');
   var field = function (id, label, type, extra) {
-    return '<div class="field" id="f-' + id + '"><input id="' + id + '" type="' + type + '" placeholder=" " ' + (extra || '') + '><label for="' + id + '">' + label + '</label></div>';
+    return '<div class="field" id="f-' + id + '"><input id="' + id + '" type="' + type + '" aria-describedby="' + id + '-error" ' + (extra || '') + '><label for="' + id + '">' + label + '</label><span class="field-error" id="' + id + '-error" aria-live="polite"></span></div>';
   };
   app('<div class="auth">' +
       '<div class="left">' + brand(36) + '<h1 id="h"></h1><p class="lede" id="lede"></p>' +
@@ -1062,43 +1120,46 @@ function showSignIn(note) {
           '<p class="hint" id="emhint">Enter your Gmail address. We’ll check whether you’re already on the START scholar list.</p></div>' +
         '<div class="pane" id="p-password">' + field('pw', 'Password', 'password', 'autocomplete="current-password"') +
           '<label class="show"><input type="checkbox" data-show="pw"> Show password</label>' +
-          '<label class="show"><input type="checkbox" class="keepme" checked> This is my own device (stay signed in)</label>' +
+          '<label class="show"><input type="checkbox" class="keepme" checked> Stay signed in on this device</label>' +
           '<p class="hint switch"><button type="button" class="linkish" id="setup-password">Set up or reset password</button> · We’ll email you a verification code.</p></div>' +
-        '<div class="pane" id="p-code">' + field('cd', 'Enter code', 'text', 'inputmode="numeric" autocomplete="one-time-code" maxlength="7"') +
-          '<p class="hint">Not there? Check Spam, or <button class="linkish" id="again">send a new code</button>.</p>' +
-          '<div class="joinbox" id="joinbox"><b>No code after 2 minutes?</b> Search your inbox, Spam and Promotions for "START", then send a new code. ' +
+        '<div class="pane" id="p-code">' + field('cd', '6-digit code', 'text', 'inputmode="numeric" autocomplete="one-time-code" maxlength="12"') +
+          '<p class="hint">Check Spam or Promotions. <button class="linkish" id="again">Resend code</button> · <button class="linkish" id="codehelp">Still no code?</button></p>' +
+          '<div class="joinbox" id="joinbox" style="display:none"><b>No code after 2 minutes?</b> Search your inbox, Spam and Promotions for "START", then send a new code. ' +
           'Still nothing? Message your Campus Lead or Regional Representative.<button class="linkish" id="joinlink" hidden></button></div></div>' +
-        '<div class="pane" id="p-join"><p class="jsec">Your name, as on your DOST scholarship</p>' +
-          '<div class="jrow3">' + field('jln', 'Last name', 'text', 'autocomplete="family-name" maxlength="60"') + field('jfn', 'First name', 'text', 'autocomplete="given-name" maxlength="60"') +
-            field('jmi', 'M.I.', 'text', 'maxlength="3" autocomplete="off"') + '</div>' +
-          '<p class="jsec">School and program</p>' +
-          '<div class="field sel" id="f-js"><select id="js"><option value="">Choose your school</option></select><label for="js">School</label></div>' +
-
-          '<div class="field sel" id="f-jp"><select id="jp"><option value="">Choose your degree program</option></select><label for="jp">Degree Program / Course</label></div>' +
-
-
-          '<p class="jsec">Your DOST scholarship</p>' +
-          '<div class="jrow"><div class="field sel" id="f-jy"><select id="jy"><option value="">Choose</option></select><label for="jy">Year level</label></div>' +
-          '<div class="field sel" id="f-jya"><select id="jya"><option value="">Choose</option></select><label for="jya">Year awarded</label></div></div>' +
-          '<div class="field sel" id="f-jc"><select id="jc"><option value="">Choose</option></select><label for="jc">DOST scholarship</label></div>' +
-          '<p class="jsec">Hometown</p>' +
-          '<div class="field sel" id="f-jprov"><select id="jprov"><option value="">Choose your province</option></select><label for="jprov">Province</label></div>' +
-          '<div class="field sel" id="f-jcity"><select id="jcity" disabled><option value="">Choose your province first</option></select><label for="jcity">City / Municipality</label></div>' +
-          '<p class="hint">After submitting, eligible scholars receive a verification code to set their password. Other applications go to the Regional Representative for review. The 13 START degree programs are listed above.</p></div>' +
+        '<div class="pane" id="p-join"><div class="join-progress" id="joinprogress" aria-live="polite"><strong id="joincount"></strong><span id="joinlabel"></span><i></i></div>' +
+          '<section class="join-step" data-join-step="0"><h2>Your name</h2><p>Use the name on your DOST scholarship record.</p>' +
+            '<div class="jrow3">' + field('jln', 'Last name', 'text', 'autocomplete="family-name" maxlength="60"') + field('jfn', 'First name', 'text', 'autocomplete="given-name" maxlength="60"') +
+              field('jmi', 'Middle initial (optional)', 'text', 'maxlength="3" autocomplete="off"') + '</div></section>' +
+          '<section class="join-step" data-join-step="1" hidden><h2>School and program</h2><p>Choose your current school, degree program, and year level.</p>' +
+            '<div class="field sel" id="f-js"><select id="js"><option value="">Choose your school</option></select><label for="js">School</label><span class="field-error" aria-live="polite"></span></div>' +
+            '<div class="field sel" id="f-jp"><select id="jp"><option value="">Choose your degree program</option></select><label for="jp">Degree program</label><span class="field-error" aria-live="polite"></span></div>' +
+            '<div class="field sel" id="f-jy"><select id="jy"><option value="">Choose your year level</option></select><label for="jy">Year level</label><span class="field-error" aria-live="polite"></span></div></section>' +
+          '<section class="join-step" data-join-step="2" hidden><h2>Scholarship and hometown</h2><p>These details help us check your scholar record.</p>' +
+            '<div class="jrow"><div class="field sel" id="f-jya"><select id="jya"><option value="">Choose</option></select><label for="jya">Year awarded</label><span class="field-error" aria-live="polite"></span></div>' +
+            '<div class="field sel" id="f-jc"><select id="jc"><option value="">Choose</option></select><label for="jc">DOST scholarship</label><span class="field-error" aria-live="polite"></span></div></div>' +
+            '<div class="field sel" id="f-jprov"><select id="jprov"><option value="">Choose your province</option></select><label for="jprov">Province</label><span class="field-error" aria-live="polite"></span></div>' +
+            '<div class="field sel" id="f-jcity"><select id="jcity" disabled><option value="">Choose your province first</option></select><label for="jcity">City or municipality</label><span class="field-error" aria-live="polite"></span></div>' +
+            '<div class="join-note">After you submit, START will email a code if your record qualifies. Other requests go to your Regional Representative for review.</div></section></div>' +
         '<div class="pane" id="p-joined"><div class="joined">' + startLogo(84) + '<p id="joinedt"></p></div></div>' +
         '<div class="pane" id="p-newpass">' + field('np', 'New password', 'password', 'autocomplete="new-password"') +
           field('np2', 'Confirm password', 'password', 'autocomplete="new-password"') +
           '<div class="pwmeter" id="pwm"><i></i><span></span></div>' +
           '<p class="hint">Use 8 or more characters. A short phrase is easy to remember and hard to guess, like <i>kape sa Samal 7</i>.</p>' +
           '<label class="show"><input type="checkbox" data-show="np,np2"> Show password</label>' +
-          '<label class="show"><input type="checkbox" class="keepme" checked> This is my own device (stay signed in)</label></div>' +
-        '<div class="err" id="err"><span>ⓘ</span><span id="errt"></span></div>' +
+          '<label class="show"><input type="checkbox" class="keepme" checked> Stay signed in on this device</label></div>' +
+        '<p class="statusnote" id="authstatus" role="status" aria-live="polite"></p>' +
+        '<div class="err" id="err" role="alert"><span>ⓘ</span><span id="errt"></span></div>' +
         '<div class="actions"><button class="linkish" id="alt"></button><button class="next" id="next">Next</button></div>' +
       '</div></div>' +
       '<div class="authfoot"><span></span><span>START will never ask for your password or code</span></div>');
   $('em').value = keep('start_email') || '';
   $('next').onclick = next;
+  [].forEach.call(document.querySelectorAll('.auth .field input, .auth .field select'), function (control) {
+    var clear = function () { var wrap = control.closest('.field'); wrap.classList.remove('bad'); control.removeAttribute('aria-invalid'); wrap.querySelector('.field-error').textContent = ''; };
+    control.addEventListener('input', clear); control.addEventListener('change', clear);
+  });
   ['em', 'pw', 'cd', 'np', 'np2'].forEach(function (id) { $(id).onkeydown = function (e) { if (e.key === 'Enter') next(); }; });
+  $('cd').oninput = function () { this.value = this.value.replace(/\D/g, '').slice(0, 6); };
   $('joinlink').onclick = joinOpen;
   $('setup-password').onclick = function () { AUTH.purpose = 'reset'; AUTH.mode = 'reset'; begin('reset'); };
   $('np').oninput = function () {                     // a quick strength hint while typing (the server makes the final check)
@@ -1107,6 +1168,7 @@ function showSignIn(note) {
     $('pwm').className = 'pwmeter s' + sc; $('pwm').querySelector('span').textContent = ['', 'Too short', 'Okay', 'Strong'][sc];
   };
   $('again').onclick = function () { begin(AUTH.purpose === 'reset' ? 'reset' : '', true); };
+  $('codehelp').onclick = function () { $('joinbox').style.display = ''; };
   $('who').onclick = function () { go(AUTH.mode === 'signin' ? 'signin' : 'email'); };
   [].forEach.call(document.querySelectorAll('[data-show]'), function (c) {
     c.onchange = function () { c.getAttribute('data-show').split(',').forEach(function (id) { $(id).type = c.checked ? 'text' : 'password'; }); };
@@ -1120,13 +1182,14 @@ function showSignIn(note) {
 function go(step) {
   if (step === 'password') step = 'signin';
   AUTH.step = step;
-  var email = $('em').value.trim(), reset = AUTH.purpose === 'reset', creating = AUTH.mode !== 'signin';
+  var email = $('em').value.trim(), reset = AUTH.purpose === 'reset';
+  document.querySelector('.auth').classList.toggle('register', step === 'join');
   var show = { signin: ['email', 'password'] }[step] || [step];
   ['choose', 'email', 'password', 'code', 'newpass', 'join', 'joined'].forEach(function (p) { $('p-' + p).style.display = show.indexOf(p) !== -1 ? '' : 'none'; });
-  $('joinbox').style.display = '';
+  $('joinbox').style.display = 'none';
   $('emhint').textContent = reset
     ? 'Enter your email to request a password-reset code.'
-    : 'Enter your email. START will check your account and guide you to sign in, set a password, or request membership.';
+    : 'Enter your email to sign in or register.';
   $('emhint').style.display = step === 'signin' ? 'none' : '';
   $('p-password').style.marginTop = step === 'signin' ? '16px' : '';
   if ($('tosignin')) $('tosignin').onclick = function () { AUTH.mode = 'signin'; go('signin'); };
@@ -1134,10 +1197,10 @@ function go(step) {
     choose:   ['Welcome to START', 'Sign in, or create your account if this is your first time.', '', null],
     signin:   ['Welcome back', 'Enter your password to continue to START ' + REGION, 'Forgot password?', function () { if (!$('em').value.trim()) { say('Enter your email first'); return; } AUTH.mode = 'reset'; AUTH.purpose = 'reset'; begin('reset'); }],
     email:    reset ? ['Reset password', 'Enter your email to request a new verification code.', 'Back', function () { AUTH.purpose = 'new'; go('email'); }]
-                    : ['Welcome to START', 'Enter your email to continue. We’ll guide you to the right next step.', '', null],
-    code:     [reset ? 'Reset password' : 'Verify your email', 'We emailed a 6-digit code to ' + email + '. It can take a minute. Check Spam and Promotions too.', 'Use another email', function () { go('email'); }],
+                    : ['Welcome to START', 'Enter your email to continue.', '', null],
+    code:     [reset ? 'Reset password' : 'Verify your email', 'Enter the code sent to ' + email + '.', 'Use another email', function () { go('email'); }],
     newpass:  [reset ? 'Set a new password' : 'Set up your password', 'Enter a new password and confirm it. You’ll enter START automatically.', '', null],
-    join:     ['Register for START', 'Tell us about your scholarship. If your details qualify, we’ll email you a code to set up your password.', 'Back', function () { go('email'); }],
+    join:     ['Register for START', 'A few details help us find your scholar record.', 'Back', function () { go('email'); }],
     joined:   [AUTH.sorry ? 'Thank you!' : 'Request received', '', 'Use another email', function () { AUTH.purpose = 'new'; go('email'); }],
   }[step];
   $('next').textContent = { join: 'Continue with registration', joined: 'Use another email', signin: 'Sign in', email: reset ? 'Send reset code' : 'Continue', newpass: reset ? 'Save password' : 'Create password' }[step] || 'Next';
@@ -1147,19 +1210,29 @@ function go(step) {
   $('who').style.display = ['choose', 'email', 'signin'].indexOf(step) !== -1 ? 'none' : 'inline-flex';
   $('whoe').textContent = email; $('av').textContent = email.charAt(0).toUpperCase();
   say('');
+  if (step === 'join') renderJoinStage();
   var focus = { email: 'em', signin: email ? 'pw' : 'em', code: 'cd', newpass: 'np', join: 'jln' }[step];
   if (step !== 'email' && step !== 'signin') ['pw', 'cd', 'np', 'np2'].forEach(function (id) { $(id).value = ''; });
   setTimeout(function () { try { $(focus).focus(); } catch (e) {} }, 30);
 }
 // Errors under the box, like Google's
 function say(t, ok) {
-  [].forEach.call(document.querySelectorAll('.field.bad'), function (f) { f.classList.remove('bad'); });
+  [].forEach.call(document.querySelectorAll('.auth .field.bad'), function (f) {
+    f.classList.remove('bad'); var c = f.querySelector('input,select'); if (c) c.removeAttribute('aria-invalid');
+    var msg = f.querySelector('.field-error'); if (msg) msg.textContent = '';
+  });
   var e = $('err'); if (!e) return;
-  e.classList.remove('on');
+  e.classList.remove('on'); $('authstatus').textContent = '';
   if (!t) return;
-  if (ok) { $('lede').textContent = t; return; }
+  if (ok) { $('authstatus').textContent = t; return; }
+  var id = AUTH.bad; AUTH.bad = null;
+  if (id && $(id)) {
+    var f = $(id), control = f.querySelector('input,select');
+    f.classList.add('bad'); f.querySelector('.field-error').textContent = t;
+    if (control) { control.setAttribute('aria-invalid', 'true'); control.focus(); }
+    return;
+  }
   $('errt').textContent = t; e.classList.add('on');
-  var f = AUTH.bad || { email: 'f-em', password: 'f-pw', code: 'f-cd', newpass: 'f-np', join: 'f-jln' }[AUTH.step]; AUTH.bad = null; if ($(f)) $(f).classList.add('bad');
 }
 function busy(on) { $('next').disabled = on; }
 // "This is my own device": unticked on a shared or lab computer = signed out after 12 hours
@@ -1169,16 +1242,18 @@ function next() {
   if (AUTH.step === 'signin') return password();
   if (AUTH.step === 'code') return code();
   if (AUTH.step === 'newpass') return newPassword();
-  if (AUTH.step === 'join') return joinSend();
+  if (AUTH.step === 'join') return joinNext();
   if (AUTH.step === 'joined') { AUTH.mode = 'create'; AUTH.purpose = 'new'; return go('email'); }
 }
 // Not on the list yet: ask to join (the RR adds them, they get a "You're in" email)
 function joinOpen() {
-  AUTH.joinFrom = 'email'; AUTH.sorry = false;
+  AUTH.joinFrom = 'email'; AUTH.sorry = false; AUTH.joinStage = 0;
   go('join');
   if ($('js').options.length > 1) return;
+  $('js').options[0].textContent = 'Loading schools…';
+  $('jp').options[0].textContent = 'Loading programs…';
   call('webJoinSchools').then(function (r) {
-    if (!r || !r.ok) return;
+    if (!r || !r.ok) { say((r && r.msg) || 'Could not load the form choices. Try again.'); return; }
     var opt = function (v, t) { return '<option value="' + esc(v) + '">' + esc(t == null ? v : t) + '</option>'; };
     $('js').innerHTML = '<option value="">Choose your school</option>' + r.schools.map(function (x) { return typeof x === 'string' ? opt(x) : opt(x.name, x.label); }).join('');
     $('jp').innerHTML = '<option value="">Choose your degree program</option>' +
@@ -1196,19 +1271,57 @@ function joinOpen() {
   }).catch(function () { say('Could not load the join form choices. Check your connection, then go back and try again.'); });
 }
 var JOIN_PLACES = {};
+var JOIN_STAGES = ['Your name', 'School and program', 'Scholarship and hometown'];
+function renderJoinStage() {
+  var stage = AUTH.joinStage;
+  [].forEach.call(document.querySelectorAll('[data-join-step]'), function (section) { section.hidden = Number(section.getAttribute('data-join-step')) !== stage; });
+  $('joincount').textContent = 'Step ' + (stage + 1) + ' of 3';
+  $('joinlabel').textContent = JOIN_STAGES[stage];
+  $('joinprogress').style.setProperty('--join-progress', ((stage + 1) * 100 / 3) + '%');
+  $('next').textContent = stage === 2 ? 'Submit registration' : 'Continue';
+  $('alt').textContent = 'Back'; $('alt').style.visibility = 'visible';
+  $('alt').onclick = function () {
+    if (AUTH.joinStage > 0) {
+      AUTH.joinStage--; say(''); renderJoinStage();
+      var first = document.querySelector('[data-join-step="' + AUTH.joinStage + '"] input, [data-join-step="' + AUTH.joinStage + '"] select');
+      if (first) first.focus();
+    } else go('email');
+  };
+}
+function joinValidate(stage) {
+  var value = function (id) { return $(id).value.trim(); };
+  var rules = [
+    [['jln', value('jln').length >= 2, 'Enter your last name'], ['jfn', value('jfn').length >= 2, 'Enter your first name']],
+    [['js', !!value('js'), 'Choose your school'], ['jp', !!value('jp'), 'Choose your degree program'], ['jy', !!value('jy'), 'Choose your year level']],
+    [['jya', !!value('jya'), 'Choose the year awarded'], ['jc', !!value('jc'), 'Choose your DOST scholarship'],
+      ['jprov', !!value('jprov'), 'Choose your province'], ['jcity', !!value('jcity'), 'Choose your city or municipality']]
+  ];
+  var invalid = rules[stage].filter(function (r) { return !r[1]; })[0];
+  if (invalid) { AUTH.bad = 'f-' + invalid[0]; say(invalid[2]); return false; }
+  return true;
+}
+function joinNext() {
+  if (AUTH.joinStage === 1 && $('js').options.length <= 1) {
+    say('School and program choices are still loading. Please wait a moment.'); return;
+  }
+  if (!joinValidate(AUTH.joinStage)) return;
+  if (AUTH.joinStage < 2) {
+    AUTH.joinStage++; say(''); renderJoinStage();
+    var first = document.querySelector('[data-join-step="' + AUTH.joinStage + '"] input, [data-join-step="' + AUTH.joinStage + '"] select');
+    if (first) first.focus();
+    return;
+  }
+  joinSend();
+}
 function joinSend() {
   var v = function (id) { return ($(id) ? $(id).value : '').trim(); };
-  var bad = function (id, t) { AUTH.bad = id; say(t); };
-  if (v('jln').length < 2) return bad('f-jln', 'Enter your last name');
-  if (v('jfn').length < 2) return bad('f-jfn', 'Enter your first name');
-  if (!v('js')) return bad('f-js', 'Choose your school');
-  if (!v('jp')) return bad('f-jp', 'Choose your degree program');
-  if (!v('jy')) return bad('f-jy', 'Choose your year level');
-  if (!v('jya')) return bad('f-jya', 'Choose the year your DOST scholarship was awarded');
-  if (!v('jc')) return bad('f-jc', 'Choose your DOST scholarship (or "Not sure")');
-  if (!v('jprov')) return bad('f-jprov', 'Choose your province');
-  if (!v('jcity')) return bad('f-jcity', 'Choose your city or municipality');
+  for (var stage = 0; stage < 3; stage++) {
+    AUTH.joinStage = stage; renderJoinStage();
+    if (!joinValidate(stage)) return;
+  }
+  AUTH.joinStage = 2; renderJoinStage();
   var name = v('jln') + ', ' + v('jfn') + (v('jmi') ? ' ' + v('jmi').replace(/\.$/, '') + '.' : '');
+  say('');
   busy(true);
   call('webJoinRequest', S.email || $('em').value.trim(), name, v('js'), '',
        { last: v('jln'), first: v('jfn'), mi: v('jmi'), program: v('jp'), year: v('jy'), awarded: v('jya'), kind: v('jc'), city: v('jcity'), province: v('jprov') }).then(function (r) {
@@ -1221,7 +1334,7 @@ function joinSend() {
 }
 function begin(purpose, again) {
   var email = $('em').value.trim();
-  if (!/\S+@\S+\.\S+/.test(email)) { go('email'); say('Enter an email address'); return; }
+  if (!/\S+@\S+\.\S+/.test(email)) { go('email'); AUTH.bad = 'f-em'; say('Enter a valid email address'); return; }
   busy(true); say('');
   call('webStart', email, purpose || '').then(function (r) {
     busy(false);
@@ -1239,20 +1352,20 @@ function begin(purpose, again) {
 }
 function password() {
   var pw = $('pw').value;
-  if (!pw) { say('Enter your password'); return; }
-  busy(true);
+  if (!pw) { AUTH.bad = 'f-pw'; say('Enter your password'); return; }
   var em = $('em').value.trim();
-  if (!/\S+@\S+\.\S+/.test(em)) { say('Enter your email'); return; }
+  if (!/\S+@\S+\.\S+/.test(em)) { AUTH.bad = 'f-em'; say('Enter a valid email address'); return; }
+  busy(true);
   S.email = em; keep('start_email', em);
   call('webPasswordSignIn', em, pw, keepMe()).then(function (r) {
     busy(false);
-    if (!r || !r.ok) { say(((r && r.msg) || 'Could not sign in') + (r && /Wrong email or password/.test(r.msg) ? '. Don\'t have an account yet? Create one below.' : '')); return; }
+    if (!r || !r.ok) { say((r && r.msg) || 'Could not sign in. Check your details or reset your password.'); return; }
     signedIn(r.token);
   }).catch(function () { busy(false); say('Could not reach START. Try again.'); });
 }
 function code() {
   var c = $('cd').value.replace(/\D/g, '');
-  if (c.length !== 6) { say('Enter the 6-digit code'); return; }
+  if (c.length !== 6) { AUTH.bad = 'f-cd'; say('Enter the 6-digit code'); return; }
   busy(true);
   call('webCheckCode', S.email || $('em').value.trim(), c).then(function (r) {
     busy(false);
@@ -1262,8 +1375,8 @@ function code() {
 }
 function newPassword() {
   var a = $('np').value, b = $('np2').value;
-  if (a.length < 8) { say('Use 8 or more characters'); return; }
-  if (a !== b) { say('Those passwords didn\'t match. Try again.'); return; }
+  if (a.length < 8) { AUTH.bad = 'f-np'; say('Use 8 or more characters'); return; }
+  if (a !== b) { AUTH.bad = 'f-np2'; say('Those passwords didn\'t match. Try again.'); return; }
   busy(true);
   call('webSetPassword', AUTH.ticket, a, keepMe()).then(function (r) {
     busy(false);
@@ -1736,8 +1849,7 @@ function joinCard(list, auto) {
   var intro = auto
     ? 'Requests with one exact old masterlist match, including the email, are added automatically. The requests below still need your review.'
     : 'Review each new sign-up here, then approve, ask for details, or decline.';
-  if (!list.length) return '<div class="card joinfirst none"><div class="joinhero"><div><div class="joinkicker">Join requests</div><h2>Pending approvals</h2><p class="muted sm">New scholar requests appear here for review.</p></div>' + sw + '</div>' +
-    '<div class="joinsummary"><span class="jstat pending">Pending <b>0</b></span></div>' +
+  if (!list.length) return '<div class="card joinfirst none"><div class="joinhero"><div><h2>Join requests <span class="cnt">0</span></h2><p class="muted sm">New scholar requests appear here for review.</p></div>' + sw + '</div>' +
     '<div class="joinempty"><b>No scholars are waiting right now.</b><span class="muted sm">' +
     (auto ? 'Auto-approve is on, so exact old masterlist matches, including email, are added automatically. Requests that need review will still appear here.'
           : 'When a scholar requests to join START, the request will appear here for your decision.') +
@@ -1746,8 +1858,7 @@ function joinCard(list, auto) {
   var cls = { 'Eligible': 'ok', 'Needs review': 'rev', 'Not eligible': 'no' };
   var order = { 'Eligible': 0, 'Needs review': 1, 'Not eligible': 2 };
   list = list.slice().sort(function (a, b) { return (order[a.elig] || 1) - (order[b.elig] || 1); });
-  return '<div class="card joinfirst"><div class="joinhero"><div><div class="joinkicker">Join requests</div><h2>Pending approvals <span class="cnt">' + list.length + '</span></h2><p class="muted sm">New scholar requests waiting for your decision.</p></div>' + sw + '</div>' +
-    '<div class="joinsummary"><span class="jstat pending">Pending <b>' + list.length + '</b></span></div>' +
+  return '<div class="card joinfirst"><div class="joinhero"><div><h2>Join requests <span class="cnt">' + list.length + '</span></h2><p class="muted sm">New scholar requests waiting for your decision.</p></div>' + sw + '</div>' +
     '<div class="joinhint"><b>' + (auto ? 'Auto-approve is on.' : 'What to do here:') + '</b> ' + intro + '</div>' +
     '<ul class="list joins">' + list.map(function (j) {
       var facts = [
@@ -1781,16 +1892,15 @@ function joinHistoryCard(list) {
   var approved = list.filter(function(j){return /^Added/.test(j.status);});
   var declined = list.filter(function(j){return /^Declined/.test(j.status);});
   var item = function(j) {
-    var chips = [j.when && ('Submitted: ' + j.when), j.schoolLabel, j.program].filter(Boolean);
-    return '<li><div class="grow"><div class="jtop"><div><b>' + esc(j.name) + '</b><div class="muted sm jmail">' + esc(j.email) + '</div></div><span class="muted sm">' + esc(j.status) + '</span></div>' +
-      '<div class="jfacts">' + chips.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join('') + '</div></div></li>';
+    var facts = [j.schoolLabel || j.school, j.program, j.when && ('Submitted ' + j.when)].filter(Boolean);
+    return '<li class="jhistrow">' + schoolBadge(j.school || j.schoolLabel, 34) + '<div class="jhistbody"><div class="jhisttop"><b>' + esc(j.name) + '</b><span class="jhiststatus">' + esc(j.status) + '</span></div>' +
+      '<div class="jhistmail">' + esc(j.email) + '</div><div class="jhistmeta">' + facts.map(esc).join(' · ') + '</div></div></li>';
   };
-  var pane = function(title, rows, cls) { return '<div class="jhistgroup"><div class="jhisthead"><h3>' + title + '</h3><span class="jstat ' + cls + '"><b>' + rows.length + '</b></span></div>' +
-    (rows.length ? '<ul class="list">' + rows.map(item).join('') + '</ul>' : '<p class="muted sm jhistempty">No requests here yet.</p>') + '</div>'; };
-  return '<div class="card jhistory"><div class="joinhero"><div><div class="joinkicker">Join requests</div><h2>Decision history</h2><p class="muted sm">See which requests were already approved or declined.</p></div></div>' +
-    '<div class="joinsummary"><span class="jstat ok">Approved <b>' + approved.length + '</b></span><span class="jstat no">Declined <b>' + declined.length + '</b></span></div>' +
-    '<div class="jhistorygroups">' + pane('Approved', approved, 'ok') + pane('Declined', declined, 'no') + '</div>' +
-    '<p class="muted sm">The spreadsheet also includes Join - Pending, Join - Approved, and Join - Declined tabs.</p></div>';
+  var pane = function(title, rows) { return '<section class="jhistgroup"><div class="jhisthead"><h3>' + title + '</h3><b class="jhistcount">' + rows.length + '</b></div>' +
+    (rows.length ? '<ul class="jhistlist">' + rows.map(item).join('') + '</ul>' : '<p class="muted sm jhistempty">No ' + title.toLowerCase() + ' requests yet.</p>') + '</section>'; };
+  return '<div class="card jhistory"><h2>Decision history</h2><p class="muted sm jhistintro">Approved and declined requests stay here for reference.</p>' +
+    (approved.length || declined.length ? '<div class="jhistorygroups">' + pane('Approved', approved) + pane('Declined', declined) + '</div>' :
+      '<p class="muted sm jhistempty">Decisions will appear here after you review a join request.</p>') + '</div>';
 }
 // Weekly check-in rate: % of members who answered, week by week (this week so far shown dashed)
 function weekChart(list, title) {
@@ -1881,10 +1991,16 @@ function schoolInitials(name) {
   return n.split(/\s+/).filter(function (w) { return /^[A-Z]/.test(w) && !/^(Of|De|Del|The|And)$/.test(w); }).map(function (w) { return w[0]; }).join('').slice(0, 3) || first.slice(0, 2).toUpperCase();
 }
 var CREST = [['#12203A', '#FFDD00'], ['#0099FF', '#FFFFFF'], ['#FFDD00', '#12203A'], ['#7CCBFF', '#12203A']];
+function schoolLogoKey(name) {
+  var n = String(name || '').trim();
+  // The roster may say UM Main, while the supplied main-campus logo is keyed as UM.
+  if (/^UM(?:\s+Main)?$/i.test(n) || /^(?:The\s+)?University of Mindanao(?:\s*[—–-]\s*UM Main)?$/i.test(n)) return 'UM';
+  return n;
+}
 function schoolBadge(name, size, cls) {
   size = size || 32;
-  var id = SCHOOL_LOGO_IDS[String(name || '').trim()];
-  var src = id ? 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w256' : LOGOS[name];
+  var key = schoolLogoKey(name), id = SCHOOL_LOGO_IDS[key];
+  var src = id ? 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w256' : (LOGOS[key] || LOGOS[name]);
   if (src) return '<span class="slogo ' + (cls || '') + '" style="width:' + size + 'px;height:' + size + 'px" title="' + esc(name) + '"><img src="' + esc(src) + '" alt="' + esc(name) + ' logo"></span>';
   var h = 2166136261; String(/^(UM\b|(The )?University of Mindanao)/i.test(name) ? 'UM' : name).split('').forEach(function (c) { h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0; }); h = (h ^ (h >>> 13)) >>> 0;
   var col = CREST[h % CREST.length], ini = /^(UM\b|(The )?University of Mindanao)/i.test(name) ? 'UM' : schoolInitials(name), fs = ini.length > 3 ? 8.6 : ini.length > 2 ? 11 : 14;
@@ -2279,7 +2395,7 @@ function rrScholarsView(d) {
     ['Active', String(active), 'sky', false, 'check'],
     ['Checked in this week', a.memberCheckins ? t.answered + ' <small>of ' + t.members + '</small>' : '—', 'sunl', false, 'pen']]);
   return page('Scholars', 'Manage accounts and see who has checked in',
-    summary + dataQualityCard(a) + scholarManagementCard(a) + joinHistoryCard(a.joinHistory));
+    summary + dataQualityCard(a) + joinCard(a.joins, a.autoApprove) + scholarManagementCard(a) + joinHistoryCard(a.joinHistory));
 }
 function rrSchoolsView(d) {
   var a = d.admin, rows = (a.schools || []).slice().sort(function(x,y){return x.name.localeCompare(y.name);});

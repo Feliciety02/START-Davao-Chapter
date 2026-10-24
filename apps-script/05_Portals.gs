@@ -2287,18 +2287,21 @@ function joinMatch_(roster, name, school, email) {
 
 // Automatic approval requires a single matching pre-existing masterlist record.
 // The applicant's self-reported school and program alone are insufficient evidence.
-function autoJoinEligible_(ss, request, roster) {
-  if (!autoApproveOn_() || String(request[2] || '').trim() === JOIN.other) return false;
+function autoJoinMasterMatch_(ss, request, roster) {
+  if (!autoApproveOn_() || String(request[2] || '').trim() === JOIN.other) return null;
   const norm = v => String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
   const words = v => norm(v).split(' ').filter(Boolean).sort().join(' ');
   const school = String(request[2] || '').trim(), email = emailOf_(request[3]);
-  if (joinMatch_(roster, request[1], school, email).i >= 0) return false; // never reactivate or attach an alias automatically
+  if (joinMatch_(roster, request[1], school, email).i >= 0) return null; // never reactivate or attach an alias automatically
   const hits = oldMasterRows_(ss).filter(o => !String(o.r[10] || '').trim() &&
     email && emailOf_(o.r[4]) === email && String(o.r[1] || '').trim() === school && words(o.r[0]) === words(request[1]) &&
     norm(o.r[2]) === norm(request[7]) && String(o.r[3] || '').trim() === String(request[15] || '').trim() &&
     String(o.r[5] || '').trim() === 'Active');
-  return hits.length === 1;
+  if (hits.length !== 1) return null;
+  const hit = hits[0];
+  return { at: hit.at, row: hit.r, text: [hit.r[0], hit.r[1], hit.r[2], hit.r[3]].filter(Boolean).join(' · ') };
 }
+function autoJoinEligible_(ss, request, roster) { return !!autoJoinMasterMatch_(ss, request, roster); }
 
 // RR on the website: Add or Decline a request
 function webJoinAction_(ss, action, arg) {
@@ -2337,7 +2340,8 @@ function webJoinAction_(ss, action, arg) {
       return { ok: false, msg: 'Match ' + name + '\'s school to one on the list first (or add the school in the Schools tab).' };
     const sc = ss.getSheetByName(TAB.scholars);
     const n = Math.max(sc.getLastRow() - 1, 0), roster = n ? sc.getRange(2, 1, n, 6).getValues() : [];
-    if (o.auto && !autoJoinEligible_(ss, r, roster)) return { ok: false, msg: 'This request needs Regional Representative review.' };
+    const autoHit = o.auto ? autoJoinMasterMatch_(ss, r, roster) : null;
+    if (o.auto && !autoHit) return { ok: false, msg: 'This request needs Regional Representative review.' };
     const m = joinMatch_(roster, name, school, email);
     if (m.i >= 0 && String(roster[m.i][5] || '').trim() !== 'Active')
       return { ok: false, msg: 'This scholar is not Active. Verify the record and change its status in Scholars before approving this request.' };
@@ -2346,7 +2350,7 @@ function webJoinAction_(ss, action, arg) {
     const yl = String(r[8] || '').trim(), year = /^\d(st|nd|rd|th) year$/i.test(yl) ? yl.replace(/year$/i, 'Year') : '';
     const kind = String(r[9] || '').trim() === 'Not sure' ? '' : String(r[9] || '').trim();
     const from = 'Join request · ' + stamp;
-    const oldHit = oldMasterMatch_(oldMasterRows_(ss), name, school), ov = oldHit ? oldHit.row : [];
+    const oldHit = autoHit || oldMasterMatch_(oldMasterRows_(ss), name, school), ov = oldHit ? oldHit.row : [];
     const pick = (mine, k) => String(mine || '').trim() || String(ov[k] || '').trim();      // the request first, else the old masterlist
     const awarded = pick(r[15], 3), campus = pick(r[16], 7), hometown = pick(r[17], 8);
     const extras = c => {                                            // fills only EMPTY cells: your masterlist always wins
@@ -2640,9 +2644,9 @@ function alignScholarsTab_(ss) {
 }
 
 
-/* ---------- auto-approve (the RR's switch on the Region page) ----------
- * ON: a sign-up with a START program and a school from the list is added to Scholars at once and gets the "You're in" email.
- * "Needs review" and "Not eligible" always wait for the RR. OFF (the default): every request waits. */
+/* ---------- auto-approve (Settings and the RR's Scholars page) ----------
+ * ON: only a unique active old masterlist match is added automatically.
+ * Other requests wait for review. OFF (the default): every request waits. */
 // Where this email's join request stands: 'waiting' | 'sorry' (not eligible) | 'declined' | 'added' | '' (none). Newest row wins.
 function joinStateOf_(ss, email) {
   email = emailOf_(email);
@@ -2661,5 +2665,20 @@ function joinStateOf_(ss, email) {
   return '';
 }
 
-function autoApproveOn_() { try { return docProps_().getProperty('AUTO_APPROVE') === '1'; } catch (e) { return false; } }
-function setAutoApprove_(on) { docProps_().setProperty('AUTO_APPROVE', on ? '1' : '0'); return on; }
+// The Settings checkbox is the source of truth, so an RR can use either the Sheet or the website.
+// Older trackers without the new row retain their website switch until setup adds the row.
+function autoApproveCell_() {
+  const sh = webSheet_().getSheetByName(TAB.settings);
+  const i = SETTINGS.findIndex(s => s[0] === 'autoApprove');
+  return sh && i >= 0 && sh.getRange(i + 2, 1).getValue() === SETTINGS[i][1] ? sh.getRange(i + 2, 2) : null;
+}
+function autoApproveOn_() {
+  try { const cell = autoApproveCell_(); if (cell) return cell.getValue() === true; } catch (e) { /* older tracker: use the saved switch */ }
+  try { return docProps_().getProperty('AUTO_APPROVE') === '1'; } catch (e) { return false; }
+}
+function setAutoApprove_(on) {
+  const cell = autoApproveCell_();
+  if (cell) cell.setValue(!!on);
+  docProps_().setProperty('AUTO_APPROVE', on ? '1' : '0');
+  return !!on;
+}

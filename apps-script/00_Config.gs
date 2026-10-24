@@ -188,8 +188,10 @@ var SETTINGS = [
    'Untick to hide the scholar list (names, year, program) from the Campus Lead pages.'],
   ['termStart',  'Term start date',                    '',
    'Counts "this term" (streaks, end-of-term report) from this date.'],
+  ['autoApprove', 'Auto-approve verified join requests (tick = ON)', false,
+   'Only a unique active old masterlist record matching email, name, school, program and award year is approved automatically. Other requests wait for your review on the Scholars page.'],
 ];
-var CHECKBOX_SETTINGS = ['autoWeekly', 'missedAlert', 'autoClose', 'eventRemind', 'monthlyReport', 'selfCheck', 'backups', 'portalMembers', 'portalScholars'];
+var CHECKBOX_SETTINGS = ['autoWeekly', 'missedAlert', 'autoClose', 'eventRemind', 'monthlyReport', 'selfCheck', 'backups', 'portalMembers', 'portalScholars', 'autoApprove'];
 var DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 var HOURS = Array.from({ length: 24 }, (_, h) =>
   (h % 12 || 12) + (h < 12 ? ' AM' : ' PM'));
@@ -206,14 +208,15 @@ function buildSettings_(ss) {
   // A and C are written in one go; B keeps what the RR typed (defaults only fill empty cells)
   const N = SETTINGS.length;
   const cur = sh.getRange(2, 2, N, 1).getValues();
+  const props = docProps_();
   sh.getRange(2, 1, N, 1).setValues(SETTINGS.map(x => [x[1]])).setFontWeight('bold');
   sh.getRange(2, 3, N, 1).setValues(SETTINGS.map(x => [x[3]])).setFontColor(THEME.muted).setWrap(true);
   // the 🚀 switch starts ticked if weekly emails were already turned on with an older version
   const wasOn = ScriptApp.getProjectTriggers().some(t => ['weeklySummary', 'autoReminder'].indexOf(t.getHandlerFunction()) !== -1);
-  sh.getRange(2, 2, N, 1).setValues(SETTINGS.map((x, i) => [cur[i][0] === '' ? (x[0] === 'autoWeekly' ? wasOn : x[2]) : cur[i][0]]))
+  sh.getRange(2, 2, N, 1).setValues(SETTINGS.map((x, i) => [cur[i][0] === '' ?
+    (x[0] === 'autoWeekly' ? wasOn : x[0] === 'autoApprove' ? props.getProperty('AUTO_APPROVE') === '1' : x[2]) : cur[i][0]]))
     .setBackground(THEME.yellow);
   // One time: move the Campus Lead emails from the old Mon / Wed / Thu to Fri (reminder) / Sun (deadline) / Sat (follow-up)
-  const props = docProps_();
   if (!props.getProperty('DAYS_V2')) {
     const cell = k => sh.getRange(settingCell_(k).split('!')[1]);
     if (cell('remDay').getValue() === 'Monday' && cell('dueDay').getValue() === 'Wednesday' && cell('fuDay').getValue() === 'Thursday') {
@@ -313,7 +316,11 @@ var LIB_CTX_ = null;
 var STUB_NEEDED = 3;                    // raise when the small START file gets new functions
 function connectTracker(ctx) { LIB_CTX_ = ctx || null; return typeof START_MODULES === 'undefined' ? '' : START_MODULES; }
 function docProps_() { return LIB_CTX_ && LIB_CTX_.props ? LIB_CTX_.props : PropertiesService.getDocumentProperties(); }
-function docLock_() { return LIB_CTX_ && LIB_CTX_.lock ? LIB_CTX_.lock() : LockService.getDocumentLock(); }
+// Web apps have no containing-document lock, even when they open a spreadsheet by ID.
+// Use the shared script lock there so website writes still run one at a time.
+function docLock_() {
+  return (LIB_CTX_ && LIB_CTX_.lock && LIB_CTX_.lock()) || LockService.getDocumentLock() || LockService.getScriptLock();
+}
 function libMode_() { return !!(LIB_CTX_ && LIB_CTX_.props); }
 function stubVersion_() { return LIB_CTX_ && LIB_CTX_.stub ? Number(LIB_CTX_.stub) : 0; }
 
