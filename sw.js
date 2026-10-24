@@ -1,7 +1,7 @@
 // START app: keeps the app shell (this page, icons) so the app opens even on a weak connection.
 // The portal itself always comes live from the region's tracker, so nobody sees old data.
-const CACHE = 'start-app-v7';
-const SHELL = ['./', './index.html', './config.js', './manifest.webmanifest', './icons/mark-256.png', './icons/icon-192.png', './icons/favicon-32.png'];
+const CACHE = 'start-app-v9';
+const SHELL = ['./', './index.html', './config.js', './manifest.webmanifest', './icons/mark-256.png', './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

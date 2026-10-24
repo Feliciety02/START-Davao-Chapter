@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<!--
+  START email template: used by EVERY email the tracker sends (weekly check-in, follow-up, welcome, summary,
+  alerts, portal welcome, announcement, reports…). One design everywhere.
+  Style: StaRRt IGNITE deck (blue-white-yellow, navy, Poppins, pill buttons, twinkling stars).
+  Why pictures for the gradients: the Gmail PHONE apps remove CSS gradients, so the soft background, the
+  navy hero and the colour bar are small pictures (they show on phones too). If pictures are off or not
+  added yet, every part falls back to a solid colour, so the email always looks clean.
+  Values: badge, badgeColor, accent, greeting, intro (list), extraHtml, outro (list), title1 + title2,
+  link, buttonText, buttonNote, schoolLabel + school, weekLabel + week, deadlineLabel + deadline,
+  portal, signature (list), region, footer, logo + logoW + logoH,
+  bg, hero, bar, sparkle, star (the decorative pictures; '' = not added)
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="format-detection" content="telephone=no,date=no,address=no,email=no">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light only">
+<style>
+  body { margin:0; padding:0; -webkit-text-size-adjust:100%; }
+  img { border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic; }
+  .chip-count-1 { max-width:552px; }
+  .chip-count-2 { max-width:276px; }
+  .chip-count-3 { max-width:184px; }
+  @media only screen and (max-width:520px) {
+    .outer    { padding:12px 8px 20px 8px !important; }
+    .px       { padding-left:20px !important; padding-right:20px !important; }
+    .hero     { padding:22px 20px 22px 20px !important; }
+    .title    { font-size:26px !important; }
+    .msg      { font-size:15px !important; line-height:1.6 !important; }
+    .program  { font-size:9px !important; }
+    .spark    { width:84px !important; height:50px !important; }
+    .chips    { padding:18px 16px 0 16px !important; }
+    .chipbox  { background:#EEF5FD !important; border-radius:14px !important; overflow:hidden !important; }
+    .chip     { width:100% !important; max-width:100% !important; display:block !important; }
+    .chip-in  { margin:0 !important; border-radius:0 !important; background:transparent !important;
+                padding:12px 16px !important; border-bottom:1px solid #D6E4F5 !important; }
+    .chip-last .chip-in { border-bottom:0 !important; background:#FFF6BF !important; }
+    .chip-l   { display:inline-block !important; width:42% !important; vertical-align:middle !important; }
+    .chip-v   { display:inline-block !important; width:57% !important; text-align:right !important; vertical-align:middle !important; margin-top:0 !important; }
+    .btn-wrap { width:100% !important; }
+    .btn      { display:block !important; padding:16px 18px !important; font-size:14px !important; }
+    .extra table td, .extra table th { padding:6px 6px !important; font-size:12px !important; }
+    .foot     { padding:20px 20px !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#EAF3FC;">
+<!-- Page: the deck gradient as a picture (phones) with a plain colour behind it -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#EAF3FC"
+       <? if (bg) { ?>background="<?= bg ?>"<? } ?>
+       style="background-color:#EAF3FC;background-image:linear-gradient(135deg,#0099FF 0%,#EAF3FC 48%,#FFDD00 100%);font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;">
+  <tr>
+    <td align="center" class="outer" style="padding:28px 12px 30px 12px;">
+
+      <!-- Logos (one fixed-size picture) + program line -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
+        <tr>
+          <td style="padding:0 4px 6px 4px;">
+            <? if (logo) { ?><img src="<?= logo ?>" width="<?= logoW ?>" height="<?= logoH ?>" alt="DOST · START · DOST-SEI"
+                 style="display:block;max-width:100%;height:auto;border:0;font-size:11px;font-weight:700;color:#12203A;">
+            <? } else { ?>
+            <div style="font-size:13px;font-weight:800;letter-spacing:1px;color:#12203A;">DOST &nbsp;·&nbsp; START &nbsp;·&nbsp; DOST-SEI</div>
+            <? } ?>
+          </td>
+        </tr>
+        <tr>
+          <td class="program" style="padding:0 4px 14px 4px;font-size:10px;line-height:1.45;color:#12203A;">
+            Department of Science and Technology – Science Education Institute<br>
+            <span style="font-weight:800;letter-spacing:0.3px;">SCHOLARS TRANSFORMING ADVANCEMENT AND RESEARCH FOR TECHNOLOGY</span> (START – DOST)
+          </td>
+        </tr>
+      </table>
+
+      <!-- Card -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff"
+             style="max-width:600px;width:100%;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 8px 28px rgba(18,32,58,0.18);">
+
+        <!-- Hero: navy-to-blue picture with rings, twinkling stars, pill, region and big title -->
+        <tr>
+          <td class="hero" bgcolor="#12203A" <? if (hero) { ?>background="<?= hero ?>"<? } ?>
+              style="background-color:#12203A;background-image:linear-gradient(135deg,#12203A 0%,#163a6b 60%,#005CAA 100%);padding:26px 30px 28px 30px;">
+            <? if (sparkle) { ?><img class="spark" src="<?= sparkle ?>" width="108" height="65" align="right" alt=""
+                 style="display:block;float:right;width:108px;height:65px;border:0;margin:-6px -8px 0 8px;"><? } ?>
+            <span style="display:inline-block;background-color:#FFDD00;color:#12203A;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;padding:6px 14px;border-radius:999px;">✦ <?= badge ?></span>
+            <div class="title" style="font-size:32px;line-height:1.06;font-weight:800;color:#FFFFFF;letter-spacing:-0.3px;text-transform:uppercase;margin-top:16px;"><?= title1 ?><br><span style="color:#FFDD00;"><?= title2 ?></span></div>
+          </td>
+        </tr>
+        <!-- Colour bar: blue → yellow (picture), with two solid blocks when pictures are off -->
+        <tr>
+          <td style="font-size:0;line-height:0;">
+            <? if (bar) { ?><img src="<?= bar ?>" width="600" height="6" alt="" style="display:block;width:100%;height:6px;border:0;">
+            <? } else { ?>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td width="62%" height="6" bgcolor="#0099FF" style="height:6px;background-color:#0099FF;font-size:0;line-height:0;">&nbsp;</td>
+              <td width="38%" height="6" bgcolor="#FFDD00" style="height:6px;background-color:#FFDD00;font-size:0;line-height:0;">&nbsp;</td>
+            </tr></table>
+            <? } ?>
+          </td>
+        </tr>
+
+        <!-- Info boxes: side by side on wide screens, a neat list on phones -->
+        <? var chips = [[schoolLabel, school, '#EAF3FC', '#12203A'], [weekLabel, week, '#EAF3FC', '#12203A'], [deadlineLabel, deadline, '#FFF6BF', badgeColor]]
+             .filter(function (c) { return c[0] || (c[1] && c[1] !== 'undefined'); }); ?>
+        <? if (chips.length) { ?>
+        <tr>
+          <td class="chips" style="padding:22px 24px 0 24px;">
+            <div class="chipbox" style="font-size:0;line-height:0;">
+            <? for (var c = 0; c < chips.length; c++) { ?><div class="chip chip-count-<?= chips.length ?><?= c === chips.length - 1 ? ' chip-last' : '' ?>" style="display:inline-block;vertical-align:top;width:100%;">
+              <? if (c === chips.length - 1) { ?><div class="chip-in" style="margin:0 6px 8px 6px;background:#FFF6BF;border-radius:14px;padding:12px 14px;border:1px solid #F5E27A;">
+              <? } else { ?><div class="chip-in" style="margin:0 6px 8px 6px;background:#EAF3FC;border-radius:14px;padding:12px 14px;border:1px solid #D6E4F5;">
+              <? } ?>
+                <div class="chip-l" style="font-size:10px;line-height:1.4;font-weight:700;color:#4b5b77;letter-spacing:1px;text-transform:uppercase;"><?= chips[c][0] ?></div>
+                <div class="chip-v" style="font-size:15px;line-height:1.3;font-weight:800;margin-top:2px;word-wrap:break-word;"><font color="<?= chips[c][3] ?>"><?= chips[c][1] ?></font></div>
+              </div>
+            </div><? } ?>
+            </div>
+          </td>
+        </tr>
+        <? } ?>
+
+        <!-- Message -->
+        <tr>
+          <td class="px msg" style="padding:20px 30px 6px 30px;font-size:15px;line-height:1.65;color:#12203A;">
+            <? if (greeting) { ?><p style="margin:0 0 14px 0;font-weight:700;font-size:16px;"><?= greeting ?></p><? } ?>
+            <? for (var i = 0; i < intro.length; i++) { ?>
+              <p style="margin:0 0 14px 0;"><?= intro[i] ?></p>
+            <? } ?>
+            <? if (extraHtml) { ?><div class="extra" style="margin:6px 0 10px 0;overflow-x:auto;"><?!= extraHtml ?></div><? } ?>
+          </td>
+        </tr>
+
+        <!-- Pill button: solid yellow (shows the same everywhere) with a blue edge. Left out when there is no button. -->
+        <? if (buttonText && link) { ?>
+        <tr>
+          <td align="center" class="px" style="padding:12px 30px 4px 30px;">
+            <table role="presentation" class="btn-wrap" cellpadding="0" cellspacing="0" border="0" style="max-width:100%;">
+              <tr>
+                <td align="center" bgcolor="#FFDD00" style="background-color:#FFDD00;background-image:linear-gradient(90deg,#FFDD00 0%,#FFF3A0 50%,#7CCBFF 100%);border-radius:999px;border-bottom:3px solid #0099FF;box-shadow:0 4px 12px rgba(0,153,255,0.30);">
+                  <a href="<?= link ?>" class="btn" style="display:inline-block;padding:16px 36px;color:#12203A;font-size:15px;line-height:1.3;font-weight:800;letter-spacing:0.8px;text-transform:uppercase;text-decoration:none;"><?= buttonText ?> &rarr;</a>
+                </td>
+              </tr>
+            </table>
+            <? if (buttonNote) { ?><p style="margin:10px 0 0 0;font-size:12px;color:#4b5b77;"><?= buttonNote ?></p><? } ?>
+            <? if (typeof portal !== 'undefined' && portal) { ?>
+              <p style="margin:14px 0 0 0;font-size:13px;"><a href="<?= portal ?>" style="color:#0099FF;font-weight:700;text-decoration:none;">Open my START Campus Lead Portal &rarr;</a>
+                <br><span style="font-size:11px;color:#4b5b77;">Private: opens only with your Google account</span></p>
+            <? } ?>
+          </td>
+        </tr>
+        <? } ?>
+
+        <!-- Closing + signature -->
+        <tr>
+          <td class="px msg" style="padding:20px 30px 26px 30px;font-size:15px;line-height:1.65;color:#12203A;">
+            <? for (var j = 0; j < outro.length; j++) { ?>
+              <p style="margin:0 0 14px 0;"><?= outro[j] ?></p>
+            <? } ?>
+            <? if (signature.length) { ?>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px;"><tr>
+              <td width="4" bgcolor="#FFDD00" style="width:4px;background-color:#FFDD00;border-radius:4px;font-size:0;line-height:0;">&nbsp;</td>
+              <td style="padding:2px 0 2px 12px;line-height:1.5;">
+                <span style="color:#4b5b77;font-size:13px;">Respectfully,</span><br>
+                <? for (var k = 0; k < signature.length; k++) { ?>
+                  <? if (k === 0) { ?><b style="font-weight:800;font-size:16px;color:#12203A;"><?= signature[k] ?></b><br><? } else { ?><span style="color:#4b5b77;font-size:13px;"><?= signature[k] ?></span><br><? } ?>
+                <? } ?>
+              </td>
+            </tr></table>
+            <? } ?>
+          </td>
+        </tr>
+
+        <!-- Colour bar -->
+        <tr>
+          <td style="font-size:0;line-height:0;">
+            <? if (bar) { ?><img src="<?= bar ?>" width="600" height="6" alt="" style="display:block;width:100%;height:6px;border:0;">
+            <? } else { ?>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td width="38%" height="6" bgcolor="#FFDD00" style="height:6px;background-color:#FFDD00;font-size:0;line-height:0;">&nbsp;</td>
+              <td width="62%" height="6" bgcolor="#0099FF" style="height:6px;background-color:#0099FF;font-size:0;line-height:0;">&nbsp;</td>
+            </tr></table>
+            <? } ?>
+          </td>
+        </tr>
+
+        <!-- Footer (navy) with a twinkling star: only the button's link, for when the button does not work -->
+        <? if (buttonText && link) { ?>
+        <tr>
+          <td class="foot" bgcolor="#12203A" style="background:#12203A;padding:18px 30px;font-size:11px;line-height:1.6;color:#b9c3d6;">
+            <? if (star) { ?><img src="<?= star ?>" width="30" height="30" align="right" alt="" style="display:block;float:right;width:30px;height:30px;border:0;margin:0 0 0 10px;"><? } ?>
+            Button not working? Open this link:<br>
+            <a href="<?= link ?>" style="color:#FFDD00;word-break:break-all;"><?= link ?></a>
+          </td>
+        </tr>
+        <? } ?>
+      </table>
+
+
+    </td>
+  </tr>
+</table>
+</body>
+</html>
