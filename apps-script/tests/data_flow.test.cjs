@@ -28,6 +28,32 @@ assert.equal(context.autoJoinEligible_({}, request, [[old[0], old[1], '', '', ol
 context.oldMasterRows_ = () => [{ r: old, at: 2 }, { r: old, at: 3 }];
 assert.equal(context.autoJoinEligible_({}, request, []), false);
 
+// The Sheets checkbox controls the website switch. A matching legacy property is only a fallback
+// until setup adds the Settings row.
+const settingRow = context.SETTINGS.findIndex(s => s[0] === 'autoApprove') + 2;
+let sheetToggle = false, savedToggle = '1';
+context.webSheet_ = () => ({ getSheetByName: name => name === context.TAB.settings ? {
+  getRange: (row, col) => ({
+    getValue: () => col === 1 ? context.SETTINGS[settingRow - 2][1] : sheetToggle,
+    setValue: value => { sheetToggle = value; }
+  })
+} : null });
+context.docProps_ = () => ({ getProperty: () => savedToggle, setProperty: (_, value) => { savedToggle = value; } });
+assert.equal(context.autoApproveOn_(), false);
+assert.equal(context.setAutoApprove_(true), true);
+assert.equal(sheetToggle, true);
+assert.equal(savedToggle, '1');
+assert.equal(context.autoApproveOn_(), true);
+context.setAutoApprove_(false);
+assert.equal(sheetToggle, false);
+assert.equal(savedToggle, '0');
+context.setAutoApprove_(true);
+
+// When a same-name legacy row exists, automatic approval must use the uniquely verified row.
+const other = old.slice(); other[4] = 'other@example.com'; other[2] = 'BS Mathematics';
+context.oldMasterRows_ = () => [{ r: other, at: 2 }, { r: old, at: 3 }];
+assert.equal(context.autoJoinMasterMatch_({}, request, []).at, 3);
+
 // A historical snapshot keeps its original denominator when the current roster grows.
 context.scholarByEmail_ = () => ({
   'ana@example.com': { primary: 'ana@example.com', status: 'Active', school: 'USeP' },
