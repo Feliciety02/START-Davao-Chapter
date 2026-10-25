@@ -325,8 +325,8 @@ function showOutreachDialog() {
 }
 
 // Called from the dialog (must not end with "_" so the dialog can reach it)
-function saveOutreach(d) {
-  const ss = SpreadsheetApp.getActive();
+function saveOutreach(d, spreadsheet) {
+  const ss = spreadsheet || SpreadsheetApp.getActive();
   if (!d || !d.school) throw new Error('No school selected.');
   let sh = ss.getSheetByName(TAB.outreach);
   if (!sh) { buildOutreach_(ss); sh = ss.getSheetByName(TAB.outreach); }

@@ -46,11 +46,11 @@
   .tile.navy .material-icon { color: var(--sun); }
   .tab .material-icon { width: 26px; height: 26px; }
 
-  /* the START mark only */
-  .smark { display: inline-block; flex: none; background-repeat: no-repeat; }
+  /* The official START image is displayed whole, beside the region pill. */
+  .smark { display: block; flex: none; object-fit: contain; }
   .brandrow { display: flex; align-items: center; gap: 10px; }
-  .brandrow b { font-size: 18px; font-weight: 800; letter-spacing: .3px; line-height: 1.1; }
-  .brandrow span { font-size: 12px; color: var(--ink2); font-weight: 600; }
+  .brandrow .region-pill { display:inline-flex; align-items:center; min-height:28px; padding:4px 12px; border-radius:999px;
+    background:var(--sun); color:var(--navy); font-size:12px; font-weight:800; white-space:nowrap; }
 
   /* ---------- layout: side menu (computer), bottom bar (phone) ---------- */
   .layout { display: grid; grid-template-columns: 236px minmax(0, 1fr); max-width: 1220px; margin: 0 auto; min-height: 100vh; }
@@ -459,7 +459,7 @@
     .brand { padding-right: 40px; }
     body.folded .layout { grid-template-columns: 96px minmax(0, 1fr); }
     body.folded aside.sidebar { padding: 26px 10px 14px; }
-    body.folded .brandrow > div, body.folded #sidehelp, body.folded .acctbtn .who1, body.folded .acctbtn .more { display: none; }
+    body.folded .brandrow .region-pill, body.folded #sidehelp, body.folded .acctbtn .who1, body.folded .acctbtn .more { display: none; }
     body.folded .brand { padding: 0 0 18px; display: flex; justify-content: center; }
     body.folded .sidetog { position: static; margin: 0 auto 18px; }
     body.folded .tab { justify-content: center; padding: 12px 0; }
@@ -470,9 +470,7 @@
 
   /* ---------- game (Duolingo-like) ---------- */
   .start-logo { display: inline-grid; place-items: center; flex: none; }
-  .start-logo .smark { max-width: 100%; max-height: 100%; }
-  .start-logo b { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 12px; background: #fff;
-    font-size: .5em; font-weight: 800; color: var(--blue); }
+  .start-logo .smark { width: 100%; height: 100%; }
   .coach .start-logo { animation: hover 3s ease-in-out infinite; }
   .card.goal { display: flex; align-items: center; gap: 22px; }
   .card.goal h2 { margin-bottom: 8px; }
@@ -1090,6 +1088,19 @@
   .me-profile-card h2 { display:block; font-size: clamp(18px,2.1vw,24px); font-weight: 800; line-height:1.25; letter-spacing:-.35px; overflow-wrap:anywhere; }
   .me-profile-card .muted { margin-top:5px; font-size:13px; overflow-wrap:anywhere; }
   .me-settings { padding: 8px 18px; overflow:hidden; }
+  .rrdb-head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .rrdb-head h2 { margin:0; }
+  .rrdb-check { display:flex; align-items:center; gap:10px; }
+  .rrdb-check input { width:auto; }
+  .rrdb-setting { display:grid; grid-template-columns:minmax(0,1fr) minmax(200px,320px); gap:10px 20px; padding:17px 0; border-top:1px solid #E7EDF5; align-items:center; }
+  .rrdb-setting label b,.rrdb-setting label small { display:block; }
+  .rrdb-setting label small { color:#66748C; font-size:12px; line-height:1.4; margin-top:4px; }
+  .rrdb-value { display:flex; align-items:center; gap:10px; }
+  .rrdb-value input:not([type=checkbox]),.rrdb-value select { min-width:0; width:100%; padding:10px; border:1px solid #C9D5E4; border-radius:10px; font:inherit; }
+  .rrdb-value input[type=checkbox] { width:22px; height:22px; }
+  .rrdb-value button { flex:none; }
+  .rrdb-msg { grid-column:2; color:#14532D; font-size:12px; }
+  @media(max-width:600px) { .rrdb-setting { grid-template-columns:1fr; } .rrdb-msg { grid-column:1; } }
   .me-settings .linkrow { display:flex; align-items:center; gap:16px; min-height:72px; padding:13px 8px; border-radius:0; font-size:14px; font-weight:700; line-height:1.4; }
   .me-settings .linkrow + .linkrow { border-top:1px solid #E7EDF5; }
   .me-settings .linkrow > span:nth-child(2) { flex:1; min-width:0; }
@@ -1216,6 +1227,221 @@
     cursor: default;
   }
   select option { background: #fff; color: var(--navy); }
+
+  /* ---------- one playful look for the RR pages (Schools, Outreach, Settings, Diagnostics, Calendar, pop-ups) ---------- */
+  .rrdb-head h2 { display:flex; align-items:center; gap:8px; margin:0; font-size:15px; font-weight:800; letter-spacing:.9px; text-transform:uppercase; line-height:1.3; }
+  .rrdb-head h2::before { content:""; width:4px; height:15px; border-radius:4px; background:var(--sun); flex:none; }
+  .rrdb-head { margin-bottom:12px; }
+  .rrdb-head + p.muted { margin-top:0; }
+
+  /* tables: ice header, chunky rows, a yellow wash when you point at a row */
+  .tablebox { border:1.5px solid #E3EEFA; box-shadow:none; }
+  .tablebox th { background:var(--sky); color:var(--navy2); font-size:11px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; padding:11px 12px; }
+  .tablebox td { border-top:1px solid #EAF1F9; }
+  .tablebox tbody tr { transition:background .15s ease; }
+  .tablebox tbody tr:hover td { background:#FFFBE0; }
+  .tablebox td .pillbtn.sm { padding:6px 14px; }
+  .pill { padding:3px 11px; font-weight:700; }
+  @media(max-width:680px) {
+    .tablebox { border:0; background:transparent; }
+    table.stack tbody { display:grid; gap:10px; }
+    table.stack tr, table.stack tr:first-child { background:#fff; border:1.5px solid #E3EEFA; border-radius:18px; padding:10px 6px; box-shadow:0 3px 0 #E3EEFA; }
+    table.stack tbody tr:hover td { background:transparent; }
+    table.stack td[data-l]::before { font-size:10.5px; font-weight:800; letter-spacing:.7px; text-transform:uppercase; }
+  }
+
+  /* inputs: same soft blue outline everywhere */
+  .rrdb-value input:not([type=checkbox]), .rrdb-value select, #outreach-form input, #outreach-form select {
+    min-height:46px; padding:10px 14px; border:1.5px solid #D5E3F2; border-radius:14px; background:#fff; font:inherit; color:var(--navy); }
+  .rrdb-value input:focus, .rrdb-value select:focus { outline:2px solid var(--blue); outline-offset:1px; border-color:transparent; }
+  .scholar-form input, .scholar-form select { border-color:#D5E3F2; border-radius:14px; }
+  #outreach-form { margin-bottom:0; }
+  #outreach-form .wide { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  #or-msg { font-size:13px; font-weight:700; color:var(--g-fg); }
+
+  /* settings: bubble rows, real toggles, a green "saved" note */
+  .rrdb-setting { padding:16px 12px; margin:0 -12px; border-top:1px solid #EAF1F9; border-radius:16px; transition:background .15s ease; }
+  .rrdb-setting:first-of-type { border-top:0; }
+  .rrdb-setting:hover { background:#F7FBFF; }
+  .rrdb-setting label b { font-size:14.5px; }
+  .rrdb-msg:not(:empty) { display:inline-block; justify-self:start; background:var(--g-bg); color:var(--g-fg); font-weight:700; padding:3px 12px; border-radius:999px; animation:pop .35s cubic-bezier(.2,1.6,.4,1); }
+  @keyframes pop { from { transform:scale(.7); opacity:0; } to { transform:scale(1); opacity:1; } }
+  .swt { display:inline-flex; align-items:center; gap:10px; cursor:pointer; }
+  .swt input { position:absolute; opacity:0; width:1px; height:1px; }
+  .swt-track { position:relative; flex:none; width:54px; height:30px; border-radius:99px; background:#CBD3DE; transition:background .2s; }
+  .swt-track i { position:absolute; left:3px; top:3px; width:24px; height:24px; border-radius:50%; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,.2); transition:left .2s cubic-bezier(.2,1.6,.4,1); }
+  .swt input:checked + .swt-track { background:#1E8E3E; } .swt input:checked + .swt-track i { left:27px; }
+  .swt input:focus-visible + .swt-track { outline:3px solid var(--sky2); outline-offset:2px; }
+  .swt input:disabled + .swt-track { opacity:.5; }
+  .swt-text::before { content:"Off"; font-size:13px; font-weight:800; color:var(--ink2); }
+  .swt input:checked ~ .swt-text::before { content:"On"; color:var(--g-fg); }
+
+  /* diagnostics: a round status bubble per check */
+  .diaghead { display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:20px; margin:0 0 12px; }
+  .diaghead b { font-size:16px; }
+  .dh-ok { background:var(--g-bg); } .dh-warn { background:var(--y-bg); }
+  .dbub { display:inline-grid; place-items:center; width:40px; height:40px; flex:none; border-radius:50%; background:#fff; box-shadow:0 3px 0 rgba(18,32,58,.12); }
+  .dh-ok .dbub, .d-ok .dbub { color:var(--g-fg); } .dh-warn .dbub, .d-warn .dbub { color:#8A6A00; } .d-bad .dbub { color:var(--r-fg); }
+  .diaglist { display:grid; gap:8px; }
+  .diag { display:flex !important; align-items:center; gap:12px; padding:10px 14px; border:1.5px solid #E3EEFA; border-radius:18px; background:var(--soft); }
+  .diag.d-warn { background:#FFFBE0; border-color:#F5E27A; } .diag.d-bad { background:var(--r-bg); border-color:#F5C2BC; }
+  .diag .dbub { width:34px; height:34px; }
+
+  /* roster + dialogs */
+  .rrsch { transition:transform .15s ease, box-shadow .15s ease; }
+  .rrsch:hover { transform:translateY(-2px); box-shadow:0 8px 0 #E3EEFA; }
+  .scholar-dialog { position:relative; border-radius:28px; padding-top:28px; animation:pop .3s cubic-bezier(.2,1.4,.4,1); }
+  .scholar-dialog::before { content:""; position:absolute; left:0; right:0; top:0; height:8px; background:linear-gradient(90deg,#0099FF 0%,#7CCBFF 55%,#FFDD00 100%); }
+  .scholar-dialog h2 { display:flex; align-items:center; gap:8px; font-size:17px; font-weight:800; letter-spacing:.9px; text-transform:uppercase; }
+  .scholar-dialog h2::before { content:""; width:4px; height:15px; border-radius:4px; background:var(--sun); flex:none; }
+  .scholar-form label { font-size:11.5px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:var(--navy2); }
+  .scholar-form .rrdb-check { text-transform:none; letter-spacing:0; font-size:14px; }
+  .scholar-form input[type=checkbox] { width:22px; height:22px; min-height:0; accent-color:var(--blue); }
+  .scholar-edit-note { background:var(--sky); border-left:5px solid var(--sun); border-radius:14px; }
+  .scholar-edit-error:not(:empty) { background:var(--r-bg); color:var(--r-fg); font-weight:700; border-radius:12px; padding:8px 12px; }
+  .diaglist { padding:0; margin:0 0 14px; list-style:none; }
+  .diaglist .diag { padding:10px 14px !important; margin:0; border-top:1.5px solid #E3EEFA; }
+  .diaglist .diag.d-warn { border-color:#F5E27A; } .diaglist .diag.d-bad { border-color:#F5C2BC; }
+  .diag .pill { margin-left:auto; }
+  .diag .dbub svg, .diaghead .dbub svg { margin:0; }
+  .scholar-dialog h2 { margin-bottom:14px; }
+
+  /* ---------- weekly mini-game (check-in): a calm, minimal brain-break card with the START star ---------- */
+  .bb { position:relative; background:#fff; border-radius:24px; padding:18px 18px 20px; box-shadow:0 4px 0 #DCE6F0; }
+  @media (min-width:640px) { .bb { padding:24px; } }
+  .bbtop { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .bbstar { flex:none; line-height:0; }
+  .bbstar .start-logo { animation:mgbob 2.6s ease-in-out infinite; }
+  .bbstar.s-win .start-logo { animation:mghop .5s cubic-bezier(.2,1.6,.4,1) 3; }
+  .bbstar.s-oops .start-logo { animation:mgwob .45s ease 1; }
+  .bbstar.s-sad .start-logo { animation:none; transform:rotate(-10deg) translateY(2px); }
+  .bbsay { flex:1; font-weight:700; font-size:15px; line-height:1.35; }
+  @keyframes mgbob { 0%, 100% { transform:translateY(0) rotate(-3deg); } 50% { transform:translateY(-4px) rotate(3deg); } }
+  @keyframes mghop { 50% { transform:translateY(-10px) rotate(8deg) scale(1.06); } }
+  @keyframes mgwob { 25% { transform:rotate(-12deg); } 75% { transform:rotate(12deg); } }
+  .bbmeta { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12.5px; font-weight:700; color:var(--ink2); }
+  .bbq { font-size:18px; font-weight:800; line-height:1.3; margin:14px 0 0; }
+  .bbhint { font-size:15px; font-weight:600; margin:14px 0 0; text-align:center; }
+  .bblink { display:block; margin:14px auto 0; background:none; border:0; padding:4px 8px; font:700 13px Poppins,Arial,sans-serif; color:var(--blue-d); cursor:pointer; }
+  .hearts { display:flex; gap:4px; }
+  .heart { width:17px; height:15px; position:relative; display:inline-block; }
+  .heart::before { content:""; position:absolute; inset:0; background:#FF5A6E; -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'%3E%3Cpath d='M12 21S1 14 1 7a5.5 5.5 0 0 1 11-1 5.5 5.5 0 0 1 11 1c0 7-11 14-11 14z'/%3E%3C/svg%3E") center/contain no-repeat;
+    mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 22'%3E%3Cpath d='M12 21S1 14 1 7a5.5 5.5 0 0 1 11-1 5.5 5.5 0 0 1 11 1c0 7-11 14-11 14z'/%3E%3C/svg%3E") center/contain no-repeat; }
+  .heart.lost::before { background:#E1E7EF; } .heart.lost { animation:mgbreak .45s ease; }
+  @keyframes mgbreak { 30% { transform:scale(1.3) rotate(-10deg); } }
+  .mgslots { display:flex; gap:5px; justify-content:center; margin:14px 0 16px; }
+  .mgslot { flex:1 1 0; max-width:40px; min-width:0; height:44px; border-radius:11px; border:0; background:#F2F5FA; font:800 clamp(15px,4.4vw,20px) Poppins,Arial,sans-serif; color:var(--navy); padding:0; cursor:pointer; }
+  .mgslot.full { background:#FFF3B0; }
+  .mgslot.shown { background:#F2F5FA !important; color:#9AA6B8 !important; }
+  .fx-shake .mgslots { animation:mgshake .45s ease; } .fx-shake .mgslot.full { background:#FFE8E7; color:#A1261B; }
+  @keyframes mgshake { 20%,60% { transform:translateX(-7px); } 40%,80% { transform:translateX(7px); } }
+  .fx-win .mgslot.full { background:#E0F8E7; color:#127244; animation:mgpop .5s cubic-bezier(.2,1.6,.4,1) both; animation-delay:var(--d); }
+  @keyframes mgpop { 0% { transform:scale(.7); } 60% { transform:scale(1.1) translateY(-4px); } 100% { transform:none; } }
+  .mgtiles { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .mgtile { min-width:40px; height:44px; border:1.5px solid #E0EAF3; border-radius:11px; background:#fff; font:800 20px Poppins,Arial,sans-serif; color:var(--navy); cursor:pointer; box-shadow:0 3px 0 #E0EAF3; transition:transform .08s; }
+  .mgtile:active { transform:translateY(2px); box-shadow:0 1px 0 #E0EAF3; }
+  .mgtile.used { display:none; }
+  .pips { display:flex; gap:6px; }
+  .pip { width:9px; height:9px; border-radius:50%; background:#E1E7EF; display:inline-block; }
+  .pip.now { background:var(--blue); } .pip.ok { background:#1E8E3E; } .pip.no { background:#E5484D; }
+  .mgodds { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:14px 0 0; }
+  .mgodd { min-height:58px; padding:10px; border:1.5px solid #E0EAF3; border-radius:14px; background:#fff; font:700 14.5px Poppins,Arial,sans-serif; text-align:center; color:var(--navy); overflow-wrap:anywhere; cursor:pointer; transition:transform .08s; }
+  .mgodd:active:not([disabled]) { transform:translateY(2px); background:#FFF8D6; }
+  .mgodd.ok { background:#E0F8E7; border-color:#71C890; animation:mgpop .45s cubic-bezier(.2,1.6,.4,1); }
+  .mgodd.no { background:#FFE8E7; border-color:#EB8A80; animation:mgshake .4s ease; }
+  .mgodd.dim { opacity:.45; } .mgodd[disabled] { cursor:default; }
+  .mgwhy { margin:12px 0 0; font-size:13.5px; color:var(--ink2); }
+  .mgnext { margin-top:12px; width:100%; justify-content:center; }
+  .mgdone { text-align:center; padding:18px 0 4px; display:grid; gap:6px; justify-items:center; }
+  .mgdone b { font-size:18px; }
+  .stars { display:flex; gap:8px; }
+  .bigstar { color:#E1E7EF; display:inline-grid; } .bigstar.on { color:var(--sun); animation:mgpop .55s cubic-bezier(.2,1.6,.4,1) both; animation-delay:var(--d); }
+  .bigstar svg.ico { fill:currentColor; stroke:#12203A; stroke-width:1.2; }
+  .mgburst { position:absolute; left:44px; top:44px; pointer-events:none; }
+  .mgburst i { position:absolute; width:8px; height:8px; border-radius:3px; background:var(--c); animation:mgfly .8s ease-out forwards; transform:rotate(var(--a)); }
+  @keyframes mgfly { to { transform:rotate(var(--a)) translateY(-80px) scale(.4); opacity:0; } }
+  .bbtime { height:6px; border-radius:99px; background:#EDF2F7; overflow:hidden; margin:10px 0 0; }
+  .bbtime i { display:block; height:100%; width:100%; border-radius:99px; background:var(--blue); transform-origin:left center; animation:bbclock linear forwards; }
+  .bbtime.stop i { animation-play-state:paused; }
+  @keyframes bbclock { 0% { transform:scaleX(1); background:#0099FF; } 65% { background:#0099FF; } 80% { background:#FFC400; } 100% { transform:scaleX(0); background:#E5484D; } }
+  .combo { margin-left:auto; display:inline-flex; align-items:center; gap:3px; background:var(--navy); color:var(--sun); font-weight:800; font-size:12.5px; padding:4px 10px; border-radius:99px; animation:mgpop .4s cubic-bezier(.2,1.6,.4,1); }
+  .bbfeed { margin:14px -18px -20px; padding:14px 18px 18px; border-radius:0 0 24px 24px; display:grid; gap:6px; animation:bbup .3s cubic-bezier(.2,1.2,.4,1); }
+  @media (min-width:640px) { .bbfeed { margin:16px -24px -24px; padding:16px 24px 22px; } }
+  @media (max-width:420px) { .bbfeed { margin:14px -16px -16px; padding:14px 16px 16px; } }
+  .bbfeed b { display:flex; align-items:center; gap:6px; font-size:16px; }
+  .bbfeed span { font-size:13.5px; font-weight:600; }
+  .bbfeed.ok { background:#E0F8E7; color:#127244; } .bbfeed.no { background:#FFE8E7; color:#A1261B; }
+  .bbfeed .mgnext { margin-top:6px; }
+  @keyframes bbup { from { transform:translateY(12px); opacity:0; } to { transform:none; opacity:1; } }
+  .xpfly { position:absolute; right:22px; top:28px; font-weight:800; font-size:16px; color:var(--blue-d); pointer-events:none; animation:xpfly 1.2s ease-out forwards; }
+  @keyframes xpfly { 0% { transform:translateY(8px) scale(.8); opacity:0; } 20% { opacity:1; transform:translateY(0) scale(1.1); } 100% { transform:translateY(-34px) scale(1); opacity:0; } }
+  .medal { font-size:11.5px; font-weight:800; letter-spacing:1px; text-transform:uppercase; padding:4px 12px; border-radius:99px; }
+  .medal.m-gold { background:var(--sun); color:var(--navy); } .medal.m-silver { background:#E3E9F1; color:#3F4A5C; } .medal.m-bronze { background:#F6DCC4; color:#7A4A1F; }
+  .fx-shake .mgslot.shown { background:#FFE8E7 !important; color:#A1261B !important; }
+  @media (prefers-reduced-motion: reduce) { .xpfly, .bbfeed, .combo { animation:none; } }
+  .lesson .lf #ckgo.skipgame { background:#fff; color:var(--ink2); flex:2; box-shadow:0 4px 0 #D9E2EE; border-bottom:0; }
+  .mgwon { display:inline-flex; align-items:center; gap:6px; margin-top:10px; background:var(--sun); color:var(--navy); font-weight:800; font-size:13px; padding:6px 14px; border-radius:999px; }
+  @media (max-width:420px) { .bb { padding:16px; } .mgtile { min-width:36px; height:42px; font-size:18px; } }
+  /* ---------- Journey day map: isometric tiles, START colours only ---------- */
+  .dmap { position:relative; flex:none; }
+  .board:has(.dmap) { background:linear-gradient(180deg,#EDF5FF 0%,#FFFFFF 50%,#FFF8DA 100%); border-radius:28px; padding:8px 0 14px; box-shadow:0 4px 0 #DCE6F0; margin-bottom:18px; }
+  .dmap > svg { position:absolute; inset:0; overflow:visible; }
+  .dt { position:absolute; width:0; height:0; }
+  .dpin { position:absolute; left:0; bottom:22px; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; white-space:nowrap;
+    background:var(--navy); color:#fff; border-radius:12px; padding:3px 9px; font-size:10px; font-weight:600; line-height:1.15; box-shadow:0 3px 0 rgba(18,32,58,.25); }
+  .dpin b { font-size:12.5px; font-weight:800; letter-spacing:.4px; text-transform:uppercase; }
+  .dpin::after { content:""; position:absolute; bottom:-5px; left:50%; width:10px; height:10px; background:inherit; transform:translateX(-50%) rotate(45deg); border-radius:2px; }
+  .dpin.lock { width:32px; height:32px; padding:0; border-radius:50%; justify-content:center; color:#fff; }
+  .dpin.grey { background:#9AA6B8; }
+  .dpin.now { background:var(--blue); }
+  .dst { position:absolute; left:0; top:-11px; transform:translateX(-50%); display:flex; gap:2px; background:var(--navy); border-radius:99px; padding:3px 8px; }
+  .k-checkin .dst { background:var(--sun); }
+  .dst i { color:#5B6B84; display:inline-grid; } .dst i.on { color:var(--sun); } .k-checkin .dst i { color:#C9A900; } .k-checkin .dst i.on { color:var(--navy); }
+  .dst svg.ico { fill:currentColor; stroke:none; }
+  .dxp { position:absolute; left:0; top:12px; transform:translateX(-50%); font-size:10.5px; font-weight:800; color:var(--navy); opacity:.7; white-space:nowrap; }
+  .k-checkin .dxp { color:var(--sun); opacity:1; }
+  .dgo { position:absolute; left:0; top:-12px; transform:translateX(-50%); background:#fff; color:var(--blue-d); font-weight:800; font-size:12.5px; letter-spacing:.6px; text-transform:uppercase; padding:4px 12px; border-radius:99px; box-shadow:0 3px 0 rgba(0,0,0,.15); white-space:nowrap; pointer-events:none; }
+  .k-checkin .dgo { color:var(--navy); background:var(--sun); }
+  .dmiss { position:absolute; left:0; top:-9px; transform:translateX(-50%); font-size:10.5px; font-weight:800; color:#8895A9; letter-spacing:.5px; text-transform:uppercase; }
+  .dhit { position:absolute; left:-52px; top:-28px; width:104px; height:66px; border:0; background:transparent; border-radius:30px; cursor:pointer; }
+  .dhit:focus-visible { outline:3px solid var(--sun); outline-offset:2px; }
+  .dme { position:absolute; left:28px; top:-58px; z-index:2; pointer-events:none; }
+  .dme .start-logo { animation:none; }
+  .rewards { display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:#fff; border-radius:22px; padding:12px 14px; margin:0 0 14px; box-shadow:0 4px 0 #DCE6F0; }
+  .rbal { display:inline-flex; align-items:center; gap:6px; background:var(--sun); border-radius:99px; padding:6px 14px; font-size:13px; font-weight:700; }
+  .rbal b { font-size:18px; } .rbal svg.ico { fill:var(--navy); stroke:none; }
+  .rtxt { flex:1; min-width:150px; font-size:13px; color:var(--ink2); font-weight:600; }
+  #redeem em { font-style:normal; font-size:10px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; background:var(--navy); color:var(--sun); padding:2px 7px; border-radius:99px; margin-left:4px; }
+  .dailycard { display:flex; align-items:center; gap:12px; background:#fff; border-radius:22px; padding:12px 16px; margin:0 0 18px; box-shadow:var(--shadow); }
+  .dailycard b { display:block; font-size:15.5px; } .dailycard .grow > span { display:block; font-size:13px; color:var(--ink2); }
+  .dailycard .start-logo { animation:mgbob 2.6s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .dtl.s-today, .dme .start-logo, .dailycard .start-logo { animation:none; } }
+  /* Campus Lead tools */
+  .ltools { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .ltag { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:800; padding:3px 9px; border-radius:99px; background:#EDF1F6; color:#3F4A5C; }
+  .ltag.warn { background:#FFF3B0; color:#6B5200; } .ltag.ok { background:#DDF5E6; color:#17643A; }
+  .lcontact { display:inline-flex; align-items:center; gap:4px; border:1.5px solid #D5E3F2; background:#fff; color:var(--blue-d); border-radius:99px; padding:4px 10px; font:800 11.5px Poppins,Arial,sans-serif; cursor:pointer; }
+  .lcontact.on { background:#DDF5E6; border-color:#9FD9B4; color:#17643A; }
+  .ljoins li, .lattend li { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .ljbtn { display:flex; gap:8px; flex-wrap:wrap; }
+  .lnote { width:100%; min-height:90px; border:1.5px solid #D5E3F2; border-radius:14px; padding:12px 14px; font:500 14.5px Poppins,Arial,sans-serif; color:var(--navy); resize:vertical; }
+  .atlist { display:grid; gap:6px; overflow-y:auto; min-height:0; padding:2px; }
+  .atrow { display:flex; align-items:center; gap:12px; padding:10px 12px; border:1.5px solid #E3EEFA; border-radius:14px; font-weight:700; cursor:pointer; }
+  .atrow input { width:20px; height:20px; accent-color:var(--blue); }
+  .atrow:has(input:checked) { background:#FFF8D6; border-color:#F5E27A; }
+  .leadchk.ok { color:#17643A; } .leadchk.no { color:#A1261B; }
+  .leadnote .say b { color:var(--blue-d); }
+  /* members: weekly recap and points help */
+  .recap { background:#fff; border-radius:22px; padding:14px 16px; margin:0 0 18px; box-shadow:var(--shadow); }
+  .rhead { display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; } .rhead b { font-size:15.5px; } .rhead > span { font-size:12.5px; color:var(--ink2); font-weight:700; display:inline-flex; align-items:center; gap:3px; }
+  .rnums { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0; }
+  .rnums span { background:var(--ice); border-radius:14px; padding:8px; text-align:center; font-size:11px; font-weight:700; color:var(--ink2); text-transform:uppercase; letter-spacing:.6px; }
+  .rnums b { display:block; font-size:20px; color:var(--navy); letter-spacing:0; }
+  .rbar { height:8px; background:#EDF2F7; border-radius:99px; overflow:hidden; } .rbar i { display:block; height:100%; background:linear-gradient(90deg,#0099FF,#FFDD00); border-radius:99px; }
+  .recap small { display:block; margin-top:6px; font-size:12px; color:var(--ink2); font-weight:600; }
+  .pointshelp .phl { list-style:none; padding:0; margin:10px 0 16px; text-align:left; display:grid; gap:10px; }
+  .pointshelp .phl li { background:var(--ice); border-radius:14px; padding:10px 12px; } .pointshelp .phl b { display:block; } .pointshelp .phl span { font-size:13px; color:var(--ink2); }
+  .rank-stars { display:inline-flex; align-items:center; gap:2px; font-weight:800; font-size:13px; color:#8A6A00; margin-left:6px; } .rank-stars svg.ico { fill:var(--sun); stroke:#12203A; stroke-width:1; }
 </style>
 </head>
 <body>
@@ -1243,11 +1469,13 @@ var START_BOOT = "__START_BOOT__";
 var REGION = START_BOOT.region || '';
 var REGION_NAME = START_BOOT.regionName || '';
 var PICS = START_BOOT.pics || {};
-var MARK = START_BOOT.mark || '';
+var MARK = START_BOOT.mark || 'https://www.start-dost.org/_next/static/media/logo-s.7f4f7462.png';
 var PLACE = START_BOOT.place || null;
 var APP = START_BOOT.appOrigin || '';
 var BRIDGE = {};                            // inside the app, the app keeps the sign-in for us (phones may block storage in frames)
 var S = { token: null, data: null, tab: null, school: 0, email: '', later: false };
+var ADMIN_PAGE_PENDING = null, ADMIN_PAGE_ERROR = '', ADMIN_OVERVIEW_DIRTY = false;
+var WEB_TIMINGS = [];
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function keep(k, v) {                       // browser storage: a convenience only, the page works without it
@@ -1263,8 +1491,18 @@ function keep(k, v) {                       // browser storage: a convenience on
 function ready() { if (APP) { try { window.top.postMessage({ start: 'ready' }, APP); } catch (e) {} } }
 function call(fn) {
   var args = Array.prototype.slice.call(arguments, 1);
+  var started = performance.now();
   return new Promise(function (ok, bad) {
-    var r = google.script.run.withSuccessHandler(ok).withFailureHandler(bad);
+    var done = function(result, failed) {
+      var ms = Math.round(performance.now() - started), bytes = 0;
+      if (!failed) try { bytes = new Blob([JSON.stringify(result)]).size; } catch (e) { /* unavailable */ }
+      WEB_TIMINGS.push({ request: fn, ms: ms, bytes: bytes, failed: failed });
+      if (WEB_TIMINGS.length > 20) WEB_TIMINGS.shift();
+      if (window.console && console.info) console.info('START ' + fn + ': ' + ms + ' ms, ' + bytes + ' bytes' + (failed ? ' (failed)' : ''));
+      (failed ? bad : ok)(result);
+    };
+    var r = google.script.run.withSuccessHandler(function(x) { done(x, false); })
+      .withFailureHandler(function(e) { done(e, true); });
     r[fn].apply(r, args);
   });
 }
@@ -1288,7 +1526,7 @@ function showSignIn(note) {
     return '<div class="field" id="f-' + id + '"><input id="' + id + '" type="' + type + '" aria-describedby="' + id + '-error" ' + (extra || '') + '><label for="' + id + '">' + label + '</label><span class="field-error" id="' + id + '-error" aria-live="polite"></span></div>';
   };
   app('<div class="auth">' +
-      '<div class="left">' + brand(36) + '<h1 id="h"></h1><p class="lede" id="lede"></p>' +
+      '<div class="left">' + brand(56) + '<h1 id="h"></h1><p class="lede" id="lede"></p>' +
         '<button class="who" id="who" style="display:none" title="Use another email"><span class="av" id="av"></span><span id="whoe"></span> ▾</button>' +
         postcard('wide') + '</div>' +
       '<div class="right">' +
@@ -1696,7 +1934,7 @@ function load(fresh) {
   if (!S.data) app('<div class="loading">Loading…</div>');
   return call('webLoad', S.token, fresh === true).then(function (d) {
     if (!d || !d.ok) { S.token = null; keep('start_token', null); showSignIn(d && d.msg); return; }
-    S.data = d; document.body.classList.remove('out');
+    S.data = d; ADMIN_PAGE_PENDING = null; ADMIN_PAGE_ERROR = ''; ADMIN_OVERVIEW_DIRTY = false; document.body.classList.remove('out');
     if (fresh === true) VA.list = null;
     loadLogos(d);
     showAccount(d);
@@ -1708,6 +1946,18 @@ function load(fresh) {
     else if (dueNow(d) && !S.later) startCheckin();          // a scholar who has not checked in yet: the check-in comes first
   }).catch(function (e) { app('<div class="box">Could not load your page: ' + esc(e.message) + ' <button class="linkish" onclick="load()">Try again</button></div>'); });
 }
+// After an RR edit, fetch just the active table. The overview refreshes when next opened.
+function refreshAdminPage(page, message) {
+  if (!S.data || !S.data.admin) return Promise.resolve();
+  ADMIN_OVERVIEW_DIRTY = true;
+  return call('webAdminPage', S.token, page).then(function(r) {
+    if (!r || !r.ok) { banner((r && r.msg) || 'Saved, but this page could not refresh. Use Refresh.', 'warn'); return; }
+    Object.keys(r).forEach(function(k) { if (k === 'calendarEvents') S.data.calendarEvents = r[k];
+      else if (k !== 'ok') S.data.admin[k] = r[k]; });
+    draw();
+    if (message) banner(message, 'ok');
+  }).catch(function() { banner('Saved, but this page could not refresh. Use Refresh.', 'warn'); });
+}
 function dueNow(d) { var m = d && d.member; return !!(m && m.checkin && m.checkin.open && !m.done); }
 // Keep the most useful destinations in the phone dock, with five tabs at most.
 function barPref(d) { return d.admin ? ['admin', 'scholars', 'schools', 'events', 'me'] : d.member ? ['home', 'journey', 'events', 'ranks', 'me'] : ['lead', 'events', 'ranks', 'me']; }
@@ -1717,6 +1967,9 @@ function views(d) {
     { id: 'admin', label: 'Overview', ic: 'region', dot: !!((d.admin.help || []).length) },
     { id: 'scholars', label: 'Scholars', ic: 'user' },
     { id: 'schools', label: 'Schools', ic: 'school' },
+    { id: 'outreach', label: 'Outreach', ic: 'mail' },
+    { id: 'settings', label: 'Settings', ic: 'gear' },
+    { id: 'diagnostics', label: 'Diagnostics', ic: 'check' },
     { id: 'events', label: 'Calendar', ic: 'events' },
     { id: 'me', label: 'Me', ic: 'user' }
   ];
@@ -1742,11 +1995,21 @@ function snapshot() {
     window.top.postMessage({ start: 'snapshot', data: snap }, APP);
   } catch (e) { /* not in the app */ }
 }
-// the hero's googly eyes follow the pointer (and glance at the check-in button on phones)
+// Paint the hero's eyes at most once per frame, even on high-rate pointer devices.
+var EYE_POINTER = null, EYE_FRAME = false;
 document.addEventListener('pointermove', function (e) {
-  [].forEach.call(document.querySelectorAll('.peek .ge'), function (g) {
-    var r = g.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2), d = Math.max(1, Math.hypot(dx, dy)), k = Math.min(5, d / 30);
-    g.firstChild.style.transform = 'translate(' + (dx / d * k).toFixed(1) + 'px,' + (dy / d * k).toFixed(1) + 'px)';
+  EYE_POINTER = { x: e.clientX, y: e.clientY };
+  if (EYE_FRAME) return;
+  EYE_FRAME = true;
+  requestAnimationFrame(function () {
+    EYE_FRAME = false;
+    var eyes = document.querySelectorAll('.peek .ge');
+    if (!eyes.length) return;
+    var p = EYE_POINTER;
+    [].forEach.call(eyes, function (g) {
+      var r = g.getBoundingClientRect(), dx = p.x - (r.left + r.width / 2), dy = p.y - (r.top + r.height / 2), d = Math.max(1, Math.hypot(dx, dy)), k = Math.min(5, d / 30);
+      g.firstChild.style.transform = 'translate(' + (dx / d * k).toFixed(1) + 'px,' + (dy / d * k).toFixed(1) + 'px)';
+    });
   });
 }, { passive: true });
 function draw() {
@@ -1761,8 +2024,42 @@ function draw() {
   $('nav2').innerHTML = bb.join('');
   STAMP = '';
   snapshot();
-  var V = { admin: adminView, scholars: rrScholarsView, schools: rrSchoolsView, lead: leadView, events: eventsView, journey: journeyView, ranks: ranksView, me: meView };
-  app((V[S.tab] || memberView)(d));
+  var V = { admin: adminView, scholars: rrScholarsView, schools: rrSchoolsView, outreach: rrOutreachView, settings: rrSettingsView, diagnostics: rrDiagnosticsView, lead: leadView, events: eventsView, journey: journeyView, ranks: ranksView, me: meView };
+  var adminPage = d.admin && ['scholars', 'schools', 'outreach', 'settings', 'diagnostics', 'events'].indexOf(S.tab) !== -1 ? S.tab : '';
+  if (ADMIN_PAGE_ERROR && ADMIN_PAGE_ERROR.page !== adminPage) ADMIN_PAGE_ERROR = '';
+  var ready = !adminPage || (adminPage === 'scholars' ? Array.isArray(d.admin.scholars) :
+    adminPage === 'schools' ? Array.isArray(d.admin.schoolRecords) :
+    adminPage === 'outreach' ? Array.isArray(d.admin.outreach) :
+    adminPage === 'diagnostics' ? Array.isArray(d.admin.diagnostics) :
+    adminPage === 'events' ? Array.isArray(d.admin.eventRecords) : Array.isArray(d.admin.settings));
+  if (ready) app((V[S.tab] || memberView)(d));
+  else {
+    app('<div class="card loading" role="status">' + (ADMIN_PAGE_ERROR ?
+      esc(ADMIN_PAGE_ERROR.message) + ' <button class="linkish" id="admin-page-retry">Try again</button>' : 'Loading ' + esc(adminPage) + '…') + '</div>');
+    if (!ADMIN_PAGE_PENDING && !ADMIN_PAGE_ERROR) {
+      ADMIN_PAGE_PENDING = { data: d, page: adminPage };
+      call('webAdminPage', S.token, adminPage).then(function (r) {
+        if (ADMIN_PAGE_PENDING && ADMIN_PAGE_PENDING.data === d && ADMIN_PAGE_PENDING.page === adminPage) ADMIN_PAGE_PENDING = null;
+        if (S.data !== d) return;
+        if (!r || !r.ok) {
+          if (r && r.signedOut) { S.token = null; keep('start_token', null); showSignIn('Please sign in again.'); return; }
+          if (S.tab === adminPage) ADMIN_PAGE_ERROR = { page: adminPage, message: (r && r.msg) || 'Could not load this page.' };
+        } else {
+          ADMIN_PAGE_ERROR = '';
+          Object.keys(r).forEach(function (key) { if (key === 'calendarEvents') d.calendarEvents = r[key];
+            else if (key !== 'ok') d.admin[key] = r[key]; });
+        }
+        draw();
+      }).catch(function () {
+        if (ADMIN_PAGE_PENDING && ADMIN_PAGE_PENDING.data === d && ADMIN_PAGE_PENDING.page === adminPage) ADMIN_PAGE_PENDING = null;
+        if (S.data !== d) return;
+        if (S.tab === adminPage) ADMIN_PAGE_ERROR = { page: adminPage, message: 'Could not reach START.' };
+        draw();
+      });
+    }
+    var retry = $('admin-page-retry');
+    if (retry) retry.onclick = function () { ADMIN_PAGE_ERROR = ''; draw(); };
+  }
   [].forEach.call(document.querySelectorAll('[data-calnav]'),function(b){b.onclick=function(){
     var k=b.getAttribute('data-calnav'), now=new Date();
     if(k==='today'){ START_CAL_MONTH=new Date(now.getFullYear(),now.getMonth(),1).getTime(); START_CAL_DAY=null; }
@@ -1770,6 +2067,13 @@ function draw() {
     draw();
   };});
   [].forEach.call(document.querySelectorAll('[data-calday]'),function(b){b.onclick=function(){START_CAL_DAY=b.getAttribute('data-calday');draw();};});
+  wireOutreach();
+  [].forEach.call(document.querySelectorAll('[data-event-edit]'), function(b) { b.onclick = function() {
+    openEventEditor(Number(b.getAttribute('data-event-edit')));
+  }; });
+  if ($('diag-refresh')) $('diag-refresh').onclick = function() {
+    delete S.data.admin.diagnostics; draw();
+  };
 
   [].forEach.call(document.querySelectorAll('[data-act]'), function (b) { b.onclick = function () { runAction(b.getAttribute('data-act')); }; });
   viewAsWire();
@@ -1777,7 +2081,7 @@ function draw() {
     if (S.viewAs) return;
     var status = b.getAttribute('data-scholar-status'), email = b.getAttribute('data-email'), row = Number(b.getAttribute('data-row'));
     var finish = function () { b.disabled = true; call('webAdminAction', S.token, 'scholar-status', { row:row, email:email, status:status }).then(function (r) {
-      if (r && r.ok) load(true); else { b.disabled = false; alert((r && r.msg) || 'Could not update the scholar.'); }
+      if (r && r.ok) refreshAdminPage('scholars', r.msg); else { b.disabled = false; alert((r && r.msg) || 'Could not update the scholar.'); }
     }).catch(function () { b.disabled = false; alert('Could not connect to START. Try again.'); }); };
     if (status === 'Suspended') askSure('Suspend scholar?', 'This ends their active logins and prevents access until reactivated. Their records and check-ins are kept.', finish, 'Suspend scholar');
     else askSure('Reactivate scholar?', 'This restores access. The scholar can sign in again.', finish, 'Reactivate scholar');
@@ -1792,13 +2096,38 @@ function draw() {
   [].forEach.call(document.querySelectorAll('[data-scholar-edit]'), function (b) {
     b.onclick = function () { openScholarEditor(Number(b.getAttribute('data-scholar-edit'))); };
   });
-  if (rrSearch) rrFilter();
+  [].forEach.call(document.querySelectorAll('[data-school-edit]'), function (b) {
+    b.onclick = function () { openSchoolEditor(Number(b.getAttribute('data-school-edit'))); };
+  });
+  var schoolImport=$('school-import');if(schoolImport)schoolImport.onclick=function(){
+    askSure('Load region schools?', 'This adds the ready-made school list and refreshes its public school details. Existing Campus Lead assignments stay in place.', function(){
+      schoolImport.disabled=true;
+      call('webAdminAction',S.token,'school-import',{}).then(function(r){
+        if(!r||!r.ok){schoolImport.disabled=false;banner((r&&r.msg)||'Could not load schools.','warn');return;}
+        refreshAdminPage('schools',r.msg||'Schools loaded.');
+      }).catch(function(){schoolImport.disabled=false;banner('Could not reach START. Try again.','warn');});
+    },'Load schools');
+  };
+  [].forEach.call(document.querySelectorAll('[data-setting-save]'), function (b) {
+    b.onclick = function () { saveSetting(b); };
+  });
+  if (rrSearch) wireRoster();
+  [].forEach.call(document.querySelectorAll('[data-history-more]'), function(b) { b.onclick = function() {
+    var kind = b.getAttribute('data-history-more'), list = S.data.admin.joinHistory || [];
+    var count = list.filter(function(j) { return kind === 'Approved' ? /^Added/.test(j.status) : /^Declined/.test(j.status); }).length;
+    b.disabled = true; b.textContent = 'Loading...';
+    call('webJoinHistory', S.token, kind, count).then(function(r) {
+      if (!r || !r.ok) { b.disabled = false; b.textContent = 'Try again'; return; }
+      S.data.admin.joinHistory = list.concat(r.rows); S.data.admin.joinHistoryTotal[kind] = r.total; draw();
+      var history = document.querySelector('.jhistory'); if (history) history.scrollIntoView({ block: 'start' });
+    }).catch(function() { b.disabled = false; b.textContent = 'Try again'; });
+  }; });
   [].forEach.call(document.querySelectorAll('[data-auto]'), function (b) { b.onclick = function () {
     if (S.viewAs) return;
     var on = b.getAttribute('data-auto') === 'on';
     var go = function () { b.disabled = true; call('webAdminAction', S.token, 'auto-approve', on ? 'on' : 'off').then(function (r) {
-      $('joinmsg').textContent = (r && r.msg) || 'Could not change auto-approve. Try again.'; if (r && r.ok) setTimeout(function () { load(true); }, 700); else b.disabled = false; }).catch(function () { b.disabled = false; $('joinmsg').textContent = 'Could not reach START. Try again.'; }); };
-    if (on) askSure('Turn on auto-approve?', 'Only requests matching one active old masterlist record by name, school, program, and award year will be added automatically. If the record has an email, it must match too. The scholar confirms their email before setting a password.', go);
+      $('joinmsg').textContent = (r && r.msg) || 'Could not change auto-approve. Try again.'; if (r && r.ok) { S.data.admin.autoApprove = on; refreshAdminPage('scholars'); } else b.disabled = false; }).catch(function () { b.disabled = false; $('joinmsg').textContent = 'Could not reach START. Try again.'; }); };
+    if (on) askSure('Turn on auto-approve?', 'Every valid sign-up from a listed school will be added automatically, including scholars not on the old masterlist. Existing record conflicts still need review. Each scholar confirms their email before setting a password.', go);
     else go();
   }; });
   [].forEach.call(document.querySelectorAll('[data-jask]'), function (b) { b.onclick = function () { var box = $('jask' + b.getAttribute('data-jask')); box.style.display = box.style.display ? '' : 'none'; if (!box.style.display) box.querySelector('input').focus(); }; });
@@ -1809,18 +2138,33 @@ function draw() {
     if (S.viewAs) { $('joinmsg').textContent = 'Preview only.'; return; }
     b.disabled = true; $('joinmsg').textContent = 'Working…';
     call('webAdminAction', S.token, act, arg).then(function (r) {
-      $('joinmsg').textContent = (r && r.msg) || 'Done'; if (r && r.ok) setTimeout(function () { load(true); }, 900); else b.disabled = false;
+      $('joinmsg').textContent = (r && r.msg) || 'Done'; if (r && r.ok) refreshAdminPage('scholars', r.msg); else b.disabled = false;
     }).catch(function () { b.disabled = false; $('joinmsg').textContent = 'Could not reach START. Try again.'; });
   }; });
   [].forEach.call(document.querySelectorAll('.tab'), function (b) {
-    b.onclick = function () { S.tab = b.getAttribute('data-t'); keep('start_tab', S.tab); draw(); window.scrollTo(0, 0); };
+    b.onclick = function () { S.tab = b.getAttribute('data-t'); keep('start_tab', S.tab);
+      if (S.tab === 'admin' && ADMIN_OVERVIEW_DIRTY) load(true); else draw(); window.scrollTo(0, 0); };
   });
   [].forEach.call(document.querySelectorAll('[data-copy]'), function (b) { b.onclick = function () { copyText(b); }; });
   [].forEach.call(document.querySelectorAll('[data-school]'), function (b) {
     b.onclick = function () { S.school = Number(b.getAttribute('data-school')); draw(); };
   });
   [].forEach.call(document.querySelectorAll('[data-checkin]'), function (b) { b.onclick = startCheckin; });
-  [].forEach.call(document.querySelectorAll('[data-go]'), function (b) { b.onclick = function (e) { e.preventDefault(); S.tab = b.getAttribute('data-go'); keep('start_tab', S.tab); draw(); window.scrollTo(0, 0); }; });
+  [].forEach.call(document.querySelectorAll('[data-daily]'), function (b) { b.onclick = openDaily; });
+  [].forEach.call(document.querySelectorAll('[data-contact]'), function (b) { b.onclick = function () { b.disabled = true; leadAct('contacted', { email: b.getAttribute('data-contact'), kind: b.getAttribute('data-kind') }); }; });
+  [].forEach.call(document.querySelectorAll('[data-jcheck]'), function (b) { b.onclick = function () {
+    var yes = b.getAttribute('data-jcheck') === 'yes', row = Number(b.getAttribute('data-row'));
+    if (yes) { leadAct('join-check', { row: row, value: 'yes' }); return; }
+    askSure('Not from your school?', 'Your Regional Representative will see this before deciding.', function () { leadAct('join-check', { row: row, value: 'no' }); }, 'Send');
+  }; });
+  [].forEach.call(document.querySelectorAll('[data-attend]'), function (b) { b.onclick = function () {
+    var s = S.data.lead[Math.min(S.school, S.data.lead.length - 1)]; openAttendance(s, s.attend[Number(b.getAttribute('data-attend'))]); }; });
+  if ($('lnotesave')) $('lnotesave').onclick = function () { leadAct('note', { text: $('lnote').value }); };
+  if ($('lnoteclear')) $('lnoteclear').onclick = function () { leadAct('note', { text: '' }); };
+  if ($('redeem')) $('redeem').onclick = showRewards;
+  if ($('pointshelp')) $('pointshelp').onclick = showPointsHelp;
+  [].forEach.call(document.querySelectorAll('[data-go]'), function (b) { b.onclick = function (e) { e.preventDefault(); S.tab = b.getAttribute('data-go'); keep('start_tab', S.tab);
+    if (S.tab === 'admin' && ADMIN_OVERVIEW_DIRTY) load(true); else draw(); window.scrollTo(0, 0); }; });
 }
 function copyText(b) {
   var text = $(b.getAttribute('data-copy')).textContent;
@@ -1837,6 +2181,7 @@ function copyText(b) {
 var ICONS = {
   home: '<path class="f" d="M9 21v-6h6v6"/><path d="M3 11l9-7 9 7"/><path d="M5 10v11h14V10"/><path d="M9 21v-6h6v6"/>',
   school: '<path class="b" d="M4 10h16v10H4z"/><path d="M2 10l10-6 10 6"/><path d="M4 10v10h16V10"/><path d="M9 20v-5h6v5"/><circle class="f" cx="12" cy="9" r="1.6"/>',
+  gear: '<circle class="f" cx="12" cy="12" r="3"/><path d="M10 2h4l.6 2.4 1.7.8 2.2-1.2 2.8 2.8-1.2 2.2.8 1.7L23 11v3l-2.4.6-.8 1.7 1.2 2.2-2.8 2.8-2.2-1.2-1.7.8L14 23h-4l-.6-2.4-1.7-.8-2.2 1.2-2.8-2.8 1.2-2.2-.8-1.7L1 14v-3l2.4-.6.8-1.7L3 6.5l2.8-2.8L8 4.9l1.7-.8z"/>',
   region: '<path class="f" d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
   events: '<rect class="b" x="3" y="5" width="18" height="5" rx="1"/><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/><circle class="f" cx="15.5" cy="15.5" r="2"/>',
   calplus: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18M12 13v5M9.5 15.5h5"/>',
@@ -1881,7 +2226,7 @@ var ICONS = {
   external: '<path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/>'
 };
 var MATERIAL_NAMES = {
-  home:'home', school:'school', region:'location_on', events:'calendar_month', calplus:'event',
+  home:'home', school:'school', gear:'settings', region:'location_on', events:'calendar_month', calplus:'event',
   plus:'add', refresh:'refresh', close:'close', pen:'edit', check:'check_circle', clock:'schedule',
   hourglass:'hourglass_empty', flame:'local_fire_department', smile:'sentiment_satisfied',
   wavy:'sentiment_dissatisfied', lifebuoy:'support', trend:'trending_up', gauge:'speed',
@@ -1945,11 +2290,10 @@ function postcard(cls) {
   return '<div class="postcard ' + (cls || '') + '">' + (STAMP ? '<span class="stamp">' + schoolBadge(STAMP, 46) + '</span>' : '') + scene() + (PLACE && PLACE.name ? '<span class="cap">' + esc(PLACE.name) + '</span>' : '') + '</div>';
 }
 
-/* ---------- START mark used as the friendly guide in cards and check-ins ---------- */
-function startLogo(size) {
+// The downloaded START-DOST logo is used as the guide and brand image.
+function startLogo(size, mood) {
   size = size || 48;
-  return '<span class="start-logo" style="width:' + size + 'px;height:' + size + 'px" aria-hidden="true">' +
-    (smark(Math.round(size * .9)) || '<b>S</b>') + '</span>';
+  return '<span class="start-logo star-' + (mood || 'idle') + '" style="width:' + size + 'px;height:' + size + 'px" aria-hidden="true">' + smark(size) + '</span>';
 }
 
 /* ---------- game pieces ---------- */
@@ -1973,11 +2317,60 @@ function noteCard(d) {
 }
 
 /* ---------- Journey: this term's weeks as a path, then the Davao postcards ---------- */
+function todayKeyOf(days) { var t = (days || []).filter(function (x) { return x.today; })[0]; return t ? t.key : ''; }
+function showRewards() {
+  var box = document.createElement('div'); box.className = 'overlay';
+  box.innerHTML = '<div class="sure">' + startLogo(72, 'win') + '<h2>Rewards are coming soon</h2><p class="muted">Keep playing every day and checking in each week. Your XP is saved, and you will be able to redeem it for START rewards once they are ready.</p>' +
+    '<div class="actions" style="justify-content:center"><button class="pillbtn" id="rok">Got it</button></div></div>';
+  document.body.appendChild(box);
+  $('rok').onclick = function () { box.remove(); };
+  box.onclick = function (e) { if (e.target === box) box.remove(); };
+}
+/* ---------- the daily brain break: today only, opening it starts it, the tracker checks the answer ---------- */
+var GAME_NAMES = { scramble: 'Word scramble', odd: 'Odd one out', pattern: 'Number pattern' };
+function openDaily() {
+  if (S.viewAs) { banner('Preview only: brain breaks are not played for ' + S.viewAs.label.split(' · ')[0] + '.'); return; }
+  var t = (S.data.member && S.data.member.game && S.data.member.game.days || []).filter(function (x) { return x.today; })[0];
+  call('webDailyStart', S.token).then(function (r) {
+    if (r && r.signedOut) { signOut(); return; }
+    if (r && r.checkin) { startCheckin(); return; }
+    if (!r || !r.ok) { banner((r && r.msg) || 'Could not open today\'s game. Try again.', 'warn'); return; }
+    if (r.over || !r.game) { banner(r.msg || 'Today\'s brain break is used. A new one opens tomorrow.'); load(true); return; }
+    CK = { daily: true, day: r.day, dayLabel: t ? t.label + ', ' + t.date : 'Today', spec: {}, i: 0, a: {}, g: miniStart(r.game), steps: [{ k: 'mini', type: 'mini' }] };
+    var el = $('lesson'); if (el) el.remove();
+    el = document.createElement('div'); el.className = 'lesson'; el.id = 'lesson';
+    el.innerHTML = '<div class="lcard"><div class="lt"><button class="x" id="ckx" title="Leave" aria-label="Leave">' + ico('close', 18) + '</button><div class="prog"><i id="ckbar"><span class="ride">' + startLogo(30) + '</span></i></div></div>' +
+      '<div id="ckh"></div><div class="lq" id="ckq"></div><div class="lf solo"><div class="msg" id="ckmsg"></div>' +
+      '<button class="pillbtn" id="ckback" style="display:none">Back</button><button class="pillbtn" id="ckgo">Continue</button></div></div>';
+    document.body.appendChild(el); document.body.style.overflow = 'hidden';
+    $('ckx').onclick = function () {
+      if (CK.g.done) { closeDaily(); return; }
+      askSure('Leave today\'s game?', 'It counts as played: you get 0 XP and cannot come back to it today.', function () { dailyQuit(); closeDaily(); }, 'Leave');
+    };
+    $('ckgo').onclick = forward;
+    step();
+  }).catch(function () { banner('Could not reach START. Try again.', 'warn'); });
+}
+function dailyQuit() {
+  if (!CK || !CK.daily || CK.g.done) return;
+  miniClockStop(CK.g); CK.g.done = true; CK.g.skipped = true; CK.g.won = 0; CK.a.mini = { id: CK.g.id, skip: true };
+  call('webDailyFinish', S.token, { day: CK.day, id: CK.g.id, skip: true }).then(function () { load(true); }).catch(function () {});
+}
+function dailySend() {
+  if (!CK || !CK.daily || CK.sent) return;
+  CK.sent = true; CK.err = '';
+  call('webDailyFinish', S.token, Object.assign({ day: CK.day }, CK.a.mini)).then(function (r) {
+    if (!CK || !CK.daily) return;
+    if (r && r.signedOut) { closeCheckin(); signOut(); return; }
+    if (!r || !r.ok) { CK.sent = false; CK.err = (r && r.msg) || 'Not saved yet.'; step(); return; }
+    CK.saved = true; if (r.member) S.data.member = r.member; step();
+  }).catch(function () { if (!CK) return; CK.sent = false; CK.err = 'Could not reach START. Your result is still here: try again.'; step(); });
+}
+function closeDaily() { closeCheckin(); S.tab = 'journey'; draw(); }
 function journeyView(d) {
   var m = d.member, g = m && m.game;
   if (!g) return page('Journey', '', '<div class="card">' + startLogo(60) + '<p class="muted">Your journey starts with your first check-in.</p></div>');
-  var L = g.level, span = L.to ? L.to - L.from : 0, inLv = span ? Math.max(0, g.xp - L.from) : 0, pct = span ? Math.min(100, Math.round(100 * inLv / span)) : 100;
-  var weeks = g.journey, n = weeks.length, doneN = weeks.filter(function (w) { return /done|late|saved/.test(w.state); }).length;
+  var L = g.level, span = L.to ? L.to - L.from : 0, inLv = span ? Math.min(span, Math.max(0, g.xp - L.from)) : 0, pct = span ? Math.min(100, Math.round(100 * inLv / span)) : 100;
   // the quest card: level, XP to the next level, streak and the streak saver
   var quest = '<div class="quest"><div class="qlv"><div class="qhex"><span>' + L.n + '</span></div><small>LEVEL</small></div>' +
     '<div class="qmid"><b>' + esc(L.title) + '</b><div class="qbar"><i style="width:' + pct + '%"></i></div>' +
@@ -1985,59 +2378,122 @@ function journeyView(d) {
     '<div class="qfire">' + ico('flame', 30) + '<b>' + g.streak + '</b><small>week streak</small></div>' +
     (g.saver.available || g.saver.used ? '<div class="qsaver' + (g.saver.used ? ' used' : '') + '">' + ico('shield', 18) +
       (g.saver.used ? 'Streak saver used this term' : 'Streak saver ready: miss one week, keep your streak') + '</div>' : '') + '</div>';
-  // the road: weeks zig-zag down a winding path; the gold trail shows how far you got
-  // an even wave: every week the road swings the same amount, and the curve passes through each coin smoothly
-  var W = 320, rowH = 108, top = 70, amp = 72, extra = 0;
-  var offs = weeks.map(function (w, i) { return Math.round(amp * Math.sin(i * Math.PI / 2)); });   // centre, right, centre, left…
-  var pts = weeks.map(function (w, i) { if (w.state === 'now' && i) extra = 34; return [W / 2 + offs[i], top + i * rowH + extra]; });   // room for "Check in"
-  var H = top + (n - 1) * rowH + extra + 110;
-  // Catmull-Rom through the coins -> Bezier curves: no corners at the coins
-  var curve = function (P) {
-    if (P.length < 2) return P.length ? 'M ' + P[0][0] + ' ' + P[0][1] : '';
-    var dd = 'M ' + P[0][0] + ' ' + P[0][1];
-    for (var i = 0; i < P.length - 1; i++) {
-      var p0 = P[i - 1] || P[i], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2] || p2;
-      dd += ' C ' + (p1[0] + (p2[0] - p0[0]) / 6).toFixed(1) + ' ' + (p1[1] + (p2[1] - p0[1]) / 6).toFixed(1) + ', ' +
-            (p2[0] - (p3[0] - p1[0]) / 6).toFixed(1) + ' ' + (p2[1] - (p3[1] - p1[1]) / 6).toFixed(1) + ', ' + p2[0] + ' ' + p2[1];
-    }
-    return dd;
+  // the day map: chunky isometric tiles up a staircase path (newest at the top); check-in days carry a flag; no going back
+  var days = (g.days || []).slice().reverse(), played = (g.days || []).filter(function (x) { return x.state === 'done'; }).length;
+  // one isometric grid for everything: cell = 50 x 25 (2:1). Day tiles = 2 x 2 cells on grid points; the path runs along
+  // the grid axes only (exact isometric angle); background squares are random grid cells (the same on every visit)
+  var CW = 50, CH = 25, TW = CW * 2, TH = CH * 2, D = 16, STEP = 6, W = 330, ox = 90, oy = 66;
+  var iso = function (gx, gy) { return [ox + (gx - gy) * CW / 2, oy + (gx + gy) * CH / 2]; };
+  var grid = [[0, 0]];
+  for (var gi = 1; gi < days.length; gi++) { var lp = grid[gi - 1], right = gi % 2 === 1; grid.push(right ? [lp[0] + STEP, lp[1]] : [lp[0], lp[1] + STEP]); }
+  var pos = grid.map(function (q) { return iso(q[0], q[1]); });
+  var H = (pos.length ? pos[pos.length - 1][1] : oy) + TH / 2 + D + 40;
+  var COL = { done: ['#FFDD00', '#E0B800', '#C9A300'], today: ['#0099FF', '#0077C8', '#005FA3'], missed: ['#EEF2F7', '#D3DBE6', '#BCC7D5'], locked: ['#FFFFFF', '#D6E4F5', '#C2D5EC'] };
+  var NAVY = ['#23365C', '#12203A', '#0B1526'];
+  var dia = function (x, y, w, h) { return (x) + ',' + (y - h / 2) + ' ' + (x + w / 2) + ',' + y + ' ' + x + ',' + (y + h / 2) + ' ' + (x - w / 2) + ',' + y; };
+  // a solid isometric tile: the same rounded edge on the top and on the sides (the sides are the top shape stacked downward),
+  // lit from the top left: top lightest, left side medium, right side darkest (shade split at the front corner)
+  var SHADE = { done: 'gDone', today: 'gToday', missed: 'gMissed', locked: 'gLocked', navy: 'gNavy' };
+  var defs = '<defs>' + [['gDone', COL.done], ['gToday', COL.today], ['gMissed', COL.missed], ['gLocked', COL.locked], ['gNavy', NAVY]].map(function (q) {
+    return '<linearGradient id="' + q[0] + '" x1="0" y1="0" x2="1" y2="0"><stop offset=".5" stop-color="' + q[1][1] + '"/><stop offset=".5" stop-color="' + q[1][2] + '"/></linearGradient>'; }).join('') + '</defs>';
+  var RND = ' stroke-linejoin="round" stroke-width="10"';
+  var tile = function (x, y, c, cls, st, navy) {
+    var g = navy ? SHADE.navy : SHADE[st] || SHADE.locked, side = '';
+    for (var k = D; k > 0; k -= 2) side += '<polygon points="' + dia(x, y + k, TW, TH) + '" fill="url(#' + g + ')" stroke="url(#' + g + ')"' + RND + '/>';
+    var mark = st === 'missed' ? '<polygon points="' + dia(x, y, TW * .7, TH * .7) + '" fill="none" stroke="#A9B5C6" stroke-width="2" stroke-dasharray="5 5" stroke-linejoin="round"/>'
+      : st === 'today' ? '<polygon points="' + dia(x, y, TW * .78, TH * .78) + '" fill="none" stroke="#7CCBFF" stroke-width="2.5" stroke-linejoin="round" opacity=".9"/>' : '';
+    return '<g class="' + (cls || '') + '"><polygon points="' + dia(x, y + D + 6, TW * .96, TH * .62) + '" fill="#12203A" opacity=".07"/>' + side +
+      '<polygon points="' + dia(x, y, TW, TH) + '" fill="' + c[0] + '" stroke="' + c[0] + '"' + RND + '/>' + mark + '</g>';
   };
-  var road = curve(pts);
-  var lastLit = -1; weeks.forEach(function (w, i) { if (w.state !== 'next') lastLit = i; });
-  var trail = lastLit > 0 ? curve(pts.slice(0, lastLit + 1)) : '';
-  var ICON = { done: 'check', late: 'clock', saved: 'shield', missed: 'close', next: 'lock' };
-  var nodes = weeks.map(function (w, i) {
-    var p = pts[i], st = w.state === 'next' ? 'soon' : w.state, side = offs[i] > 0 || (offs[i] === 0 && (offs[i + 1] || 0) > 0 ? false : offs[i] === 0 && i % 4 === 2) ? 'l' : (offs[i] === 0 ? 'l' : 'r');
-    var face = w.state === 'now' ? startLogo(54) : ico(ICON[w.state] || 'check', 32);
-    var note = w.state === 'saved' ? 'Streak saver' : w.state === 'late' ? 'Late' : w.state === 'missed' ? 'Missed' : w.state === 'next' ? 'Coming up' : (w.place || '');
-    return '<div class="wk ' + st + '" style="left:' + p[0] + 'px;top:' + p[1] + 'px">' +
-      (w.state === 'now' ? '<span class="wtip">Check in · +' + (m.checkin && m.checkin.late ? 10 : 15) + ' XP</span>' : '') +
-      '<button class="coin"' + (w.state === 'now' ? ' data-checkin' : '') + ' aria-label="Week of ' + esc(w.label) + ': ' + esc(w.state) + '">' + face + '</button>' +
-      '<div class="wl ' + side + '"><b>' + esc(w.label) + '</b>' + (note ? '<span>' + esc(note) + '</span>' : '') + '</div></div>';
-  }).join('');
-  var board = '<div class="unit"><div><small>THIS TERM</small><b>' + doneN + ' of ' + n + ' weeks checked in</b></div>' +
-      '<div class="ubar"><i style="width:' + (n ? Math.round(100 * doneN / n) : 0) + '%"></i></div></div>' +
-    '<div class="board"><div class="road" style="width:' + W + 'px;height:' + H + 'px">' +
-      '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">' +
-        '<path d="' + road + '" fill="none" stroke="#fff" stroke-width="26" stroke-linecap="round" opacity=".9"/>' +
-        '<path d="' + road + '" fill="none" stroke="#D6E4F5" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 14"/>' +
-        (trail ? '<path class="trail" d="' + trail + '" fill="none" stroke="#FFDD00" stroke-width="12" stroke-linecap="round"/>' : '') +
-      '</svg>' + nodes + '</div></div>';
+  // background: random cells of the same grid, kept clear of the tiles and the path
+  var hash = function (a, b) { var h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+  var nearPath = function (x, y) {
+    for (var k = 0; k < pos.length; k++) {
+      if (Math.abs(pos[k][0] - x) < TW * .62 && Math.abs(pos[k][1] - y) < TH * .9) return true;
+      var n2 = pos[k + 1]; if (!n2) continue;
+      var ax = pos[k][0], ay = pos[k][1], vx = n2[0] - ax, vy = n2[1] - ay, t = Math.max(0, Math.min(1, ((x - ax) * vx + (y - ay) * vy) / (vx * vx + vy * vy)));
+      if (Math.hypot(ax + vx * t - x, ay + vy * t - y) < 26) return true;
+    }
+    return false;
+  };
+  var floor = '';
+  for (var fx = -14; fx < 40; fx++) for (var fy = -14; fy < 40; fy++) {
+    var c0 = iso(fx + .5, fy + .5);
+    if (c0[0] < 12 || c0[0] > W - 12 || c0[1] < 14 || c0[1] > H - 10) continue;
+    var rnd = hash(fx + 100, fy + 100);
+    if (rnd > .2 || nearPath(c0[0], c0[1])) continue;
+    var tone = c0[1] < H * .45 ? '#D9EBFB' : c0[1] < H * .7 ? '#EAF3FC' : '#FFF0B8';
+    floor += '<polygon points="' + dia(c0[0], c0[1], CW * .84, CH * .84) + '" fill="' + tone + '" opacity="' + (.55 + rnd * 2).toFixed(2) + '"/>';
+  }
+  var road = pos.map(function (p, i) { return (i ? 'L' : 'M') + p[0] + ' ' + p[1]; }).join(' ');
+  var svgTiles = '', pins = '';
+  days.forEach(function (x, i) {
+    var p = pos[i], c = x.kind === 'checkin' && (x.state === 'done' || x.state === 'today') ? NAVY : COL[x.state] || COL.locked;
+    svgTiles += tile(p[0], p[1], c, 'dtl s-' + x.state, x.state, c === NAVY);
+    if (x.kind === 'checkin') svgTiles += '<g class="dflag"><path d="M' + (p[0] + 30) + ' ' + (p[1] + 4) + ' v-34" stroke="#12203A" stroke-width="3" stroke-linecap="round"/>' +
+      '<path d="M' + (p[0] + 31) + ' ' + (p[1] - 30) + ' l18 6 l-18 6z" fill="#FFDD00" stroke="#12203A" stroke-width="2" stroke-linejoin="round"/>' +
+      '<polygon points="' + dia(p[0] + 30, p[1] + 4, 16, 8) + '" fill="#12203A" opacity=".25"/></g>';
+    var star3 = ''; for (var k = 0; k < 3; k++) star3 += '<i class="' + (k < x.stars ? 'on' : '') + '">' + ico('star', 12) + '</i>';
+    var pin = x.state === 'locked' ? '<span class="dpin lock">' + ico('lock', 15) + '</span>'
+      : '<span class="dpin' + (x.state === 'missed' ? ' grey' : x.state === 'today' ? ' now' : '') + '"><b>' + esc(x.label) + '</b>' + esc(x.date) + '</span>';
+    var on = x.state === 'done' ? '<span class="dst">' + star3 + '</span>'
+      : x.state === 'today' ? '<span class="dgo">' + (x.kind === 'checkin' ? 'Check in' : 'Play') + '</span>'
+      : x.state === 'missed' ? '<span class="dmiss">Missed</span>' : '';
+    var act = x.state === 'today' ? (x.kind === 'checkin' ? ' data-checkin' : ' data-daily') : '';
+    pins += '<div class="dt s-' + x.state + ' k-' + x.kind + '" style="left:' + p[0] + 'px;top:' + p[1] + 'px">' + pin + on +
+      (x.state === 'today' ? '<span class="dme">' + startLogo(44) + '</span><button class="dhit"' + act + ' aria-label="' + esc(x.label + ' ' + x.date + ': ' + (x.kind === 'checkin' ? 'check in' : 'play today\'s brain break') + ', up to ' + x.max + ' XP') + '"></button>' : '') +
+      (x.state === 'done' ? '<span class="dxp">+' + x.xp + '</span>' : '') + '</div>';
+  });
+  var rewards = '<div class="rewards"><span class="rbal">' + ico('star', 20) + '<b>' + g.xp + '</b> XP</span><span class="rtxt">Your XP will be redeemable for START rewards.</span>' +
+    '<button class="pillbtn sm" id="redeem">Redeem <em>Soon</em></button><button class="bblink" id="pointshelp">How points work</button></div>';
+  var board = rewards + '<div class="unit"><div><small>' + (g.dayStreak ? ico('flame', 13) + ' ' + g.dayStreak + '-DAY STREAK' : 'LAST TWO WEEKS') + '</small><b>' + played + ' day' + (played === 1 ? '' : 's') + ' played</b></div>' +
+      '<div class="ubar"><i style="width:' + Math.round(100 * played / Math.max(1, (g.days || []).filter(function (x) { return x.state !== 'locked'; }).length)) + '%"></i></div></div>' +
+    '<div class="board"><div class="dmap" style="width:' + W + 'px;height:' + H + 'px">' +
+      '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">' + defs + floor +
+      '<path d="' + road + '" fill="none" stroke="#D2E3F5" stroke-width="18" stroke-linejoin="miter" stroke-linecap="butt"/>' +
+      '<path d="' + road + '" fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="8 10"/>' + svgTiles + '</svg>' + pins + '</div></div>';
   var cards = g.allCards ? '<div class="sech">Davao postcards <a>' + g.nCards + ' / ' + g.allCards + '</a></div><div class="pcgrid" id="pcgrid">' +
     (S.cards ? pcGrid(S.cards) : '<div class="muted" style="padding:10px 4px">Loading postcards…</div>') + '</div>' : '';
   if (g.allCards && !S.cards) setTimeout(loadCards, 30);
+  else if (g.allCards) setTimeout(loadVisiblePostcards, 30);
+  setTimeout(function () { var t = document.querySelector('.dt.s-today') || document.querySelector('.dt.s-done'); if (t && S.tab === 'journey' && !S.mapSeen) { S.mapSeen = true; try { t.scrollIntoView({ block: 'center' }); } catch (e) {} } }, 60);
   return page('Your journey', '', quest + board + cards);
 }
 function pcGrid(cards) {
+  S.cardSources = S.cardSources || {};
   return cards.map(function (c) {
-    return '<div class="pc ' + (c.got ? 'got' : 'locked') + '">' + (c.got ? '<img src="' + esc(c.src) + '" alt="">' : '<div class="lockbg">' + ico('lock', 30) + '</div>') +
+    return '<div class="pc ' + (c.got ? 'got' : 'locked') + '"' + (c.got ? ' data-postcard="' + c.index + '"' : '') + '>' +
+      (c.got ? (S.cardSources[c.index] ? '<img src="' + esc(S.cardSources[c.index]) + '" loading="lazy" alt="">' : '<div class="lockbg"></div>') : '<div class="lockbg">' + ico('lock', 30) + '</div>') +
       '<span>' + esc(c.got ? c.name : 'Check in to unlock') + '</span></div>';
   }).join('');
+}
+function loadVisiblePostcards() {
+  var cards = document.querySelectorAll('[data-postcard]');
+  if (!cards.length) return;
+  S.cardSources = S.cardSources || {}; S.cardLoading = S.cardLoading || {};
+  var fetchOne = function(el) {
+    var i = Number(el.getAttribute('data-postcard'));
+    if (S.cardSources[i] || S.cardLoading[i]) return;
+    S.cardLoading[i] = true;
+    call('webPostcardImage', S.token, i, S.viewAs && S.viewAs.role === 'member' ? S.viewAs.key : '').then(function(r) {
+      delete S.cardLoading[i]; if (!r || !r.ok || !r.src) return;
+      S.cardSources[i] = r.src;
+      [].forEach.call(document.querySelectorAll('[data-postcard="' + i + '"]'), function(node) {
+        var holder = node.querySelector('.lockbg'); if (holder) holder.outerHTML = '<img src="' + esc(r.src) + '" loading="lazy" alt="">';
+      });
+    }).catch(function() { delete S.cardLoading[i]; });
+  };
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function(entries) { entries.forEach(function(entry) {
+      if (entry.isIntersecting) { observer.unobserve(entry.target); fetchOne(entry.target); }
+    }); }, { rootMargin: '300px' });
+    [].forEach.call(cards, function(el) { observer.observe(el); });
+  } else [].forEach.call(cards, fetchOne);
 }
 function loadCards() {
   call('webPostcards', S.token, S.viewAs && S.viewAs.role === 'member' ? S.viewAs.key : '').then(function (r) {
     if (!r || !r.ok) return;
-    S.cards = r.cards; var el = $('pcgrid'); if (el) el.innerHTML = pcGrid(r.cards);
+    S.cards = r.cards; var el = $('pcgrid'); if (el) { el.innerHTML = pcGrid(r.cards); loadVisiblePostcards(); }
   }).catch(function () {});
 }
 
@@ -2062,7 +2518,8 @@ function ranksView(d) {
       '<div class="rank-detail"><div class="rank-school">' + schoolBadge(s.name, 28) + '<b class="rank-school-name">' + esc(s.name) + (s.me ? '<em>Your school</em>' : '') + '</b></div>' +
       (s.small ? '<small>Needs 3 members to enter the rankings</small>' : '<div class="rank-progress" role="meter" aria-label="' + esc(s.name) + ' check-in rate" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + rate + '"><i style="width:' + rate + '%"></i></div>') + '</div>' +
       '<strong class="rank-metrics">' + (s.small ? s.answered + '/' + s.members : s.rate + '%') + '</strong>' +
-      '<span class="rank-streak" title="' + s.streak + ' week streak">' + ico('flame', 18) + s.streak + '</span></li>';
+      '<span class="rank-streak" title="' + s.streak + ' week streak">' + ico('flame', 18) + s.streak + '</span>' +
+      (s.stars ? '<span class="rank-stars" title="Brain-break stars this week">' + ico('star', 16) + s.stars + '</span>' : '') + '</li>';
   }).join('');
   var more = d.ranksHidden ? '<p class="muted sm rank-board-foot">' + d.ranksHidden + ' other school' + (d.ranksHidden === 1 ? '' : 's') + ' are hidden from this view. Keep checking in to move your school up.</p>' : '';
   var board = '<section class="card rank-board" aria-label="School standings">' +
@@ -2086,7 +2543,7 @@ function meView(d) {
   }).join('') + '</div>' : '';
   // only what the phone's bottom bar does not show (the sidebar already lists everything on a computer)
   var bar = barPref(d);
-  var more = views(d).filter(function (x) { return ['lead', 'admin', 'events'].indexOf(x.id) !== -1 && bar.indexOf(x.id) === -1; }).map(function (x) {
+  var more = views(d).filter(function (x) { return x.id !== 'me' && x.id !== 'home' && bar.indexOf(x.id) === -1; }).map(function (x) {
     return '<button class="linkrow" data-go="' + x.id + '">' + ico(x.ic, 24) + '<span>' + esc(x.label) + '</span>' + ico('arrow', 18) + '</button>'; }).join('');
   var rr = d.rrEmail && !d.admin ? '<a class="linkrow phoneonly" href="mailto:' + esc(d.rrEmail) + '">' + ico('mail', 20) + '<span>Message ' + esc(d.rr || 'your RR') + '</span>' + ico('arrow', 18) + '</a>' : '';
   var acct = rr + '<button class="linkrow" onclick="changePassword()">' + '<span class="me-action-icon">' + ico('key', 21) + '</span><span>Change password</span><span class="me-action-chevron">' + ico('arrow', 18) + '</span></button>' +
@@ -2099,14 +2556,14 @@ function meView(d) {
 // People who asked to join from the sign-in page: Add (fills in / adds their Scholars row) or Decline
 function joinCard(list, auto) {
   list = list || [];
-  var sw = '<button class="aaswitch" data-auto="' + (auto ? 'off' : 'on') + '" aria-pressed="' + !!auto + '" title="Auto-approve clear sign-ups">' +
+  var sw = '<button class="aaswitch" data-auto="' + (auto ? 'off' : 'on') + '" aria-pressed="' + !!auto + '" title="Auto-approve valid sign-ups">' +
     '<span class="sw"><i></i></span><span>Auto-approve ' + (auto ? 'ON' : 'OFF') + '</span></button>';
   var intro = auto
-    ? 'Requests with one exact active old masterlist match are added automatically. A recorded email must match. The requests below still need your review.'
+    ? 'Valid sign-ups from listed schools are added automatically, even without an old masterlist match. The requests below need your review.'
     : 'Review each new sign-up here, then approve, ask for details, or decline.';
   if (!list.length) return '<div class="card joinfirst none"><div class="joinhero"><div><h2>Join requests <span class="cnt">0</span></h2></div>' + sw + '</div>' +
     '<div class="joinempty"><b>No scholars are waiting right now.</b><span class="muted sm">' +
-    (auto ? 'Auto-approve is on, so exact active old masterlist matches are added automatically. Requests that need review will still appear here.'
+    (auto ? 'Auto-approve is on, so valid sign-ups from listed schools are added automatically. Requests with record conflicts will still appear here.'
           : 'When a scholar requests to join START, the request will appear here for your decision.') +
     '</span></div><div class="qamsg" id="joinmsg"></div></div>';
   var schools = (S.data && S.data.admin && S.data.admin.scholarChoices && S.data.admin.scholarChoices.schools) || [];
@@ -2135,6 +2592,8 @@ function joinCard(list, auto) {
         (j.note ? '<div class="jnote"><b>Scholar note:</b> ' + esc(j.note) + '</div>' : '') +
         (/^Asked/.test(j.status) ? '<div class="plan">' + ico('mail', 14) + ' ' + esc(j.status) + (j.rrNote ? ': "' + esc(j.rrNote) + '"' : '') + '</div>' : '') +
         '<div class="plan">' + ico('info', 14) + ' ' + esc(j.plan) + '</div>' +
+        (j.leadCheck ? '<div class="plan leadchk ' + (j.leadCheck.value === 'yes' ? 'ok' : 'no') + '">' + ico(j.leadCheck.value === 'yes' ? 'check' : 'info', 14) + ' Campus Lead ' +
+          (j.leadCheck.value === 'yes' ? 'confirmed this scholar' : 'says they are not from this school') + ' · ' + esc(j.leadCheck.at) + '</div>' : '') +
         '<div class="jtools">' + (j.typed ? '<select data-jschool="' + j.row + '"><option value="">Match to a school…</option>' + schools.map(function (n) { return '<option>' + esc(n) + '</option>'; }).join('') + '</select>' : '') +
           '<button class="pillbtn sm" data-join="join-add" data-row="' + j.row + '">Approve</button>' +
           '<button class="pillbtn light sm" data-jask="' + j.row + '">Ask for details</button>' +
@@ -2143,8 +2602,9 @@ function joinCard(list, auto) {
     }).join('') + '</ul><p class="muted sm">Tip: check the ONSSE masterlist first. Requests marked “Not eligible” stay visible so you can still approve a real scholar if needed.</p><div class="qamsg" id="joinmsg"></div></div>';
 }
 // RR history: approved and declined requests remain visible after decisions.
-function joinHistoryCard(list) {
+function joinHistoryCard(list, totals) {
   list = list || [];
+  totals = totals || {};
   var approved = list.filter(function(j){return /^Added/.test(j.status);});
   var declined = list.filter(function(j){return /^Declined/.test(j.status);});
   var item = function(j) {
@@ -2152,8 +2612,10 @@ function joinHistoryCard(list) {
     return '<li class="jhistrow">' + schoolBadge(j.school || j.schoolLabel, 34) + '<div class="jhistbody"><div class="jhisttop"><b>' + esc(j.name) + '</b><span class="jhiststatus">' + esc(j.status) + '</span></div>' +
       '<div class="jhistmail">' + esc(j.email) + '</div><div class="jhistmeta">' + facts.map(esc).join(' · ') + '</div></div></li>';
   };
-  var pane = function(title, rows) { return '<section class="jhistgroup"><div class="jhisthead"><h3>' + title + '</h3><b class="jhistcount">' + rows.length + '</b></div>' +
-    (rows.length ? '<ul class="jhistlist">' + rows.map(item).join('') + '</ul>' : '<p class="muted sm jhistempty">No ' + title.toLowerCase() + ' requests yet.</p>') + '</section>'; };
+  var pane = function(title, rows) { var total = totals[title] == null ? rows.length : totals[title]; return '<section class="jhistgroup"><div class="jhisthead"><h3>' + title + '</h3><b class="jhistcount">' + total + '</b></div>' +
+    (rows.length ? '<ul class="jhistlist">' + rows.map(item).join('') + '</ul>' +
+      (total > rows.length ? '<button class="pillbtn light sm" data-history-more="' + title + '">Show more</button>' : '') :
+      '<p class="muted sm jhistempty">No ' + title.toLowerCase() + ' requests yet.</p>') + '</section>'; };
   return '<div class="card jhistory"><h2>Decision history</h2>' +
     (approved.length || declined.length ? '<div class="jhistorygroups">' + pane('Approved', approved) + pane('Declined', declined) + '</div>' :
       '<p class="muted sm jhistempty">Decisions will appear here after you review a join request.</p>') + '</div>';
@@ -2336,14 +2798,14 @@ function openViewAs(role, key) {
   call('webViewAs', S.token, role, key).then(function (d) {
     if (!d || !d.ok) { if ($('vamsg')) $('vamsg').textContent = (d && d.msg) || 'Could not open.'; return; }
     if (!S.real) S.real = { data: S.data, tab: S.tab };
-    S.viewAs = d.viewAs; S.data = d; S.cards = null;
+    S.viewAs = d.viewAs; S.data = d; S.cards = null; S.cardSources = {}; S.cardLoading = {};
     var v = views(d); S.tab = v[0].id;
     draw(); viewBanner(); try { window.scrollTo(0, 0); } catch (e) {}
   }).catch(function () { if ($('vamsg')) $('vamsg').textContent = 'Could not reach START. Try again.'; });
 }
 function exitViewAs() {
   if (!S.real) return;
-  S.data = S.real.data; S.tab = S.real.tab || 'admin'; S.real = null; S.viewAs = null; S.cards = null;
+  S.data = S.real.data; S.tab = S.real.tab || 'admin'; S.real = null; S.viewAs = null; S.cards = null; S.cardSources = {}; S.cardLoading = {};
   viewBanner(); draw(); try { window.scrollTo(0, 0); } catch (e) {}
 }
 function viewBanner() {
@@ -2410,15 +2872,11 @@ function goSwitch() {
 }
 
 /* ---------- page parts ---------- */
-// The START logo only (the middle mark of the logo picture), with "START" and the region beside it
+// The original START logo image, displayed whole without CSS cropping.
 function smark(h) {
-  if (MARK) return '<img class="smark" src="' + MARK + '" alt="START" style="height:' + h + 'px;width:auto">';
-  if (!PICS.logo) return '';
-  var s = h / 120;                                                    // logo picture: 375 x 120, START mark at x 149-225
-  return '<span class="smark" style="width:' + Math.round(76 * s) + 'px;height:' + h + 'px;background-image:url(' + esc(PICS.logo) + ');background-size:' +
-    Math.round(375 * s) + 'px ' + h + 'px;background-position:-' + Math.round(149 * s) + 'px 0"></span>';
+  return '<img class="smark" src="' + esc(MARK) + '" alt="START DOST logo" width="' + h + '" height="' + h + '" decoding="async">';
 }
-function brand(h) { return '<div class="brandrow">' + smark(h || 30) + '<div><b>START</b>' + (REGION ? '<br><span>' + esc(REGION) + '</span>' : '') + '</div></div>'; }
+function brand(h) { return '<div class="brandrow">' + smark(h || 40) + (REGION ? '<span class="region-pill">' + esc(REGION) + '</span>' : '') + '</div>'; }
 function greet() { var h = new Date().getHours(); return h < 12 ? ['sun', 'Good morning'] : h < 18 ? ['sun', 'Good afternoon'] : ['moonsm', 'Good evening']; }
 function page(title, sub, body, hello) {
   var g = greet(), subHtml = '';
@@ -2478,6 +2936,36 @@ function bars(list) {        // [[label, value 0-100, text]]
 }
 
 /* ---------- member: home ---------- */
+function leadNoteHome(m) {
+  var n = m.leadNote; if (!n) return '';
+  return '<div class="notecard leadnote">' + startLogo(48) + '<div class="say big"><b>' + esc(n.by) + ' · your Campus Lead</b>' + esc(n.text) + '</div></div>';
+}
+function recapCard(m) {
+  var g = m.game, r = g && g.recap; if (!r) return '';
+  var L = g.level, span = L.to ? L.to - L.from : 0, pct = span ? Math.max(0, Math.min(100, Math.round(100 * (g.xp - L.from) / span))) : 100;
+  return '<div class="recap"><div class="rhead"><b>This week</b><span>' + r.days + ' of ' + r.of + ' days played' + (g.dayStreak > 1 ? ' · ' + ico('flame', 14) + ' ' + g.dayStreak + '-day streak' : '') + '</span></div>' +
+    '<div class="rnums"><span><b>+' + r.xp + '</b>XP</span><span><b>' + r.stars + '</b>stars</span><span><b>' + L.n + '</b>level</span></div>' +
+    '<div class="rbar"><i style="width:' + pct + '%"></i></div><small>' + (L.to ? Math.max(0, L.to - g.xp) + ' XP to ' + esc(L.next) : 'Top level reached!') + '</small></div>';
+}
+function showPointsHelp() {
+  var box = document.createElement('div'); box.className = 'overlay';
+  box.innerHTML = '<div class="sure pointshelp">' + startLogo(60) + '<h2>How points work</h2>' +
+    '<ul class="phl"><li><b>Check-in day</b><span>20 XP, +10 on time, +5 for each START event you joined</span></li>' +
+    '<li><b>Brain break, every other day</b><span>Up to 10 XP. Word scramble 10. Odd one out and number pattern: 3 per round, +1 for a perfect game</span></li>' +
+    '<li><b>One chance a day</b><span>Days you miss cannot be played later. Opening a game starts it.</span></li>' +
+    '<li><b>Rewards</b><span>Your XP will be redeemable for START rewards. Coming soon!</span></li></ul>' +
+    '<div class="actions" style="justify-content:center"><button class="pillbtn" id="phok">Got it</button></div></div>';
+  document.body.appendChild(box);
+  $('phok').onclick = function () { box.remove(); }; box.onclick = function (e) { if (e.target === box) box.remove(); };
+}
+function dailyCard(m) {
+  var t = (m.game && m.game.days || []).filter(function (x) { return x.today; })[0];
+  if (!t || t.kind !== 'game') return '';
+  var body = t.state === 'today' ? '<b>Today\'s brain break</b><span>One quick challenge · up to +' + t.max + ' XP</span>'
+    : t.state === 'done' ? '<b>Brain break done · +' + t.xp + ' XP</b><span>A new one opens tomorrow.</span>' : '<b>Today\'s brain break is used</b><span>A new one opens tomorrow.</span>';
+  return '<div class="dailycard">' + startLogo(52, t.state === 'done' ? 'win' : 'idle') + '<div class="grow">' + body + '</div>' +
+    (t.state === 'today' ? '<button class="pillbtn sm" data-daily>Play</button>' : '<button class="pillbtn light sm" data-go="journey">Map</button>') + '</div>';
+}
 function memberView(d) {
   var m = d.member, ck = m.checkin, h = '';
   STAMP = m.school;
@@ -2492,7 +2980,7 @@ function memberView(d) {
     return '<div class="ftl"><span class="fc">' + miniFace(p, 46) + '</span><b>' + esc(w || '—') + '</b><small>' + esc(String(x.date).replace(/^\w{3},\s*/, '')) + '</small></div>';
   }).join('') + '</div>' : '';
   return page(d.me.first, { school: m.school },
-    noteCard(d) + weekStrip(ck && ck.due, m.done) + h + goalCard(m) +
+    noteCard(d) + leadNoteHome(m) + weekStrip(ck && ck.due, m.done) + h + dailyCard(m) + recapCard(m) + goalCard(m) +
     tiles([['Streak', m.streak + ' <small>' + (m.streak === 1 ? 'week' : 'weeks') + '</small>', 'navy', false, 'flame', m.streak >= 3 ? 'You\'re on a roll. Keep it going!' : m.streak ? 'Nice start. Keep it going!' : 'Check in to start a streak.'],
            m.lead ? ['Campus Lead', esc(m.lead), 'sunl', true, 'user'] : null]) +
     ((m.events || []).length ? '<div class="sech">Coming up <a href="#" data-go="events">See all</a></div>' + eventCards(m.events.slice(0, 4)) : '') +
@@ -2532,7 +3020,7 @@ function startCalendarView(list) {
 }
 function eventsView(d) {
   var list = Array.isArray(d.calendarEvents) ? d.calendarEvents : (d.admin ? d.admin.events : d.lead && d.lead.length ? d.lead[0].events : d.member ? d.member.events : []);
-  return page('Calendar','START events and schedules',startCalendarView(list));
+  return page('Calendar','START events and schedules', (d.admin ? rrEventManagementCard(d.admin) : '') + startCalendarView(list));
 }
 /* ---------- Campus Lead ---------- */
 function leadView(d) {
@@ -2552,6 +3040,7 @@ function leadView(d) {
       '</tr></thead><tbody>' + s.rows.map(function (r) {
         return '<tr class="' + (r.me ? 'me' : '') + '">' + r.cells.map(function (c, i) {
           var e = emo(c), cell = i === 1 && s.answers ? pill(noEmoji(c), r.tone) : (e[0] && EMO_ICON[e[0]] ? emoIco(e[0], 16) + ' ' + esc(noEmoji(e[1])) : esc(noEmoji(c)));
+          if (i === 0) cell += leadMemberTools(s, r);
           var cls = !c ? 'empty' : (String(c).length > 28 ? 'wide' : '');
           return '<td' + (cls ? ' class="' + cls + '"' : '') + (i ? ' data-l="' + esc(s.cols[i]) + '"' : '') + '>' + (cell || '<span class="muted">—</span>') + '</td>';
         }).join('') + '</tr>';
@@ -2561,39 +3050,136 @@ function leadView(d) {
     tiles([['Streak', s.streak + ' <small>' + (s.streak === 1 ? 'week' : 'weeks') + '</small>', 'navy', false, 'flame', 'Your school\'s weeks in a row'],
            s.answers ? ['Members answered', s.answered + ' <small>of ' + s.members + '</small>', 'sky', false, 'user'] : ['Scholars', s.active + ' <small>active</small>', 'sky', false, 'user'],
            s.done ? ['Your check-in', 'Done', 'sunl', true, 'check'] : (act ? null : ['Due', esc(s.due), 'sunl', true, 'clock'])]) +
-    weekChart(s.weekly, 'Weekly check-in rate · ' + s.school) + (todo ? card('To do', todo) : '') + (members ? card('Members', members) : ''));
+    weekChart(s.weekly, 'Weekly check-in rate · ' + s.school) + (todo ? card('To do', todo) : '') + (members ? card('Members', members) : '') +
+    leadJoinsCard(s) + leadAttendCard(s) + leadNoteCard(s));
+}
+// Lead tools: tags and the "contacted" button beside each member's name
+function leadMemberTools(s, r) {
+  var h = '';
+  if (r.account === 'setup') h += '<span class="ltag warn">No password yet</span>';
+  var needs = r.tone === 'red' || r.tone === 'yellow';
+  if (r.email && (needs || r.contacted) && !S.viewAs) {
+    var kind = r.tone === 'red' ? 'help' : 'reminder';
+    h += '<button class="lcontact' + (r.contacted ? ' on' : '') + '" data-contact="' + esc(r.email) + '" data-kind="' + kind + '" title="' + (r.contacted ? 'Tap to undo' : 'Mark that you messaged them') + '">' +
+      ico(r.contacted ? 'check' : 'mail', 14) + (r.contacted ? ' Contacted ' + esc(r.contacted) : ' Mark contacted') + '</button>';
+  }
+  return h ? '<div class="ltools">' + h + '</div>' : '';
+}
+function leadJoinsCard(s) {
+  var list = s.joins || [];
+  if (!list.length) return '';
+  return '<div class="card"><h2>Join requests for ' + esc(s.school) + ' <span class="cnt">' + list.length + '</span></h2>' + ('<p class="muted sm">Do you know them as a DOST scholar at your school? Your answer goes to your Regional Representative, who makes the final decision.</p><ul class="list ljoins">' +
+    list.map(function (j) {
+      var c = j.check;
+      return '<li><div class="grow"><b>' + esc(j.name) + '</b><div class="muted sm">' + esc([j.program, j.year, j.awarded ? 'Awarded ' + j.awarded : ''].filter(Boolean).join(' · ')) + ' · sent ' + esc(j.when) + '</div>' +
+        (c ? '<span class="ltag ' + (c.value === 'yes' ? 'ok' : 'warn') + '">' + (c.value === 'yes' ? 'You confirmed them' : 'You said not from your school') + ' · ' + esc(c.at) + '</span>' : '') + '</div>' +
+        (S.viewAs ? '' : '<div class="ljbtn"><button class="pillbtn sm" data-jcheck="yes" data-row="' + j.row + '">Yes, a scholar here</button><button class="pillbtn light sm" data-jcheck="no" data-row="' + j.row + '">Not from our school</button></div>') + '</li>';
+    }).join('') + '</ul>') + '</div>';
+}
+function leadAttendCard(s) {
+  var list = s.attend || [];
+  if (!list.length) return '';
+  return card('Event attendance', '<p class="muted sm">Mark who really came. It decides event XP for your members.</p><ul class="list lattend">' + list.map(function (e, i) {
+    return '<li><div class="grow"><b>' + esc(e.title) + '</b><div class="muted sm">' + esc(e.when) + ' · ' + (e.present.length ? e.present.length + ' marked present' : 'not taken yet') + '</div></div>' +
+      (S.viewAs ? '' : '<button class="pillbtn light sm" data-attend="' + i + '">' + (e.present.length ? 'Edit' : 'Take attendance') + '</button>') + '</li>'; }).join('') + '</ul>');
+}
+function leadNoteCard(s) {
+  var n = s.note;
+  return card('Note to your members', '<p class="muted sm">Shown on your members\' Home page for 3 weeks. Keep it short and friendly.</p>' +
+    '<textarea class="ta lnote" id="lnote" maxlength="300" placeholder="e.g. Study jam this Friday, 4 PM at the library!"' + (S.viewAs ? ' disabled' : '') + '>' + esc(n ? n.text : '') + '</textarea>' +
+    (n ? '<p class="muted sm">Posted ' + esc(n.when) + '</p>' : '') +
+    (S.viewAs ? '' : '<div class="qa"><button class="pillbtn sm" id="lnotesave">Post note</button>' + (n ? '<button class="pillbtn light sm" id="lnoteclear">Remove</button>' : '') + '</div>'));
+}
+function leadAct(act, arg) {
+  if (S.viewAs) return Promise.resolve();
+  var s = S.data.lead[Math.min(S.school, S.data.lead.length - 1)];
+  arg.school = s.school;
+  return call('webLeadAction', S.token, act, arg).then(function (r) {
+    if (r && r.signedOut) { signOut(); return; }
+    if (!r || !r.ok) { banner((r && r.msg) || 'Not saved. Try again.', 'warn'); return; }
+    if (r.lead) S.data.lead = r.lead;
+    draw(); banner(r.msg || 'Saved.', 'ok');
+  }).catch(function () { banner('Could not reach START. Try again.', 'warn'); });
+}
+function openAttendance(s, e) {
+  var people = (s.rows || []).filter(function (r) { return r.email; });
+  var box = document.createElement('div'); box.className = 'overlay';
+  box.innerHTML = '<div class="scholar-dialog" role="dialog" aria-modal="true" aria-labelledby="at-title"><h2 id="at-title">Who came?</h2><p class="muted">' + esc(e.title) + ' · ' + esc(e.when) + '</p>' +
+    '<div class="atlist">' + people.map(function (r, i) {
+      return '<label class="atrow"><input type="checkbox" value="' + esc(r.email) + '"' + (e.present.indexOf(r.email) !== -1 ? ' checked' : '') + '><span>' + esc(noEmoji(r.cells[0])) + '</span></label>'; }).join('') + '</div>' +
+    '<div class="actions"><button type="button" class="pillbtn light" id="at-all">Select all</button><button type="button" class="pillbtn light" id="at-cancel">Cancel</button><button type="button" class="pillbtn" id="at-save">Save attendance</button></div></div>';
+  document.body.appendChild(box);
+  var close = function () { box.remove(); };
+  $('at-cancel').onclick = close; box.onclick = function (ev) { if (ev.target === box) close(); };
+  $('at-all').onclick = function () { [].forEach.call(box.querySelectorAll('input'), function (x) { x.checked = true; }); };
+  $('at-save').onclick = function () {
+    var emails = [].filter.call(box.querySelectorAll('input'), function (x) { return x.checked; }).map(function (x) { return x.value; });
+    $('at-save').disabled = true; leadAct('attendance', { title: e.title, date: e.date, emails: emails }).then(close);
+  };
 }
 
 // Keep the RR's search and filters when a record is saved and the roster reloads.
-var ROSTER_UI = { search: '', status: 'All', school: 'All', checkin: 'All' };
-function rrFilter() {
-  var shown = 0, term = ROSTER_UI.search.toLowerCase().trim();
-  [].forEach.call(document.querySelectorAll('[data-rrsch]'), function (el) {
-    var hit = (!term || (el.getAttribute('data-match') || '').toLowerCase().indexOf(term) !== -1) &&
-      (ROSTER_UI.status === 'All' || el.getAttribute('data-status') === ROSTER_UI.status) &&
-      (ROSTER_UI.school === 'All' || el.getAttribute('data-school-name') === ROSTER_UI.school) &&
-      (ROSTER_UI.checkin === 'All' || el.getAttribute('data-checkin-status') === ROSTER_UI.checkin);
-    el.style.display = hit ? '' : 'none'; if (hit) shown++;
+var ROSTER_UI = { search: '', status: 'All', school: 'All', checkin: 'All', page: 0 };
+function wireRoster() {
+  var search = $('rrsearch');
+  if (!search) return;
+  search.oninput = function() { ROSTER_UI.search = this.value; ROSTER_UI.page = 0; rrFilter(); };
+  [].forEach.call(document.querySelectorAll('[data-rrfilter]'), function(b) {
+    b.onclick = function() { ROSTER_UI.status = b.getAttribute('data-rrfilter'); ROSTER_UI.page = 0; rrFilter(); };
   });
-  if ($('rrshown')) $('rrshown').textContent = String(shown);
-  if ($('rrmeta')) $('rrmeta').style.display = (term || ROSTER_UI.status !== 'All' || ROSTER_UI.school !== 'All' || ROSTER_UI.checkin !== 'All') ? '' : 'none';
-  if ($('rr-empty')) $('rr-empty').style.display = shown ? 'none' : 'block';
+  if ($('rrschool')) $('rrschool').onchange = function() { ROSTER_UI.school = this.value; ROSTER_UI.page = 0; rrFilter(); };
+  if ($('rrcheckin')) $('rrcheckin').onchange = function() { ROSTER_UI.checkin = this.value; ROSTER_UI.page = 0; rrFilter(); };
+  [].forEach.call(document.querySelectorAll('[data-roster-page]'), function(b) {
+    b.onclick = function() { ROSTER_UI.page += Number(b.getAttribute('data-roster-page')); rrFilter();
+      var roster = document.querySelector('.rrroster'); if (roster) roster.scrollIntoView({ block: 'start' }); };
+  });
+  [].forEach.call(document.querySelectorAll('[data-scholar-edit]'), function(b) {
+    b.onclick = function() { openScholarEditor(Number(b.getAttribute('data-scholar-edit'))); };
+  });
+  [].forEach.call(document.querySelectorAll('[data-scholar-status]'), function(b) {
+    b.onclick = function() {
+      if (S.viewAs) return;
+      var status = b.getAttribute('data-scholar-status'), email = b.getAttribute('data-email'), row = Number(b.getAttribute('data-row'));
+      var finish = function() { b.disabled = true; call('webAdminAction', S.token, 'scholar-status', { row:row, email:email, status:status }).then(function(r) {
+        if (r && r.ok) refreshAdminPage('scholars', r.msg);
+        else { b.disabled = false; banner((r && r.msg) || 'Could not update the scholar.', 'warn'); }
+      }).catch(function() { b.disabled = false; banner('Could not reach START.', 'warn'); }); };
+      if (status === 'Suspended') askSure('Suspend scholar?', 'This ends active logins until reactivated. Records remain.', finish, 'Suspend scholar');
+      else askSure('Reactivate scholar?', 'This restores access.', finish, 'Reactivate scholar');
+    };
+  });
+}
+function rrFilter() {
+  var old = document.querySelector('.rrroster'), input = $('rrsearch');
+  if (!old || !S.data || !S.data.admin) return;
+  var active = document.activeElement === input, pos = active ? input.selectionStart : 0;
+  old.outerHTML = scholarManagementCard(S.data.admin);
+  wireRoster();
+  if (active && $('rrsearch')) { $('rrsearch').focus(); $('rrsearch').setSelectionRange(pos, pos); }
 }
 function scholarManagementCard(a) {
-  var list = (a.scholars || []).slice().sort(function(x,y){ return x.name.localeCompare(y.name); });
+  var all = (a.scholars || []).slice().sort(function(x,y){ return x.name.localeCompare(y.name); });
   var counts = { Active:0, 'On leave':0, Graduated:0, Dropped:0, Suspended:0, Other:0 };
-  list.forEach(function(p){ counts[counts.hasOwnProperty(p.status) ? p.status : 'Other']++; });
+  all.forEach(function(p){ counts[counts.hasOwnProperty(p.status) ? p.status : 'Other']++; });
   if (ROSTER_UI.status !== 'All' && !counts[ROSTER_UI.status]) ROSTER_UI.status = 'All';
   var schoolNames = (a.scholarChoices && a.scholarChoices.schools || []).slice().sort();
   if (schoolNames.indexOf(ROSTER_UI.school) === -1) ROSTER_UI.school = 'All';
   if (!a.memberCheckins) ROSTER_UI.checkin = 'All';
+  var term = ROSTER_UI.search.toLowerCase().trim();
+  var matches = all.filter(function(p) { return (!term || [p.name,p.email,p.school,p.program,p.awarded,p.yearLevel,p.scholarship].join(' ').toLowerCase().indexOf(term) !== -1) &&
+    (ROSTER_UI.status === 'All' || (counts.hasOwnProperty(p.status) ? p.status : 'Other') === ROSTER_UI.status) &&
+    (ROSTER_UI.school === 'All' || p.school === ROSTER_UI.school) &&
+    (ROSTER_UI.checkin === 'All' || p.checkin === ROSTER_UI.checkin); });
+  var size = 50, pages = Math.max(1, Math.ceil(matches.length / size));
+  ROSTER_UI.page = Math.min(ROSTER_UI.page, pages - 1);
+  var list = matches.slice(ROSTER_UI.page * size, (ROSTER_UI.page + 1) * size);
   return '<div class="card rrroster"><h2>Scholar roster</h2>' +
     '<div class="rrtools"><input id="rrsearch" class="rrsearch" type="search" value="' + esc(ROSTER_UI.search) + '" placeholder="Search name, email, school, or program" aria-label="Search scholars">' +
       '<select id="rrschool" aria-label="Filter by school"><option value="All">All schools</option>' + schoolNames.map(function(n){return '<option value="' + esc(n) + '"' + (ROSTER_UI.school === n ? ' selected' : '') + '>' + esc(n) + '</option>';}).join('') + '</select>' +
       (a.memberCheckins ? '<select id="rrcheckin" aria-label="Filter by check-in"><option value="All">All check-ins</option><option value="Pending"' + (ROSTER_UI.checkin === 'Pending' ? ' selected' : '') + '>Not checked in</option><option value="Submitted"' + (ROSTER_UI.checkin === 'Submitted' ? ' selected' : '') + '>Checked in</option></select>' : '<span></span>') + '</div>' +
     '<div class="rrfilters" role="group" aria-label="Filter by status">' + ['All','Active','On leave','Suspended','Graduated','Dropped','Other'].filter(function(x){return x === 'All' || counts[x];}).map(function(x){
-      return '<button type="button" data-rrfilter="' + x + '" aria-pressed="' + (ROSTER_UI.status === x) + '">' + x + ' (' + (x === 'All' ? list.length : counts[x]) + ')</button>'; }).join('') + '</div>' +
-    '<div class="rrmeta" id="rrmeta"><span>Showing <b id="rrshown">' + list.length + '</b> of ' + list.length + '</span></div>' +
+      return '<button type="button" data-rrfilter="' + x + '" aria-pressed="' + (ROSTER_UI.status === x) + '">' + x + ' (' + (x === 'All' ? all.length : counts[x]) + ')</button>'; }).join('') + '</div>' +
+    '<div class="rrmeta" id="rrmeta"><span>Showing <b id="rrshown">' + (matches.length ? ROSTER_UI.page * size + 1 : 0) + '-' + (ROSTER_UI.page * size + list.length) + '</b> of ' + matches.length + ' matches (' + all.length + ' total)</span></div>' +
     '<div class="rrlist">' + list.map(function(p){ var cls = p.status === 'Active' ? 'active' : p.status === 'Suspended' ? 'suspended' : 'other';
       var target = p.status === 'Active' ? 'Suspended' : p.status === 'Suspended' ? 'Active' : '';
       var status = counts.hasOwnProperty(p.status) ? p.status : 'Other';
@@ -2607,7 +3193,8 @@ function scholarManagementCard(a) {
         '<span class="rrtag ' + (p.verified ? 'submitted' : 'pending') + '">' + (p.verified ? 'Email verified' : 'Password setup pending') + '</span>' +
         (p.checkin ? '<span class="rrtag ' + (p.checkin === 'Submitted' ? 'submitted' : 'pending') + '">' + (p.checkin === 'Submitted' ? 'Checked in' : 'Check-in pending') + '</span>' : '') +
         (p.needsHelp ? '<span class="rrtag help">Asked for help</span>' : '') + '</div></div></div>';
-    }).join('') + '</div><div class="rr-empty" id="rr-empty">No scholars match these filters.</div></div>';
+    }).join('') + '</div><div class="rr-empty" id="rr-empty"' + (matches.length ? ' style="display:none"' : '') + '>No scholars match these filters.</div>' +
+    (pages > 1 ? '<div class="qa"><button class="pillbtn light sm" data-roster-page="-1"' + (ROSTER_UI.page ? '' : ' disabled') + '>Previous</button><span class="muted sm">Page ' + (ROSTER_UI.page + 1) + ' of ' + pages + '</span><button class="pillbtn light sm" data-roster-page="1"' + (ROSTER_UI.page < pages - 1 ? '' : ' disabled') + '>Next</button></div>' : '') + '</div>';
 }
 function openScholarEditor(row) {
   if (S.viewAs || !S.data || !S.data.admin) return;
@@ -2646,7 +3233,7 @@ function openScholarEditor(row) {
     $('se-save').disabled = true; $('se-error').textContent = '';
     call('webAdminAction',S.token,'scholar-update',arg).then(function(r){
       if (!r || !r.ok) { $('se-save').disabled = false; $('se-error').textContent = (r && r.msg) || 'Could not save. Try again.'; return; }
-      close(); load(true).then(function(){banner(r.msg || 'Scholar saved.','ok');});
+      close(); refreshAdminPage('scholars',r.msg || 'Scholar saved.');
     }).catch(function(){ $('se-save').disabled = false; $('se-error').textContent = 'Could not reach START. Try again.'; });
   };
   $('se-name').focus();
@@ -2663,9 +3250,9 @@ function dataQualityCard(a) {
 function rrScholarsView(d) {
   var a = d.admin;
   return page('Scholars', 'Manage accounts and see who has checked in',
-    dataQualityCard(a) + joinCard(a.joins, a.autoApprove) + scholarManagementCard(a) + joinHistoryCard(a.joinHistory));
+    dataQualityCard(a) + joinCard(a.joins, a.autoApprove) + scholarManagementCard(a) + joinHistoryCard(a.joinHistory, a.joinHistoryTotal));
 }
-function rrSchoolsView(d) {
+function rrSchoolsOverviewView(d) {
   var a = d.admin, rows = (a.schools || []).slice().sort(function(x,y){return x.name.localeCompare(y.name);});
   var table = '<div class="tablebox"><table class="stack"><thead><tr><th>School</th><th>Campus Lead</th><th>Check-ins</th><th>Help</th><th>Streak</th></tr></thead><tbody>' +
     rows.map(function(s){return '<tr><td><span class="sline">' + schoolBadge(s.name,28) + '<b>' + esc(s.name) + '</b></span></td>' +
@@ -2675,6 +3262,185 @@ function rrSchoolsView(d) {
       '<td data-l="Streak">' + esc(s.streak || 0) + '</td></tr>';}).join('') + '</tbody></table></div>';
   return page('Schools', 'Campus Leads and participation across the region',
     viewAsCard() + card('This week by school', table));
+}
+function rrSchoolsView(d) {
+  var a=d.admin, records=(a.schoolRecords||[]).slice().sort(function(x,y){return x.name.localeCompare(y.name);});
+  var rows=records.map(function(s){var summary=(a.schools||[]).filter(function(x){return x.name===s.name;})[0]||{};
+    return '<tr><td><span class="sline">'+schoolBadge(s.name,28)+'<b>'+esc(s.name)+'</b></span></td>'+
+      '<td data-l="Province">'+esc(s.province||'—')+'</td><td data-l="Campus Lead">'+esc(s.lead||'Not assigned')+'</td>'+
+      '<td data-l="Check-ins">'+esc(summary.answered||0)+' / '+esc(summary.members||0)+'</td>'+
+      '<td data-l="Status">'+(s.inactive?pill('Inactive last term','yellow'):pill('Active','green'))+'</td>'+
+      '<td data-l="Manage"><button class="pillbtn light sm" data-school-edit="'+s.row+'">Edit</button></td></tr>';}).join('');
+  var table='<div class="tablebox"><table class="stack"><thead><tr><th>School</th><th>Province</th><th>Campus Lead</th><th>Check-ins</th><th>Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  return page('Schools','Manage schools and Campus Leads across the region',viewAsCard()+
+    '<div class="card"><div class="rrdb-head"><h2>School records</h2><div class="qa"><button class="pillbtn light sm" id="school-import">Load region list</button><button class="pillbtn sm" data-school-edit="0">'+ico('plus',16)+' Add school</button></div></div>'+
+    '<p class="muted sm">Renaming a school updates linked scholars, check-ins, events and outreach records.</p>'+table+'</div>');
+}
+function niceDate(v) {
+  var m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return String(v || '');
+  var d = new Date(+m[1], +m[2] - 1, +m[3]);
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+function rrOptions(list, selected) {
+  return (list || []).map(function(x) { return '<option value="' + esc(x) + '"' + (x === selected ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('');
+}
+function rrOutreachView(d) {
+  var a = d.admin, schools = a.scholarChoices && a.scholarChoices.schools || [];
+  var rows = (a.outreach || []).map(function(r) {
+    return '<tr><td data-l="Date">' + esc(niceDate(r.date)) + '</td><td data-l="School">' + esc(r.school) + '</td>' +
+      '<td data-l="Person">' + esc(r.person) + '</td><td data-l="Channel">' + esc(r.channel) + '</td>' +
+      '<td data-l="Outcome">' + esc(r.outcome) + '</td><td data-l="Next step">' + esc(r.next) + '</td>' +
+      '<td data-l="Follow up">' + esc(r.follow) + '</td></tr>'; }).join('');
+  return page('Outreach', 'Record calls, messages and follow-ups',
+    '<div class="card"><h2>Record a contact</h2><form id="outreach-form" class="scholar-form">' +
+      '<label>School<select id="or-school">' + rrOptions(schools) + '</select></label>' +
+      '<label>Date<input id="or-date" type="date" required></label>' +
+      '<label>Person contacted<input id="or-person" maxlength="180"></label>' +
+      '<label>Channel<select id="or-channel">' + rrOptions(a.outreachChannels) + '</select></label>' +
+      '<label>Outcome<select id="or-outcome">' + rrOptions(a.outreachOutcomes) + '</select></label>' +
+      '<label>Follow up on<input id="or-follow" type="date"></label>' +
+      '<label class="wide">Next step<input id="or-next" maxlength="500"></label>' +
+      '<div class="wide"><button class="pillbtn" type="submit" id="or-save">Save contact</button><span id="or-msg" role="status"></span></div></form></div>' +
+    '<div class="card"><h2>Recent contacts</h2>' + (rows ? '<div class="tablebox"><table class="stack"><thead><tr><th>Date</th><th>School</th><th>Person</th><th>Channel</th><th>Outcome</th><th>Next step</th><th>Follow up</th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="muted">No outreach recorded yet.</p>') + '</div>');
+}
+function rrEventManagementCard(a) {
+  var rows = (a.eventRecords || []).map(function(e) { return '<tr><td data-l="Date">' + esc(niceDate(e.date)) + '</td>' +
+    '<td data-l="Title">' + esc(e.title) + '</td><td data-l="Audience">' + esc(e.who) + '</td>' +
+    '<td data-l="Repeat">' + esc(e.rep || 'Never') + '</td><td><button class="pillbtn light sm" data-event-edit="' + e.row + '">Edit</button></td></tr>'; }).join('');
+  return '<div class="card"><div class="rrdb-head"><h2>Manage events</h2><button class="pillbtn sm" data-event-edit="0">Add event</button></div>' +
+    (rows ? '<div class="tablebox"><table class="stack"><thead><tr><th>Date</th><th>Title</th><th>Audience</th><th>Repeat</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="muted">No events recorded yet.</p>') + '</div>';
+}
+function rrDiagnosticsView(d) {
+  var list = d.admin.diagnostics || [], bad = 0;
+  var rows = list.map(function(r) {
+    var mark = String(r[0] || ''), tone = /❌/.test(mark) ? 'bad' : /⚠/.test(mark) ? 'warn' : 'ok';
+    if (tone !== 'ok') bad++;
+    return '<li class="diag d-' + tone + '"><span class="dbub">' + ico(tone === 'ok' ? 'check' : tone === 'warn' ? 'info' : 'siren', 20) + '</span><div class="grow"><b>' + esc(r[1]) + '</b>' +
+      (r[2] ? '<div class="muted sm">' + esc(r[2]) + '</div>' : '') + '</div>' + pill(tone === 'ok' ? 'All good' : tone === 'warn' ? 'Look at this' : 'Fix this', tone === 'ok' ? 'green' : tone === 'warn' ? 'yellow' : 'red') + '</li>'; }).join('');
+  var head = '<div class="diaghead ' + (bad ? 'dh-warn' : 'dh-ok') + '"><span class="dbub">' + ico(bad ? 'info' : 'shield', 26) + '</span><div><b>' + (bad ? bad + ' thing' + (bad === 1 ? '' : 's') + ' to look at' : 'Everything looks good') + '</b>' +
+    '<div class="muted sm">' + (bad ? 'Each one says what to do next.' : 'Your tracker passed every check.') + '</div></div></div>';
+  var timing = WEB_TIMINGS.slice(-8).reverse().map(function(t) { return '<tr><td>' + esc(t.request) + '</td><td>' + t.ms + ' ms</td><td>' + Math.round(t.bytes / 1024) + ' KB</td></tr>'; }).join('');
+  return page('Diagnostics', 'Tracker checks and this device\'s website timings',
+    '<div class="card"><h2>Tracker checks <span class="cnt">' + list.length + '</span></h2>' + head + '<ul class="list diaglist">' + rows + '</ul><button class="pillbtn light sm" id="diag-refresh">Run checks again</button></div>' +
+    '<div class="card"><h2>Recent website requests</h2><p class="muted sm">Times include the network and Google Apps Script. No scholar details are recorded.</p>' +
+    '<div class="tablebox"><table><thead><tr><th>Request</th><th>Time</th><th>Response</th></tr></thead><tbody>' + timing + '</tbody></table></div></div>' +
+    '<div class="card"><h2>Setup</h2><p class="muted sm">The tracker owner runs setup from the Google Sheet so authorization and progress stay visible.</p>' +
+    (d.admin.tracker ? '<a class="pillbtn light sm" href="' + esc(d.admin.tracker) + '" target="_blank" rel="noopener">Open tracker</a>' : '') + '</div>');
+}
+function wireOutreach() {
+  var form = $('outreach-form'); if (!form) return;
+  var now = new Date(); $('or-date').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+  form.onsubmit = function(e) { e.preventDefault();
+    var val = function(k) { return $('or-' + k).value.trim(); };
+    var arg = { school:val('school'), date:val('date'), person:val('person'), channel:val('channel'),
+      outcome:val('outcome'), next:val('next'), follow:val('follow') };
+    var b = $('or-save'), msg = $('or-msg'); b.disabled = true; msg.textContent = 'Saving...';
+    call('webAdminAction', S.token, 'outreach-save', arg).then(function(r) {
+      if (!r || !r.ok) { b.disabled = false; msg.textContent = r && r.msg || 'Could not save.'; return; }
+      refreshAdminPage('outreach', r.msg);
+    }).catch(function() { b.disabled = false; msg.textContent = 'Could not reach START.'; });
+  };
+}
+function openEventEditor(row) {
+  if (S.viewAs || !S.data || !S.data.admin) return;
+  var a = S.data.admin, old = (a.eventRecords || []).filter(function(e) { return e.row === row; })[0] ||
+    { row:0, date:'', start:'', end:'', title:'', type:'Meeting', who:'All members', rep:'Never', until:'', place:'', details:'', invite:false };
+  var box = document.createElement('div'); box.className = 'overlay';
+  var field = function(k,label,type,wide) { return '<label class="' + (wide ? 'wide' : '') + '">' + label +
+    '<input id="ev-' + k + '" type="' + (type || 'text') + '" value="' + esc(old[k] || '') + '" maxlength="500"></label>'; };
+  var select = function(k,label,options) { return '<label>' + label + '<select id="ev-' + k + '">' + rrOptions(options,old[k]) + '</select></label>'; };
+  box.innerHTML = '<div class="scholar-dialog" role="dialog" aria-modal="true"><h2>' + (row ? 'Edit event' : 'Add event') + '</h2><form id="ev-form"><div class="scholar-form">' +
+    field('title','Title','text',true) + field('date','Date','date') + field('start','Start','time') + field('end','End','time') +
+    select('type','Type',a.eventTypes) + select('who','Audience',['All members','Campus Leads','Only me'].concat(a.scholarChoices && a.scholarChoices.schools || [])) +
+    select('rep','Repeats',a.eventRepeats) + field('until','Until','date') + field('place','Place or link','text',true) +
+    field('details','Details','text',true) + '<label class="wide rrdb-check"><input id="ev-invite" type="checkbox"' + (old.invite ? ' checked' : '') + '> Invite Campus Leads</label></div>' +
+    '<div class="scholar-edit-error" id="ev-error" role="alert"></div><div class="actions">' +
+    (row ? '<button type="button" class="pillbtn light" id="ev-delete">Remove event</button>' : '') +
+    '<button type="button" class="pillbtn light" id="ev-cancel">Cancel</button><button type="submit" class="pillbtn" id="ev-save">Save event</button></div></form></div>';
+  document.body.appendChild(box);
+  var close = function() { box.remove(); }; $('ev-cancel').onclick = close;
+  box.onclick = function(e) { if (e.target === box) close(); }; box.onkeydown = function(e) { if (e.key === 'Escape') close(); };
+  if (row) $('ev-delete').onclick = function() { askSure('Remove this event?', 'It will be removed from the tracker and synced calendars.', function() {
+    $('ev-delete').disabled = true;
+    call('webAdminAction', S.token, 'event-delete', { row:old.row, original:old.title }).then(function(r) {
+      if (!r || !r.ok) { $('ev-delete').disabled = false; $('ev-error').textContent = r && r.msg || 'Could not remove event.'; return; }
+      close(); refreshAdminPage('events', r.msg);
+    }).catch(function() { $('ev-delete').disabled = false; $('ev-error').textContent = 'Could not reach START.'; });
+  }, 'Remove event'); };
+  $('ev-form').onsubmit = function(e) { e.preventDefault();
+    var val = function(k) { return $('ev-' + k).value.trim(); };
+    var arg = { row:old.row, original:old.title, title:val('title'), date:val('date'), start:val('start'), end:val('end'),
+      type:val('type'), who:val('who'), rep:val('rep'), until:val('until'), place:val('place'), details:val('details'), invite:$('ev-invite').checked };
+    $('ev-save').disabled = true; $('ev-error').textContent = '';
+    call('webAdminAction', S.token, 'event-save', arg).then(function(r) {
+      if (!r || !r.ok) { $('ev-save').disabled = false; $('ev-error').textContent = r && r.msg || 'Could not save event.'; return; }
+      close(); refreshAdminPage('events',r.msg || 'Event saved.');
+    }).catch(function() { $('ev-save').disabled = false; $('ev-error').textContent = 'Could not reach START.'; });
+  };
+  $('ev-title').focus();
+}
+function openSchoolEditor(row) {
+  if(S.viewAs||!S.data||!S.data.admin)return;
+  var a=S.data.admin,p=(a.schoolRecords||[]).filter(function(x){return x.row===row;})[0]||
+    {row:0,name:'',province:'',lead:'',inactive:false,info:(a.schoolInfoHeaders||[]).map(function(){return '';})};
+  var box=document.createElement('div');box.className='overlay';
+  var field=function(id,label,value,wide){return '<label class="'+(wide?'wide':'')+'">'+esc(label)+'<input id="sc-'+id+'" type="text" value="'+esc(value||'')+'" maxlength="250"></label>';};
+  var heads=a.schoolInfoHeaders||[],info=heads.map(function(h,i){return field('info'+i,h,(p.info||[])[i],i===0||i===3||i===6);}).join('');
+  box.innerHTML='<div class="scholar-dialog" role="dialog" aria-modal="true" aria-labelledby="sc-title"><h2 id="sc-title">'+(row?'Edit school':'Add school')+'</h2>'+
+    '<p class="muted">The short school name is used across the tracker.</p><form id="sc-form"><div class="scholar-form">'+
+    field('name','Short school name',p.name)+field('province','Province',p.province)+field('lead','START Campus Lead',p.lead,true)+info+
+    '<label class="wide rrdb-check"><input id="sc-inactive" type="checkbox"'+(p.inactive?' checked':'')+'> Inactive last term</label></div>'+
+    '<div class="scholar-edit-error" id="sc-error" role="alert"></div><div class="actions"><button type="button" class="pillbtn light" id="sc-cancel">Cancel</button><button type="submit" class="pillbtn" id="sc-save">Save school</button></div></form></div>';
+  document.body.appendChild(box);
+  var close=function(){box.remove();};$('sc-cancel').onclick=close;
+  box.onclick=function(e){if(e.target===box)close();};box.onkeydown=function(e){if(e.key==='Escape')close();};
+  $('sc-form').onsubmit=function(e){e.preventDefault();var v=function(k){return $('sc-'+k).value.trim();};
+    var arg={row:p.row,original:p.name,name:v('name'),province:v('province'),lead:v('lead'),inactive:$('sc-inactive').checked,
+      info:heads.map(function(h,i){return v('info'+i);})};
+    $('sc-save').disabled=true;$('sc-error').textContent='';
+    call('webAdminAction',S.token,'school-save',arg).then(function(r){
+      if(!r||!r.ok){$('sc-save').disabled=false;$('sc-error').textContent=(r&&r.msg)||'Could not save school.';return;}
+      close();refreshAdminPage('schools',r.msg||'School saved.');
+    }).catch(function(){$('sc-save').disabled=false;$('sc-error').textContent='Could not reach START. Try again.';});
+  };$('sc-name').focus();
+}
+function rrSettingsView(d) {
+  var list=(d.admin&&d.admin.settings)||[];
+  var group=function(title,keys){var rows=list.filter(function(s){return keys.indexOf(s.key)!==-1;});if(!rows.length)return '';
+    return '<div class="card rrdb-settings"><h2>'+esc(title)+'</h2>'+rows.map(function(s){
+      var id='set-'+s.key,val=s.value,input='';
+      if(s.type==='check')input='<label class="swt"><input id="'+id+'" type="checkbox"'+(val===true?' checked':'')+(s.readonly?' disabled':'')+'><span class="swt-track"><i></i></span><span class="swt-text"></span></label>';
+      else if(s.options&&s.options.length)input='<select id="'+id+'"'+(s.readonly?' disabled':'')+'>'+s.options.map(function(o){return '<option value="'+esc(o)+'"'+(o===val?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select>';
+      else input='<input id="'+id+'" type="'+(s.type==='date'?'date':s.type==='number'?'number':'text')+'" value="'+esc(val==null?'':val)+'"'+(s.type==='number'?' min="1" max="365" step="1"':'')+(s.readonly?' disabled':'')+'>';
+      return '<div class="rrdb-setting"><label for="'+id+'"><b>'+esc(s.label)+'</b><small>'+esc(s.help||'')+'</small></label><div class="rrdb-value">'+input+
+        (s.readonly?'<span class="muted sm">Follows the deadline</span>':'<button class="pillbtn light sm" data-setting-save="'+esc(s.key)+'">Save</button>')+'</div><div class="rrdb-msg" id="msg-'+s.key+'" role="status"></div></div>';
+    }).join('')+'</div>';};
+  return page('Settings','Manage your region, reminders and website',
+    group('Region and reports',['region','rrName','recipients','replyTo','day','hour','quietDays','tFocal','tReeng','tRate','dFocal','dReeng','termStart'])+
+    group('Weekly check-in and emails',['autoWeekly','dueDay','mOpenDay','remDay','fuDay','remHour','mDueDay','autoClose','missedAlert','selfCheck'])+
+    group('Programs and events',['dcStart','dcEnd','eventRemind','monthlyReport','backups'])+
+    group('Website and access',['portalNote','portalMembers','portalScholars','autoApprove']));
+}
+function saveSetting(b) {
+  if(S.viewAs||!S.data||!S.data.admin)return;
+  var key=b.getAttribute('data-setting-save'),s=(S.data.admin.settings||[]).filter(function(x){return x.key===key;})[0],el=$('set-'+key),msg=$('msg-'+key);
+  if(!s||!el||s.readonly)return;
+  var value=s.type==='check'?el.checked:el.value.trim();b.disabled=true;msg.textContent='Saving…';
+  call('webAdminAction',S.token,'setting-save',{key:key,previous:s.value,value:value}).then(function(r){
+    if(!r||!r.ok){b.disabled=false;msg.textContent=(r&&r.msg)||'Could not save setting.';return;}
+    refreshAdminPage('settings',r.msg||'Saved.');
+  }).catch(function(){b.disabled=false;msg.textContent='Could not reach START. Try again.';});
+}
+function leadBoardCard(a) {
+  var list = a.leadBoard || [];
+  if (!list.length) return '';
+  var yes = function (v) { return v ? '<span class="ltag ok">' + ico('check', 12) + '</span>' : '<span class="muted">—</span>'; };
+  var num = function (n) { return n ? '<b>' + n + '</b>' : '<span class="muted">0</span>'; };
+  return card('Campus Leads this week', '<div class="tablebox"><table class="stack"><thead><tr><th>School</th><th>Check-in</th><th>Contacted</th><th>Join checks</th><th>Attendance</th><th>Note</th></tr></thead><tbody>' +
+    list.map(function (x) { return '<tr><td><span class="sline">' + schoolBadge(x.school, 24) + '<span><b>' + esc(x.school) + '</b><div class="muted sm">' + esc(x.lead) + '</div></span></span></td>' +
+      '<td data-l="Check-in">' + yes(x.checkedIn) + '</td><td data-l="Contacted">' + num(x.contacted) + (x.help ? ' <span class="muted sm">· ' + x.help + ' asked for help</span>' : '') + '</td>' +
+      '<td data-l="Join checks">' + num(x.joinChecks) + '</td><td data-l="Attendance">' + num(x.attendance) + '</td><td data-l="Note">' + yes(x.note) + '</td></tr>'; }).join('') + '</tbody></table></div>');
 }
 function adminView(d) {
   var a = d.admin, t = a.totals;
@@ -2688,7 +3454,7 @@ function adminView(d) {
   var tracker = a.tracker ? '<div class="links"><a class="pillbtn light sm" href="' + esc(a.tracker) + '" target="_blank" rel="noopener">Open Google Sheets ' + ico('external',16) + '</a></div>' : '';
   return page(d.me.first, 'Spot wins and support schools.',
     summary + attentionCard(a) +
-    card('Asked for help', help) + weekChart(a.weekly, 'Weekly check-in rate · region') +
+    card('Asked for help', help) + leadBoardCard(a) + weekChart(a.weekly, 'Weekly check-in rate · region') +
     quickActions() + tracker, true);
 }
 
@@ -2699,7 +3465,8 @@ function startCheckin() {
   var spec = S.data && S.data.member && S.data.member.checkin;
   if (!spec) return;
   var prevGame = S.data.member.game;
-  CK = { spec: spec, i: 0, a: {}, prev: prevGame, steps: spec.q.concat([{ k: 'consent', type: 'consent' }]) };
+  CK = { spec: spec, i: 0, a: {}, prev: prevGame, g: spec.mini ? miniStart(spec.mini) : null,
+         steps: spec.q.concat(spec.mini ? [{ k: 'mini', type: 'mini' }] : []).concat([{ k: 'consent', type: 'consent' }]) };
   var el = $('lesson'); if (el) el.remove();
   el = document.createElement('div'); el.className = 'lesson'; el.id = 'lesson';
   el.innerHTML = '<div class="lcard"><div class="lt"><button class="x" id="ckx" title="Later" aria-label="Close">' + ico('close', 18) + '</button><div class="prog"><i id="ckbar"><span class="ride">' + startLogo(30) + '</span></i></div></div>' +
@@ -2711,13 +3478,13 @@ function startCheckin() {
   $('ckgo').onclick = forward;
   step();
 }
-function closeCheckin() { S.later = true; var el = $('lesson'); if (el) el.remove(); document.body.style.overflow = ''; CK = null; }
+function closeCheckin() { if (CK && CK.g) miniClockStop(CK.g); S.later = true; var el = $('lesson'); if (el) el.remove(); document.body.style.overflow = ''; CK = null; }
 function answered(q) {
   var v = CK.a[q.k];
   if (q.type === 'one') return !!v;
   if (q.type === 'many') return !!(v && v.length);
   if (q.type === 'consent') return v === true;
-  return true;
+  return true;                                                     // the mini-game can always be skipped
 }
 // A saved "How was your week?" answer -> mood card position (0 need support … 3 great), -1 unknown
 function moodPos(v) { var t = String(v || '').split(' ')[0]; return { '🆘': 0, '😵‍💫': 1, '🙂': 2, '🔥': 3 }[t] != null ? { '🆘': 0, '😵‍💫': 1, '🙂': 2, '🔥': 3 }[t] : -1; }
@@ -2769,12 +3536,157 @@ function moodWire(q) {
   r.oninput = function () { paint(Number(r.value)); };
   r.onchange = function () { r.value = Math.round(Number(r.value) / 100) * 100; paint(Number(r.value), true); try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {} };
 }
+/* ---------- the weekly mini-game: one random game per check-in, played for bonus XP (or skipped for 0 XP) ----------
+ * Word scramble = one hard word, one try, 45 seconds. Odd one out = 3 hard rounds, one tap each, 20 seconds a round. The tracker checks the answer
+ * again when the check-in is saved, so the XP shown here is the XP that counts. Questions follow the scholar's own
+ * program (one odd-one-out round is about Davao). Simple card, START colours, and our START star cheering them on. */
+function miniStart(m) {
+  var g = { id: m.id, kind: m.kind, m: m, done: false, won: 0, fx: '', limit: (m.secs || (m.kind === 'scramble' ? 45 : 20)) * 1000, combo: 0, best: 0 };
+  g.left = g.limit;
+  if (m.kind === 'scramble') { g.hearts = m.hearts || 1; g.tries = 0; g.slots = []; g.order = m.letters.map(function (x, i) { return i; }); }
+  else { g.r = 0; g.picks = []; g.pick = -1; g.right = 0; }
+  return g;
+}
+// the clock: runs only while the game is on screen and waiting for an answer
+function miniLive(g) { return !g.done && !(g.kind !== 'scramble' && g.pick !== -1); }
+function miniClockStop(g) {
+  if (!g || !g.running) return;
+  clearTimeout(g.tm); g.left = Math.max(0, g.left - (Date.now() - g.startAt)); g.running = false;
+}
+function miniClockStart(g) {
+  if (g.running || !miniLive(g)) return;
+  g.running = true; g.startAt = Date.now();
+  g.tm = setTimeout(function () { if (CK && CK.g === g) miniTimeUp(g); }, g.left);
+}
+function miniTimeUp(g) {
+  g.running = false; g.left = 0; g.late = true; miniBuzz([40, 30, 40]);
+  if (g.kind === 'scramble') {
+    var word = g.slots.map(function (i) { return g.m.letters[i]; }).join('');
+    g.done = true; g.won = 0; g.fx = 'lose'; CK.a.mini = { id: g.id, answer: word, tries: 1 };
+  } else { g.pick = -2; g.picks.push(''); g.combo = 0; }
+  if (CK.steps[CK.i].type === 'mini') step();
+}
+function miniMood() {
+  var g = CK.g;
+  if (g.kind === 'scramble') return g.done ? (g.won ? 'win' : 'sad') : 'idle';
+  if (g.done) return g.right >= 2 ? 'win' : g.right ? 'idle' : 'sad';
+  if (g.pick >= 0 && g.pick === g.m.rounds[g.r].odd) return 'win';
+  if (g.pick !== -1) return 'oops';
+  return 'idle';
+}
+function miniMedal(n, of) { return n === of ? 'Gold' : n >= Math.ceil(of * 2 / 3) ? 'Silver' : n ? 'Bronze' : ''; }
+function miniSay() {
+  var g = CK.g; if (!g) return '';
+  if (g.skipped) return 'Skipped. No bonus XP this week.';
+  if (g.kind === 'scramble') {
+    if (g.done) return g.won ? 'Galing! You got it.' : g.late ? 'Time\'s up!' : 'Not this time!';
+    return 'One try only. Beat the clock!';
+  }
+  if (g.done) { var md = miniMedal(g.right, g.m.rounds.length); return md ? md + '! Nice work.' : 'Better luck next week!'; }
+  if (g.pick === -2) return 'Time\'s up!';
+  if (g.pick >= 0) return g.pick === g.m.rounds[g.r].odd ? (g.combo >= 2 ? g.combo + ' in a row!' : 'Yes!') : 'Oops!';
+  return 'Round ' + (g.r + 1) + ' of ' + g.m.rounds.length + '. Quick, one tap!';
+}
+function miniHtml() {
+  var g = CK.g, m = g.m, mood = miniMood(), total = g.kind === 'scramble' ? 1 : m.rounds.length;
+  var xp = g.done ? '+' + g.won + ' XP' : 'up to +' + m.xp + ' XP';
+  var clock = miniLive(g) ? '<div class="bbtime"><i style="animation-duration:' + (g.limit / 1000) + 's;animation-delay:-' + ((g.limit - g.left) / 1000).toFixed(2) + 's"></i></div>' : '';
+  var h = '<div class="bb mg-' + g.kind + (g.fx ? ' fx-' + g.fx : '') + '">' +
+    '<div class="bbtop"><span class="bbstar s-' + mood + '">' + startLogo(52, mood) + '</span><div class="bbsay">' + esc(miniSay()) + '</div>' +
+    (g.combo >= 2 && !g.done ? '<span class="combo">' + ico('flame', 15) + ' x' + g.combo + '</span>' : '') + '</div>';
+  var feed = function (ok, head, text, btn) {
+    return '<div class="bbfeed ' + (ok ? 'ok' : 'no') + '"><b>' + ico(ok ? 'check' : 'close', 18) + ' ' + esc(head) + '</b>' + (text ? '<span>' + esc(text) + '</span>' : '') + (btn || '') + '</div>';
+  };
+  if (g.kind === 'scramble') {
+    h += '<div class="bbmeta"><span>' + (g.done ? 'Word scramble' : 'One try') + '</span><span>' + xp + '</span></div>' + clock;
+    var word = g.done && !g.won ? m.answer.split('') : null;
+    var slots = m.answer.split('').map(function (x, k) {
+      var t = g.slots[k], ch = word ? word[k] : t != null ? m.letters[t] : '';
+      return '<button class="mgslot' + (ch ? ' full' : '') + (word ? ' shown' : '') + '" data-s="' + k + '" style="--d:' + (k * 55) + 'ms"' + (g.done || t == null ? ' tabindex="-1"' : '') +
+        ' aria-label="' + (ch ? 'Letter ' + esc(ch) + ', tap to remove' : 'Empty') + '">' + esc(ch) + '</button>';
+    }).join('');
+    var tiles = g.order.map(function (t) {
+      var used = g.slots.indexOf(t) !== -1;
+      return '<button class="mgtile' + (used ? ' used' : '') + '" data-t="' + t + '"' + (used || g.done ? ' disabled' : '') + '>' + esc(m.letters[t]) + '</button>';
+    }).join('');
+    h += '<p class="bbhint">' + esc(m.clue) + '</p><div class="mgslots">' + slots + '</div>';
+    if (!g.done) h += '<div class="mgtiles">' + tiles + '</div><button class="bblink" id="mgshuf">Shuffle letters</button>';
+    else if (!g.skipped) h += g.won ? feed(true, 'Solved! +' + g.won + ' XP', '') : feed(false, g.late ? 'Time\'s up' : 'Not quite', 'The word was ' + m.answer + '.');
+  } else {
+    var dots = m.rounds.map(function (x, k) {
+      var st = k < g.picks.length ? (g.picks[k] === m.rounds[k].choices[m.rounds[k].odd] ? 'ok' : 'no') : k === g.r && !g.done ? 'now' : '';
+      return '<i class="pip ' + st + '"></i>';
+    }).join('');
+    h += '<div class="bbmeta"><span class="pips" aria-label="Round ' + (g.r + 1) + ' of ' + total + '">' + dots + '</span><span>' + xp + '</span></div>' + (g.done ? '' : clock);
+    if (g.done) {
+      var stars = ''; for (var s2 = 0; s2 < total; s2++) stars += '<i class="bigstar' + (s2 < g.right ? ' on' : '') + '" style="--d:' + (s2 * 160) + 'ms">' + ico('star', 30) + '</i>';
+      var md = miniMedal(g.right, total);
+      h += '<div class="mgdone"><div class="stars">' + stars + '</div>' + (md ? '<span class="medal m-' + md.toLowerCase() + '">' + md + '</span>' : '') +
+        '<b>' + g.right + ' of ' + total + ' right' + (g.best >= 2 ? ' · best combo x' + g.best : '') + '</b></div>';
+    } else {
+      var R = m.rounds[g.r], ok = g.pick === R.odd;
+      h += '<p class="bbq">' + esc(R.title) + '</p><div class="mgodds">' + R.choices.map(function (c, j) {
+        var st = g.pick === -1 ? '' : j === R.odd ? ' ok' : j === g.pick ? ' no' : ' dim';
+        return '<button class="mgodd' + st + '" data-o="' + j + '"' + (g.pick !== -1 ? ' disabled' : '') + '>' + esc(c) + '</button>';
+      }).join('') + '</div>';
+      if (g.pick !== -1) h += feed(ok, ok ? 'Correct! +' + m.each + ' XP' + (g.right === m.rounds.length && g.r === m.rounds.length - 1 ? ' +' + (m.perfect || 0) + ' perfect' : '') : g.pick === -2 ? 'Time\'s up' : 'Not quite', R.why,
+        '<button class="pillbtn mgnext" id="mgnext">' + (g.r < total - 1 ? 'Next round' : 'See my score') + '</button>');
+    }
+  }
+  return h + '</div>';
+}
+function miniBuzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+function miniWire() {
+  var g = CK.g, m = g.m; g.fx = '';
+  if (g.kind === 'scramble') {
+    [].forEach.call(document.querySelectorAll('#ckq [data-t]'), function (b) { b.onclick = function () {
+      var t = Number(b.getAttribute('data-t'));
+      if (g.done || g.slots.indexOf(t) !== -1) return;
+      g.slots.push(t); miniBuzz(8);
+      if (g.slots.length < m.answer.length) { step(); return; }
+      var word = g.slots.map(function (i) { return m.letters[i]; }).join('');
+      miniClockStop(g); g.tries = 1; g.done = true;                                   // one try only
+      CK.a.mini = { id: g.id, answer: word, tries: 1 };
+      if (word === m.answer) { g.won = m.xp; g.fx = 'win'; miniBuzz([20, 40, 20]); step(); miniPop('+' + m.xp + ' XP'); }
+      else { g.won = 0; g.fx = 'shake'; miniBuzz([40, 30, 40]); step(); }
+    }; });
+    [].forEach.call(document.querySelectorAll('#ckq [data-s]'), function (b) { b.onclick = function () {
+      var k = Number(b.getAttribute('data-s'));
+      if (g.done || g.slots[k] == null) return;
+      g.slots.splice(k, 1); step();
+    }; });
+    if ($('mgshuf')) $('mgshuf').onclick = function () { for (var i = g.order.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = g.order[i]; g.order[i] = g.order[j]; g.order[j] = t; } step(); };
+  } else {
+    [].forEach.call(document.querySelectorAll('#ckq [data-o]'), function (b) { b.onclick = function () {
+      if (g.done || g.pick !== -1) return;
+      miniClockStop(g);
+      var R = m.rounds[g.r]; g.pick = Number(b.getAttribute('data-o')); g.picks.push(R.choices[g.pick]);
+      if (g.pick === R.odd) { g.right++; g.combo++; g.best = Math.max(g.best, g.combo); miniBuzz([15, 30, 15]); } else { g.combo = 0; miniBuzz([40, 30, 40]); }
+      step(); if (g.pick === R.odd) miniPop('+' + m.each + ' XP');
+    }; });
+    if ($('mgnext')) $('mgnext').onclick = function () {
+      if (g.r < m.rounds.length - 1) { g.r++; g.pick = -1; g.left = g.limit; step(); return; }
+      g.done = true; g.won = g.right * m.each + (g.right === m.rounds.length ? (m.perfect || 0) : 0); CK.a.mini = { id: g.id, picks: g.picks.slice() }; step(); if (g.right) miniPop('');
+    };
+  }
+  miniClockStart(g);
+}
+// a little burst of stars from the game card
+function miniPop(label) {
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var box = document.querySelector('#ckq .bb'); if (!box) return;
+  var c = document.createElement('div'); c.className = 'mgburst';
+  for (var i = 0; i < 14; i++) c.innerHTML += '<i style="--a:' + Math.round(i / 14 * 360) + 'deg;--c:' + ['#FFDD00', '#0099FF', '#7CCBFF', '#12203A'][i % 4] + '"></i>';
+  box.appendChild(c); setTimeout(function () { c.remove(); }, 900);
+  if (label) { var f = document.createElement('span'); f.className = 'xpfly'; f.textContent = label; box.appendChild(f); setTimeout(function () { f.remove(); }, 1300); }
+}
 function step() {
   var q = CK.steps[CK.i], n = CK.steps.length, h = '';
+  if (CK.g) miniClockStop(CK.g);                                     // the game clock runs only while its card is on screen
   var head = function (kicker, title) {
     var said = reaction(q) || kicker;
-    $('ckh').innerHTML = '<div class="kicker">' + (CK.spec.late ? 'Late check-in · ' : '') + (CK.i + 1) + ' of ' + n + (CK.spec.due ? ' · Due ' + esc(CK.spec.due) : '') + '</div><h2>' + esc(title) + '</h2>' +
-      '<div class="coach">' + startLogo(54) + '<div class="say' + (CK.pop != null ? ' pop' : '') + '">' + esc(said) + '</div></div>';
+    $('ckh').innerHTML = '<div class="kicker">' + (CK.daily ? 'Today\'s brain break · ' + esc(CK.dayLabel) : (CK.spec.late ? 'Late check-in · ' : '') + (CK.i + 1) + ' of ' + n + (CK.spec.due ? ' · Due ' + esc(CK.spec.due) : '')) + '</div><h2>' + esc(title) + '</h2>' +
+      (q.type === 'mini' ? '' : '<div class="coach">' + startLogo(54, CK.pop != null ? 'win' : 'idle') + '<div class="say' + (CK.pop != null ? ' pop' : '') + '">' + esc(said) + '</div></div>');
   };
   $('ckbar').style.width = Math.round(100 * CK.i / n) + '%';
   $('ckmsg').textContent = '';
@@ -2821,6 +3733,9 @@ function step() {
     var starters = ['Exams this week', 'Schedule conflict', 'Stipend question', 'An idea for START'];
     h = '<div class="sticky"><textarea id="cktea" maxlength="1000" placeholder="Anything on your mind? Leave it blank if not.">' + esc(CK.a[q.k] || '') + '</textarea></div>' +
       '<div class="starters">' + starters.map(function (t) { return '<button class="starter" data-st="' + esc(t) + '">+ ' + esc(t) + '</button>'; }).join('') + '</div>';
+  } else if (q.type === 'mini') {                                             // the weekly mini-game (bonus XP)
+    head('Bonus', GAME_NAMES[CK.g.kind] || 'Brain break');
+    h = miniHtml();
   } else {                                                                    // the privacy promise, with a switch
     head('Last step', 'Data privacy consent');
     h = '<button class="choice pact" id="ckok" aria-pressed="' + (CK.a.consent === true) + '"><span class="pic">' + ico('shield', 30) + '</span>' +
@@ -2848,14 +3763,29 @@ function step() {
     [].forEach.call(document.querySelectorAll('[data-st]'), function (b) { b.onclick = function () {
       var t = $('cktea'), add = b.getAttribute('data-st'); t.value = (t.value ? t.value.replace(/\s*$/, '') + '\n' : '') + add + ': '; t.focus(); t.oninput(); }; });
   }
+  if (q.type === 'mini') miniWire();
   var last = CK.i === n - 1;
-  $('ckgo').textContent = last ? 'Submit' : (q.type === 'text' && !CK.a[q.k] ? 'Skip' : 'Continue');
-  $('ckgo').className = 'pillbtn';
+  $('ckgo').textContent = last ? 'Submit' : (q.type === 'text' && !CK.a[q.k] ? 'Skip' : q.type === 'mini' && !CK.g.done ? 'Skip game · 0 XP' : 'Continue');
+  $('ckgo').className = 'pillbtn' + (q.type === 'mini' && !CK.g.done ? ' skipgame' : '');
+  if (CK.daily) {                                                     // one game a day: skip = 0 XP; the result is saved by itself
+    if (CK.g.done && !CK.sent && !CK.err) dailySend();
+    $('ckgo').textContent = !CK.g.done ? 'Skip today · 0 XP' : CK.err ? 'Try again' : CK.saved ? 'Continue' : 'Saving…';
+    $('ckgo').disabled = CK.g.done && !CK.saved && !CK.err;
+    $('ckmsg').textContent = CK.err || '';
+    $('ckbar').style.width = CK.g.done ? '100%' : '0%';
+  }
   $('ckgo').disabled = !answered(q);
 }
 function forward() {
   var q = CK.steps[CK.i];
+  if (CK.daily) {
+    if (!CK.g.done) { askSure('Skip today\'s game?', 'You get 0 XP and cannot come back to it today.', function () { dailyQuit(); step(); }, 'Skip'); return; }
+    if (CK.err) { dailySend(); step(); return; }
+    if (CK.saved) closeDaily();
+    return;
+  }
   if (!answered(q)) return;
+  if (q.type === 'mini' && !CK.g.done) { miniClockStop(CK.g); CK.g.done = true; CK.g.skipped = true; CK.g.won = 0; CK.a.mini = { id: CK.g.id, skip: true }; }
   if (CK.i < CK.steps.length - 1) { CK.i++; step(); return; }
   if (S.viewAs) { $('ckmsg').textContent = 'Preview only: nothing was sent for ' + S.viewAs.label.split(' · ')[0] + '.'; return; }
   $('ckgo').disabled = true; $('ckgo').textContent = 'Sending…';
@@ -2916,6 +3846,7 @@ function reaction(q) {
   if (q.type === 'many' && v && v.length) return v.indexOf(q.none) !== -1 ? 'No worries. See you at the next one!' : 'Nice! ' + v.length + ' event' + (v.length > 1 ? 's' : '') + ' this week.';
   if (q.type === 'text') return 'Anything on your mind? This one is optional.';
   if (q.type === 'consent') return CK.a.consent ? 'All set. Tap Submit!' : 'Last one!';
+  if (q.type === 'mini') return miniSay();
   return '';
 }
 function countUp(el, to) {
@@ -2937,6 +3868,7 @@ function won(m) {
   $('ckq').innerHTML = '<div class="win">' + (urgent ? '<div class="bignum">' + ico('lifebuoy', 96) + '</div><h2>We\'re on it</h2><p>Your Campus Lead and Regional Representative have been notified.</p>'
     : postcard('wide win') + '<div class="bignum flamey">' + ico('flame', 64) + ' <span id="cnt">' + (m.streak || 1) + '</span></div><div class="plus1">+1 week</div><h2>' + (m.streak > 1 ? 'weeks in a row' : 'Check-in done') + '</h2><p>Thank you. See you next week.</p>' +
       (m.game && CK.prev ? '<span class="xpgain">' + ico('bolt', 18) + ' +' + Math.max(0, m.game.xp - CK.prev.xp) + ' XP</span>' : '') +
+      (CK.g && CK.g.won ? '<div class="mgwon">' + ico('star', 16) + ' Mini-game bonus: +' + CK.g.won + ' XP</div>' : '') +
       (m.game && CK.prev && m.game.level.n > CK.prev.level.n ? '<div class="lvup">Level up! You\'re now <b>' + esc(m.game.level.title) + '</b></div>' : '')) + '</div>';
   if (!urgent) { confetti(); if ($('cnt')) countUp($('cnt'), m.streak || 1); try { if (navigator.vibrate) navigator.vibrate([20, 40, 20]); } catch (e) {} }
   $('ckmsg').textContent = ''; $('ckback').style.display = 'none'; $('ckback').parentNode.classList.add('solo');
@@ -2945,7 +3877,7 @@ function won(m) {
 }
 
 /* ---------- start ---------- */
-$('brand').innerHTML = brand(32);
+$('brand').innerHTML = brand(48);
 // The side menu can be folded to icons only (remembered on this device)
 function sideFold(on) {
   document.body.classList.toggle('folded', on);

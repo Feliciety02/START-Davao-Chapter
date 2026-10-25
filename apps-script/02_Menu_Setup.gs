@@ -104,17 +104,13 @@ function dbMenu_(ui) {
       .addItem('📣 Write a message', 'menuAnnounce')
       .addSeparator()
       .addItem('🧪 Send me a test of every email', 'menuTestAll'))
-    .addSubMenu(ui.createMenu('⏰ Automatic emails')
-      .addItem('🚀 Turn ON', 'menuWeeklyOn')
-      .addItem('⏸ Turn OFF', 'menuWeeklyOff')
-      .addItem('🔑 Make my account send them', 'menuTakeOver'))
     .addSeparator()
     .addItem('📋 Refresh join request history', 'setupJoinHistory')
     .addItem('🩺 Check my tracker', 'menuCheck')
     .addSubMenu(ui.createMenu('🛠 Setup tools')
       .addItem('📅 Set up / update calendars', 'menuCalendar')
       .addItem('🖼 Connect the pictures folder', 'menuMemeFolder')
-      .addItem('🏫 Fill in my region\'s schools', 'menuLoadSchools')
+      .addItem('🔑 Make my account send automatic emails', 'menuTakeOver')
       .addItem('🏫 School logos (website)', 'menuSchoolLogos')
       .addSeparator()
       .addItem('📄 End-of-term report', 'menuTermReport')
@@ -368,6 +364,7 @@ function setupSteps_(ss) {
     ['Tab header pictures',   () => repairHeaders_(ss), true],                       // any tab still bare (e.g. pictures added later)
     ['Plain database tabs',   () => { if (DB_MODE) tidyToDatabase_(ss); }, true],
     ['Same table look on every tab', () => styleNewerTables_(ss, true), true],
+    ['Database protections', () => { if (DB_MODE) protect_(ss); }, true],
   ].filter(x => !DB_MODE || NOT_IN_DB.indexOf(x[0]) === -1);
 }
 
@@ -427,6 +424,7 @@ function quickFix_() {
     if (automationOwner_() === me_()) installExtrasTrigger_();
     applyFormWindow_(); checkScholarEmails_(ss); writeLeaderboard_(ss);
   });
+  if (DB_MODE) step('Database protections', () => protect_(ss));
   if (!DB_MODE) {
     step('Calendar view', () => renderCalView_(ss));
     step('Links tab (top part)', () => writeAutoLinks_(ss));
@@ -487,6 +485,10 @@ function setupFull() {
   orderTabs_(ss);
   ss.setActiveSheet(ss.getSheetByName(TAB.settings));
 
+  if (DB_MODE) {
+    notify_('✅ Your tracker database is ready\n\nOpen START Tracker › 🌐 Website for members, Leads & you. Manage schools, scholars and settings on the website.');
+    return;
+  }
   notify_('✅ Your tracker is ready\n\n' +
           '1. Fill in the yellow cells here in Settings\n' +
           '2. Schools tab: add schools (or 🛠 Setup tools › 🏫 Fill in my region\'s schools)\n' +
@@ -747,8 +749,26 @@ function scholarRowNumber_(sc, name) {
 
 // Warning-only protection: Google shows "are you sure?" before anyone types over formulas.
 function protect_(ss) {
-  ss.getProtections(SpreadsheetApp.ProtectionType.RANGE).concat(ss.getProtections(SpreadsheetApp.ProtectionType.SHEET))
-    .filter(p => p.getDescription() === PROTECT_TAG).forEach(p => p.remove());
+  const owned = ss.getProtections(SpreadsheetApp.ProtectionType.RANGE).concat(ss.getProtections(SpreadsheetApp.ProtectionType.SHEET))
+    .filter(p => p.getDescription() === PROTECT_TAG);
+  if (DB_MODE) {
+    const editors = [me_(), automationOwner_()].filter(Boolean);
+    const tabs = [TAB.settings, TAB.schools];
+    owned.filter(p => {
+      try { return tabs.indexOf(p.getRange().getSheet().getName()) !== -1; }
+      catch (e) { return false; }
+    }).forEach(p => p.remove());
+    tabs.map(name => ss.getSheetByName(name)).filter(Boolean).forEach(sh => {
+      const p = sh.protect().setDescription(PROTECT_TAG);
+      p.setWarningOnly(false);
+      editors.forEach(email => p.addEditor(email));
+      const remove = p.getEditors().filter(user => editors.indexOf(String(user.getEmail()).toLowerCase()) === -1);
+      if (remove.length) p.removeEditors(remove);
+      try { if (p.canDomainEdit()) p.setDomainEdit(false); } catch (e) { Logger.log('Domain edit protection: ' + e.message); }
+    });
+    return;
+  }
+  owned.forEach(p => p.remove());
   const L = CONFIG.maxSchools + 1, sch = ss.getSheetByName(TAB.schools);
   [sch.getRange(`C1:C${L}`), sch.getRange(`E1:E${L}`), sch.getRange(`G1:H${L}`), sch.getRange('A1:H1'), sch.getRange(`P1:Q${L}`),
    ss.getSheetByName(TAB.scholars).getRange('A1:J1'),

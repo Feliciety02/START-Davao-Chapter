@@ -109,6 +109,41 @@ function properties() {
   assert.equal(rows.length, 1);
 }
 
+// The real approval action creates a Scholar row when the old masterlist is empty.
+{
+  const c = startContext(), request = new Array(18).fill(''), scholars = [];
+  request[1] = 'Rivera, Ana'; request[2] = 'USeP'; request[3] = 'ana@example.com';
+  request[4] = 'New'; request[7] = 'Computer Science'; request[8] = c.JOIN.years[0];
+  request[10] = 'Eligible'; request[15] = '2024';
+  const joinSheet = {
+    getLastRow: () => 2,
+    getRange: (row, col) => ({ getValues: () => [request], setValue: value => { request[col - 1] = value; } }),
+    getMaxColumns: () => 18
+  };
+  const scholarSheet = {
+    getLastRow: () => scholars.length + 1,
+    getMaxColumns: () => 13,
+    getMaxRows: () => 2,
+    getRange: () => ({ getValues: () => scholars, setValues: rows => { scholars.push(...rows); } })
+  };
+  c.joinTab_ = () => joinSheet;
+  c.schoolRows_ = () => [{ name: 'USeP' }];
+  c.oldMasterRows_ = () => [];
+  c.autoApproveOn_ = () => true;
+  c.docLock_ = () => ({ tryLock: () => true, releaseLock() {} });
+  c.Utilities = { formatDate: () => 'Oct 24' };
+  c.SpreadsheetApp = { flush() {} };
+  c.refreshJoinViews_ = () => {};
+  c.calPeopleChanged_ = () => {};
+  const ss = { getSheetByName: name => name === c.TAB.scholars ? scholarSheet : null };
+  const approved = c.webJoinAction_(ss, 'join-add', { row: 2, auto: true });
+  assert.equal(approved.ok, true, 'an eligible new scholar is approved without a masterlist');
+  assert.equal(scholars.length, 1);
+  assert.equal(scholars[0][4], 'ana@example.com');
+  assert.equal(scholars[0][5], 'Active');
+  assert.match(request[4], /^Added automatically/);
+}
+
 // Codes are rate limited, single-use and time limited. A failed mail send must
 // restore the previous code state so the scholar can retry.
 {

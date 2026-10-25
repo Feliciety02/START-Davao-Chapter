@@ -14,7 +14,7 @@ new vm.Script(script, { filename: 'Web_App.html' });
 // Registration choices must not overwrite the fallback postcard scenes.
 assert.match(script, /JOIN_PLACES\s*=\s*r\.places\s*\|\|\s*\{\}/);
 const artStart = script.indexOf('function eagle(');
-const artEnd = script.indexOf('/* ---------- START mark used', artStart);
+const artEnd = script.indexOf('function startLogo(', artStart);
 assert.ok(artStart >= 0 && artEnd > artStart);
 const art = vm.createContext({ PLACE: null, JOIN_PLACES: { Davao: ['Davao City'] } });
 vm.runInContext(script.slice(artStart, artEnd), art);

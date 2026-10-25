@@ -17,16 +17,19 @@ function about_05_Portals() {
 }
 
 
-// Guard for sheet-only administrative actions. These actions must not be
-// callable through the public website (which runs as a web app).
+/* ---------- sheet-only functions are never run from the website ----------
+ * The website runs as you, and a web page can ask for any function whose name has no "_" at the end. Every tool that
+ * belongs to the sheet (send an announcement, reset a password, remove a person, upload pictures, fresh start…) starts
+ * with this check: it runs only for you or another editor of the tracker, never for a website visitor. */
 function sheetUser_() {
-  try {
-    const ui = SpreadsheetApp.getUi();
-    if (!ui) throw new Error('No spreadsheet interface');
-    return true;
-  } catch (err) {
-    throw new Error('Open the START Tracker spreadsheet and use its START Tracker menu for this action.');
+  if (typeof Session === 'undefined' || typeof Session.getActiveUser !== 'function') return '';   // test stand-ins only (Apps Script always has it)
+  let u = '';
+  try { u = emailOf_(Session.getActiveUser().getEmail()); } catch (e) { u = ''; }
+  if (u) {
+    if (u === me_() || u === automationOwner_()) return u;
+    try { if (SpreadsheetApp.getActive().getEditors().some(x => emailOf_(x.getEmail()) === u)) return u; } catch (e) { /* not in the sheet */ }
   }
+  throw new Error('This works only from the START Tracker sheet, for its editors.');
 }
 
 // ━━━━━━━━━━━━━━━━━━━━  FocalPortal  ━━━━━━━━━━━━━━━━━━━━
@@ -749,6 +752,9 @@ var WEB = { codeMins: 15, sessionDays: 30, shortHours: 12, maxTries: 5, perHour:
             lateDays: 2,          // a missed check-in can still be answered this many days after its due day (marked late)
             cacheSecs: 60 };      // a page is re-read from the sheet at most once a minute (faster on busy nights)
 
+// Original image served by DOST START. The website uses it directly as an <img>, never a CSS crop.
+var START_DOST_LOGO_URL = 'https://www.start-dost.org/_next/static/media/logo-s.7f4f7462.png';
+
 // The page itself
 function doGet(e) {
   if (e && e.parameter && e.parameter.ping) {                       // 🩺 Check my tracker: which code version is live?
@@ -760,7 +766,7 @@ function doGet(e) {
   try { const u = ScriptApp.getService().getUrl(); if (u && !docProps_().getProperty('WEB_URL_SET')) docProps_().setProperty('WEB_URL', u); } catch (err) { /* not deployed */ }
   const boot = {
     region: String(st.region || ''), regionName: String(st.regionName || ''), pics: webPics_(),
-    mark: typeof START_MARK === 'undefined' ? '' : START_MARK,
+    mark: START_DOST_LOGO_URL,
     place: (() => { try { return placeOfWeek_(); } catch (err) { return null; } })(),
     appOrigin: ''
   };
@@ -864,6 +870,13 @@ function webSafe_(fn) {
   }
 }
 
+// Timings contain no account or scholar details. They appear in Apps Script executions.
+function webTimed_(label, fn) {
+  const started = Date.now();
+  try { return webSafe_(fn); }
+  finally { if (typeof Logger !== 'undefined') Logger.log('Website timing ' + label + ': ' + (Date.now() - started) + ' ms'); }
+}
+
 // Who is this email in THIS tracker? (checked again on every request)
 function webRoles_(ss, email) {
   email = emailOf_(email);
@@ -871,7 +884,8 @@ function webRoles_(ss, email) {
   if (!email) return r;
   r.suspended = docProps_().getProperty('WEB_SUSP_' + webHash_(email)) === '1';
   let st = {}; try { st = getSettings_(); } catch (e) { st = {}; }
-  const admins = [me_(), automationOwner_()].concat(String(st.recipients || '').split(/[,;\s]+/).map(emailOf_)).filter(Boolean);
+  // Summary recipients receive a report, not control over scholar and school records.
+  const admins = [me_(), automationOwner_()].filter(Boolean);
   r.admin = admins.indexOf(email) !== -1;
   const p = scholarByEmail_(ss)[email];
   if (p) r.suspended = p.status === 'Suspended';
@@ -1148,14 +1162,19 @@ function webEndSessions_(email) {
 }
 
 // A person's cached page is dropped (after a check-in, sign-out everywhere)
-function webForget_(email) { try { CacheService.getScriptCache().remove('WL_' + webHash_(emailOf_(email))); } catch (e) { /* no cache */ } }
+function webCacheKey_(email) { return 'WL_' + (docProps_().getProperty('WEB_DATA_V') || '0') + '_' + webHash_(emailOf_(email)); }
+function webBumpData_() {
+  const props = docProps_();
+  props.setProperty('WEB_DATA_V', String(Number(props.getProperty('WEB_DATA_V') || 0) + 1));
+}
+function webForget_(email) { try { CacheService.getScriptCache().remove(webCacheKey_(email)); } catch (e) { /* no cache */ } }
 
 // Every morning: accounts of people no longer on the list (graduated, dropped, changed email) are removed
 function webCleanAccounts_(ss) {
   ss = ss || webSheet_();
-  const st = getSettings_(), keep = {};
+  const keep = {};
   const add = e => { e = emailOf_(e); if (e) keep['WEB_A_' + webHash_(e)] = true; };
-  [me_(), automationOwner_()].concat(String(st.recipients || '').split(/[,;\s]+/)).forEach(add);
+  [me_(), automationOwner_()].forEach(add);
   const by = scholarByEmail_(ss);
   Object.keys(by).forEach(e => { if (by[e].status === 'Active') add(e); });
   schoolRows_(ss).forEach(s => { if (s.focal && s.email && !s.inactive) add(s.email); });
@@ -1272,7 +1291,7 @@ function webAccountCount_() {
 /* ---------- what the page shows ---------- */
 
 function webLoad(token, fresh) {
-  return webSafe_(() => {
+  return webTimed_('load' + (fresh ? ' fresh' : ''), () => {
     const s = webSession_(token);
     if (!s) return { ok: false, signedOut: true };
     const ss = webSheet_(), who = webRoles_(ss, s.e);
@@ -1280,7 +1299,7 @@ function webLoad(token, fresh) {
       docProps_().deleteProperty('WEB_S_' + webHash_(token));
       return { ok: false, signedOut: true, msg: 'This email is no longer on your region\'s START list. Please contact your Regional Representative.' };
     }
-    const cache = (() => { try { return CacheService.getScriptCache(); } catch (e) { return null; } })(), ck = 'WL_' + webHash_(who.email);
+    const cache = (() => { try { return CacheService.getScriptCache(); } catch (e) { return null; } })(), ck = webCacheKey_(who.email);
     if (!fresh && cache) { try { const hit = cache.get(ck); if (hit) return JSON.parse(hit); } catch (e) { /* read it fresh */ } }
     const out = webBuild_(ss, who);
     const json = JSON.stringify(out);
@@ -1299,10 +1318,10 @@ function webBuild_(ss, who) {
     if (who.member) { try { out.member = webMember_(ss, who); } catch (e) { Logger.log('Website member: ' + e.message); } }
     if (who.leads.length) { try { out.lead = webLead_(ss, who.leads, st); } catch (e) { Logger.log('Website Lead: ' + e.message); } }
     if (who.admin) { try { out.admin = webAdmin_(ss, st); } catch (e) { Logger.log('Website RR: ' + e.message); } }
-    // Full event feed for monthly navigation (home cards intentionally remain six).
-    try { out.calendarEvents = webCalendarEvents_(ss, who); } catch (e) { Logger.log('Website calendar: ' + e.message); out.calendarEvents = []; }
+    // RR calendar and event records load together only when the Calendar page opens.
+    if (!who.admin) try { out.calendarEvents = webCalendarEvents_(ss, who); } catch (e) { Logger.log('Website calendar: ' + e.message); out.calendarEvents = []; }
     try { out.logoV = schoolLogoVersion_(ss); } catch (e) { out.logoV = ''; }
-    try {
+    if (!who.admin) try {
       const r = webRanksFor_(webLeaderboard_(ss, (who.member ? [who.member.school] : []).concat(who.leads)), who.admin);
       out.ranks = r.ranks; out.ranksHidden = r.hidden;
     } catch (e) { Logger.log('Leaderboard: ' + e.message); }
@@ -1436,8 +1455,8 @@ function webMember_(ss, who) {
   return { school, lead: sc.focal ? displayName_(sc.focal) : '', done: !!me.now, streak: me.streak || 0,
            vibe: me.now ? me.now.vibe : '', help: me.now ? me.now.help : '',
            due: d ? webFmt_(d.week.due, 'EEEE, MMM d') : '', near: d ? memberDeadlineNear_(d.week) : false,
-           formUrl: url, open: !!d, checkin: (spec = webCheckinSpec_(ss, who.email)), game: (() => { try { return webGame_(ss, webMyAnswers_(ss, who.email), spec); } catch (e) { Logger.log('Game: ' + e.message); return null; } })(), history: history.slice(0, 5).map(h => ({ date: h.date, vibe: h.vibe, help: h.help })),
-           events: webEvents_(ss, school, false) };
+           formUrl: url, open: !!d, checkin: (spec = webCheckinSpec_(ss, who.email)), game: (() => { try { return webGame_(ss, webMyAnswers_(ss, who.email), spec, webMyDaily_(ss, who.email)); } catch (e) { Logger.log('Game: ' + e.message); return null; } })(), history: history.slice(0, 5).map(h => ({ date: h.date, vibe: h.vibe, help: h.help })),
+           events: webEvents_(ss, school, false), leadNote: leadNote_(school) };
 }
 
 /* ---------- the weekly check-in, answered on the website ----------
@@ -1482,6 +1501,294 @@ function webAnswerRow_(ss, email, weekKey, sh, c) {
     if (v[0] instanceof Date && emailOf_(v[c.email]) === email && memberWeekKey_(v[0]) === weekKey) return i + 2;
   }
   return -1;
+}
+
+/* ---------- 🧩 daily brain breaks (website Journey) ----------
+ * Every day has one thing to do. The check-in day (Settings › "Weekly check-in opens") is the weekly check-in, worth the
+ * most XP. Every other day is ONE random brain break: a word scramble (one hard word, one try, against the clock),
+ * odd one out or a number pattern (three hard rounds, timed). Questions follow the scholar's own program (Scholars › C),
+ * with Davao Region rounds mixed in. Days cannot be replayed: a game counts only on its own day, opening it starts it,
+ * and leaving before the end scores 0. The page shows the game; THIS file checks every answer and decides the XP.
+ * Saved in the "Daily games" tab. XP from games and check-ins is one balance: levels now, rewards to redeem later. */
+var MINI = { xpScramble: 10, xpRound: 3, perfect: 1, rounds: 3, hearts: 1, programRounds: 2, secsScramble: 45, secsRound: 20 };
+// Number patterns (logic, for every program): [question, four choices, index of the answer, why]
+var MINI_PATTERNS = [
+  ['What comes next? 2, 4, 8, 16, …', ['24', '32', '30', '64'], 1, 'Each number doubles.'],
+  ['What comes next? 3, 7, 11, 15, …', ['18', '19', '20', '22'], 1, 'Add 4 each time.'],
+  ['What comes next? 1, 4, 9, 16, …', ['24', '25', '26', '36'], 1, 'These are square numbers.'],
+  ['What comes next? 2, 6, 12, 20, …', ['28', '30', '32', '40'], 1, 'Add 4, then 6, then 8, then 10.'],
+  ['What comes next? 81, 27, 9, 3, …', ['0', '1', '2', '6'], 1, 'Divide by 3 each time.'],
+  ['What comes next? 5, 10, 20, 35, …', ['45', '50', '55', '60'], 2, 'Add 5, 10, 15, then 20.'],
+  ['What comes next? 1, 1, 2, 3, 5, …', ['6', '7', '8', '10'], 2, 'Each number is the sum of the two before it.'],
+  ['What comes next? 100, 90, 81, 73, …', ['64', '65', '66', '67'], 2, 'Subtract 10, 9, 8, then 7.'],
+  ['What comes next? 2, 3, 5, 8, 12, …', ['15', '16', '17', '18'], 2, 'Add 1, 2, 3, 4, then 5.'],
+  ['What comes next? 4, 7, 13, 22, …', ['31', '32', '34', '36'], 2, 'Add 3, 6, 9, then 12.'],
+  ['What comes next? 2, 3, 5, 7, 11, …', ['12', '13', '15', '17'], 1, 'These are prime numbers.'],
+  ['What comes next? 1, 8, 27, 64, …', ['100', '125', '128', '81'], 1, 'These are cubes: 1³, 2³, 3³, 4³, 5³.'],
+];
+var MINI_DAVAO = {
+  words: [['KADAYAWAN', 'Davao City\'s thanksgiving festival, every August'], ['HAMIGUITAN', 'Mountain range in Davao Oriental, a UNESCO World Heritage Site'],
+          ['MANGOSTEEN', 'Purple "queen of fruits" grown in Davao'], ['NABUNTURAN', 'Capital town of Davao de Oro'],
+          ['MALAGOS', 'Davao City garden resort known for its chocolate'], ['MINDANAO', 'The big island Davao is on']],
+  odd: [['Which is NOT a Davao Region city?', ['Tagum', 'Panabo', 'Mati', 'Valencia'], 3, 'Valencia City is in Bukidnon. The others are Davao Region cities.'],
+        ['Which mountain is NOT in Davao Region?', ['Mt. Apo', 'Mt. Hamiguitan', 'Mt. Talomo', 'Mt. Kitanglad'], 3, 'Mt. Kitanglad is in Bukidnon.'],
+        ['Which island is NOT part of Samal or nearby?', ['Talikud', 'Malipano', 'Siargao', 'Samal'], 2, 'Siargao is in Surigao del Norte.'],
+        ['Which is NOT a Davao Region provincial capital?', ['Mati', 'Nabunturan', 'Malita', 'Kidapawan'], 3, 'Kidapawan is the capital of Cotabato (Region XII).'],
+        ['Which people are NOT native to Davao Region?', ['Bagobo', 'Mandaya', 'Mansaka', 'Ifugao'], 3, 'The Ifugao are from the Cordillera.'],
+        ['Which place is NOT in Davao?', ['Eden Nature Park', 'Chocolate Hills', 'Philippine Eagle Center', 'People\'s Park'], 1, 'The Chocolate Hills are in Bohol.'],
+        ['Which is NOT a fruit?', ['Marang', 'Pomelo', 'Ampalaya', 'Durian'], 2, 'Ampalaya (bitter gourd) is eaten as a vegetable.']],
+};
+// Program questions, shared between programs that study the same things
+var MQ_ = {
+  code: { words: [['ALGORITHM', 'Step-by-step recipe a computer follows'], ['RECURSION', 'A function that calls itself'], ['COMPILER', 'Turns source code into machine code']],
+          odd: [['Which is NOT a sorting algorithm?', ['Merge sort', 'Quicksort', 'Heap sort', 'Binary search'], 3, 'Binary search finds an item in a sorted list; it does not sort.'],
+                ['Which is NOT a data structure?', ['Stack', 'Queue', 'Linked list', 'Compiler'], 3, 'A compiler is a program that translates code.'],
+                ['Which is NOT a programming language?', ['Python', 'Java', 'Rust', 'Linux'], 3, 'Linux is an operating system kernel.']] },
+  net: { words: [['FIREWALL', 'Filters the traffic going in and out of a network'], ['BANDWIDTH', 'How much data a link can carry each second'], ['ENCRYPTION', 'Scrambling data so only the right person can read it']],
+         odd: [['Which port is NOT usually for websites?', ['80', '443', '8080', '22'], 3, 'Port 22 is for SSH (remote login).'],
+               ['Which is NOT a web browser?', ['Chrome', 'Firefox', 'Safari', 'Apache'], 3, 'Apache is a web server.'],
+               ['Which is NOT a social engineering attack?', ['Phishing', 'Pretexting', 'Baiting', 'Defragmenting'], 3, 'Defragmenting tidies a hard drive.'],
+               ['Which is NOT an operating system?', ['Windows', 'Linux', 'macOS', 'MySQL'], 3, 'MySQL is a database system.']] },
+  sys: { words: [['DATABASE', 'An organised store of records'], ['FLOWCHART', 'A diagram of steps and decisions'], ['STAKEHOLDER', 'Anyone affected by a new system']],
+         odd: [['Which is NOT a phase of the SDLC?', ['Planning', 'Analysis', 'Design', 'Marketing'], 3, 'The SDLC covers planning, analysis, design, building, testing and upkeep.'],
+               ['Which is NOT a database system?', ['MySQL', 'PostgreSQL', 'Oracle Database', 'Photoshop'], 3, 'Photoshop edits images.'],
+               ['Which is NOT a systems analysis diagram?', ['ERD', 'DFD', 'Use case diagram', 'CPU'], 3, 'A CPU is computer hardware.']] },
+  biz: { words: [['DASHBOARD', 'One screen of key numbers for managers'], ['FORECAST', 'An estimate of future sales or demand'], ['INVENTORY', 'The stock a business keeps on hand']],
+         odd: [['Which is NOT a business (ERP) system?', ['SAP', 'Odoo', 'Oracle NetSuite', 'Figma'], 3, 'Figma is a design tool.'],
+               ['Which is NOT one of the lean wastes?', ['Waiting', 'Overproduction', 'Defects', 'Ergonomics'], 3, 'Ergonomics fits work to people; it is not a waste.'],
+               ['Which is NOT a quality method?', ['Six Sigma', 'Kaizen', 'Lean', 'Kerberos'], 3, 'Kerberos is a network login protocol.']] },
+  teach: { words: [['PEDAGOGY', 'The method and practice of teaching'], ['CURRICULUM', 'Everything a course or school sets out to teach'], ['ASSESSMENT', 'Checking what learners know']],
+           odd: [['Which is NOT a domain in Bloom\'s taxonomy?', ['Cognitive', 'Affective', 'Psychomotor', 'Binary'], 3, 'Bloom\'s three domains are cognitive, affective and psychomotor.'],
+                 ['Which is NOT an input device?', ['Keyboard', 'Mouse', 'Scanner', 'Monitor'], 3, 'A monitor is an output device.']] },
+  hw: { words: [['FIRMWARE', 'Software built into a piece of hardware'], ['REGISTER', 'Tiny, very fast memory inside a CPU'], ['TRANSISTOR', 'The tiny switch inside every chip']],
+        odd: [['Which is NOT a logic gate?', ['AND', 'NOR', 'XOR', 'JUMP'], 3, 'JUMP is a CPU instruction, not a gate.'],
+              ['Which is NOT a kind of memory?', ['RAM', 'ROM', 'Cache', 'ALU'], 3, 'The ALU does the arithmetic.'],
+              ['Which is NOT a microcontroller board?', ['Arduino Uno', 'ESP32', 'Raspberry Pi Pico', 'Ubuntu'], 3, 'Ubuntu is an operating system.']] },
+  ece: { words: [['CAPACITOR', 'Stores charge between two plates'], ['FREQUENCY', 'Cycles per second, measured in hertz'], ['OSCILLATOR', 'A circuit that makes a repeating signal']],
+         odd: [['Which is NOT a passive component?', ['Resistor', 'Capacitor', 'Inductor', 'Transistor'], 3, 'A transistor is an active component.'],
+               ['Which is NOT an electrical unit?', ['Ohm', 'Farad', 'Henry', 'Kelvin'], 3, 'Kelvin measures temperature.'],
+               ['Which is NOT a type of modulation?', ['AM', 'FM', 'PSK', 'USB'], 3, 'USB is a port and cable standard.']] },
+  mech: { words: [['ACTUATOR', 'Turns a control signal into motion'], ['ROBOTICS', 'Designing machines that sense and move'], ['KINEMATICS', 'The study of motion without its forces']],
+          odd: [['Which is NOT an actuator?', ['DC motor', 'Servo', 'Solenoid', 'Thermistor'], 3, 'A thermistor is a sensor.'],
+                ['Which is NOT a sensor?', ['Ultrasonic sensor', 'Gyroscope', 'Encoder', 'Gearbox'], 3, 'A gearbox passes on motion; it does not sense.'],
+                ['Which is NOT a PID controller term?', ['Proportional', 'Integral', 'Derivative', 'Digital'], 3, 'PID stands for proportional, integral, derivative.']] },
+  math: { words: [['DERIVATIVE', 'The rate of change of a function'], ['INTEGRAL', 'The area under a curve'], ['EIGENVALUE', 'The lambda in Av = λv']],
+          odd: [['Which is NOT a prime number?', ['2', '17', '21', '29'], 2, '21 = 3 × 7.'],
+                ['Which is NOT a root-finding method?', ['Newton-Raphson', 'Bisection', 'Secant', 'Dijkstra'], 3, 'Dijkstra\'s algorithm finds shortest paths in a graph.'],
+                ['Which is NOT a conic section?', ['Ellipse', 'Parabola', 'Hyperbola', 'Cycloid'], 3, 'A cycloid is traced by a point on a rolling circle.']] },
+  stat: { words: [['REGRESSION', 'Fitting a line to predict one variable from another'], ['VARIANCE', 'The average squared distance from the mean'], ['HYPOTHESIS', 'A claim that is tested with data']],
+          odd: [['Which is NOT an "average"?', ['Mean', 'Variance', 'Median', 'Mode'], 1, 'Variance measures spread, not the centre.'],
+                ['Which is NOT a sampling method?', ['Stratified', 'Cluster', 'Systematic', 'Regression'], 3, 'Regression models relationships; the others choose a sample.'],
+                ['Which is NOT a measure of spread?', ['Range', 'Standard deviation', 'Interquartile range', 'Median'], 3, 'The median is a measure of the centre.'],
+                ['Which is NOT a probability distribution?', ['Normal', 'Poisson', 'Binomial', 'Histogram'], 3, 'A histogram is a chart of data.']] },
+};
+// Each of the 13 START programs (START_PROGRAMS) -> the question sets it draws from
+var MINI_PROGRAMS = {
+  'Applied Mathematics': ['math', 'stat'],
+  'Technology and Livelihood Education with Specialization in Information and Communication Technology': ['teach', 'net'],
+  'Computer Engineering': ['hw', 'code'],
+  'Computer Science': ['code', 'math'],
+  'Electronics and Communication Engineering': ['ece', 'hw'],
+  'Industrial Management Engineering – Information Technology': ['biz', 'sys'],
+  'Information and Communications Technology': ['net', 'code'],
+  'Information Systems': ['sys', 'biz'],
+  'Information Technology': ['net', 'sys'],
+  'Information Technology Systems': ['sys', 'net'],
+  'Management Information Systems': ['biz', 'sys'],
+  'Statistics': ['stat', 'math'],
+  'Mechatronics Engineering': ['mech', 'hw'],
+};
+
+// Bytes 0-255 from the email + week (the same every time for the same person and week)
+function miniSeed_(email, week) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, 'mini|' + emailOf_(email) + '|' + week).map(b => b & 255);
+}
+// The scholar's degree program from Scholars (column C), '' when not found
+function miniProgram_(ss, email) {
+  try {
+    const sh = ss.getSheetByName(TAB.scholars);
+    if (!sh || sh.getLastRow() < 2) return '';
+    const row = sh.getRange(2, 1, sh.getLastRow() - 1, 5).getValues().find(r => emailOf_(r[4]) === emailOf_(email));
+    return row ? String(row[2] || '').trim() : '';
+  } catch (e) { return ''; }
+}
+// The questions for a program: { words, odd } (Davao Region when the program is not one of the 13)
+function miniBank_(program) {
+  const sets = MINI_PROGRAMS[String(program || '').trim()];
+  if (!sets) return { words: MINI_DAVAO.words, odd: [], own: false };
+  return { words: [].concat.apply([], sets.map(k => MQ_[k].words)), odd: [].concat.apply([], sets.map(k => MQ_[k].odd)), own: true };
+}
+// The game for one scholar and week, as the page needs it (the answer is checked again on the server)
+function webMiniFor_(email, week, program) {
+  if (!email || !week) return null;
+  const b = miniSeed_(email, week), bank = miniBank_(program);
+  const id = week + '-' + b[1] + b[2] + (bank.own ? '-' + Object.keys(MINI_PROGRAMS).indexOf(String(program).trim()) : '');
+  const shuffle = (list, at) => {                          // a fixed shuffle from the seed
+    const a = list.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = b[(at + i) % b.length] % (i + 1); const t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  };
+  const kind = ['scramble', 'odd', 'pattern'][b[0] % 3];
+  if (kind === 'scramble') {
+    const w = bank.words[b[3] % bank.words.length], word = w[0];
+    let letters = shuffle(word.split(''), 4);
+    if (letters.join('') === word) letters = letters.slice(1).concat(letters[0]);
+    return { id, kind: 'scramble', letters, clue: w[1], answer: word, hearts: MINI.hearts, xp: MINI.xpScramble, secs: MINI.secsScramble, topic: bank.own ? String(program) : 'Davao Region' };
+  }
+  const pack = (o, r, topic) => { const idx = shuffle([0, 1, 2, 3], 8 + r * 3);
+    return { title: o[0], choices: idx.map(i => o[1][i]), odd: idx.indexOf(o[2]), why: o[3], topic }; };
+  const points = { xp: MINI.xpRound * MINI.rounds + MINI.perfect, each: MINI.xpRound, perfect: MINI.perfect, secs: MINI.secsRound };
+  if (kind === 'pattern') {
+    const rounds = shuffle(MINI_PATTERNS.map((x, i) => i), 6).slice(0, MINI.rounds).map((i, r) => pack(MINI_PATTERNS[i], r, 'Logic'));
+    return Object.assign({ id, kind, rounds }, points);
+  }
+  // odd one out: two rounds about their program, one about Davao (three Davao rounds when the program is not known)
+  const own = shuffle(bank.odd.map((x, i) => i), 6).slice(0, bank.own ? MINI.programRounds : 0).map(i => bank.odd[i]);
+  const davao = shuffle(MINI_DAVAO.odd.map((x, i) => i), 11).slice(0, MINI.rounds - own.length).map(i => MINI_DAVAO.odd[i]);
+  const rounds = own.concat(davao).map((o, r) => pack(o, r, r < own.length ? String(program) : 'Davao Region'));
+  return Object.assign({ id, kind, rounds }, points);
+}
+// What the scholar sent -> [text for the sheet, XP, stars 0-3]. Anything that does not match this game scores 0.
+function miniResult_(game, sent) {
+  if (!game) return ['', 0, 0];
+  const name = { scramble: 'Word scramble', odd: 'Odd one out', pattern: 'Number pattern' }[game.kind] || 'Brain break';
+  if (!sent) return [name + ' · not played', 0, 0];
+  if (sent.id !== game.id || sent.skip) return [name + ' · skipped', 0, 0];
+  if (game.kind === 'scramble') {
+    const tries = Math.max(1, Math.floor(Number(sent.tries) || 1));
+    const ok = String(sent.answer || '').toUpperCase().replace(/[^A-Z]/g, '') === game.answer && tries <= MINI.hearts;
+    return ok ? [name + ' · ' + game.answer + ' · solved', MINI.xpScramble, 3] : [name + ' · ' + game.answer + ' · not solved', 0, 0];
+  }
+  const picks = Array.isArray(sent.picks) ? sent.picks : [];
+  const right = game.rounds.filter((r, i) => String(picks[i]) === r.choices[r.odd]).length;
+  return [name + ' · ' + right + ' of ' + game.rounds.length, right * MINI.xpRound + (right === game.rounds.length ? MINI.perfect : 0), right];
+}
+
+var DAILY_TAB = 'Daily games';
+var DAILY_HEAD = ['Day', 'Email', 'Name', 'School', 'Game', 'Result', 'XP', 'Stars', 'Started', 'Finished', 'Game ID'];
+var DAILY_GRACE_MIN = 20;                      // a game must be finished within this many minutes of opening it
+function dailyTab_(ss) {
+  let sh = ss.getSheetByName(DAILY_TAB);
+  if (!sh) { sh = ss.insertSheet(DAILY_TAB); sh.getRange(1, 1, 1, DAILY_HEAD.length).setValues([DAILY_HEAD]).setFontWeight('bold'); sh.setFrozenRows(1); sh.getRange(1, 1, sh.getMaxRows(), 1).setNumberFormat('@'); }
+  return sh;
+}
+// One scholar's daily games: { byDay: { 'yyyy-MM-dd': { row, kind, result, xp, stars, started, finished, id } }, total, wins }
+function webMyDaily_(ss, email) {
+  const out = { byDay: {}, total: 0, wins: 0 };
+  const sh = ss.getSheetByName(DAILY_TAB);
+  if (!sh || sh.getLastRow() < 2) return out;
+  sh.getRange(2, 1, sh.getLastRow() - 1, DAILY_HEAD.length).getDisplayValues().forEach((r, i) => {
+    if (emailOf_(r[1]) !== emailOf_(email) || !r[0]) return;
+    const xp = Math.max(0, Math.min(MINI.xpScramble, Number(r[6]) || 0)), stars = Number(r[7]) || 0;
+    out.byDay[r[0]] = { row: i + 2, kind: r[4], result: r[5], xp, stars, started: r[8], finished: r[9], id: r[10] };
+    if (r[9]) { out.total += xp; if (stars >= 2) out.wins++; }
+  });
+  return out;
+}
+function dayKey_(d) { return ymd_(d || new Date()); }
+// Brain-break stars per school this week (Monday to today): a tie-breaker on the school leaderboard
+function dailyStarsBySchool_(ss) {
+  const sh = ss.getSheetByName(DAILY_TAB), out = {};
+  if (!sh || sh.getLastRow() < 2) return out;
+  const mon = dayKey_(mondayOf_(new Date()));
+  sh.getRange(2, 1, sh.getLastRow() - 1, DAILY_HEAD.length).getDisplayValues().forEach(r => {
+    if (r[0] >= mon && r[9]) out[r[3]] = (out[r[3]] || 0) + (Number(r[7]) || 0); });
+  return out;
+}
+function isCheckinDay_(d, st) { return DAYS[(d.getDay() + 6) % 7] === (st || getSettings_()).mOpenDay; }
+// The Journey map: the last days, today and the next few. One tile a day: the check-in day, or a brain break.
+function webDayMap_(ss, byWeek, daily, spec) {
+  const st = getSettings_(), today = startOfDay_(new Date()), todayKey = dayKey_(today), out = [];
+  let ts = null; try { ts = termStart_(ss); } catch (e) { ts = null; }
+  const weekDue = d => { const x = new Date(d); for (let i = 0; i < 7 && DAYS[(x.getDay() + 6) % 7] !== st.mDueDay; i++) x.setDate(x.getDate() + 1); return dayKey_(x); };
+  for (let i = -GAME.mapBack; i <= GAME.mapAhead; i++) {
+    const d = new Date(today); d.setDate(d.getDate() + i);
+    if (ts instanceof Date && d < startOfDay_(ts)) continue;
+    const key = dayKey_(d), label = webFmt_(d, 'EEE'), date = webFmt_(d, 'MMM d');
+    if (isCheckinDay_(d, st)) {
+      const wk = weekDue(d), r = byWeek[wk];
+      const open = !!(spec && spec.open && spec.week === wk && !r && key <= todayKey);
+      out.push({ key, label, date, kind: 'checkin', state: r ? 'done' : open ? 'today' : key > todayKey ? 'locked' : 'missed',
+                 stars: r ? (r.late ? 2 : 3) : 0, xp: r ? GAME.xpCheckin + (r.late ? 0 : GAME.xpOnTime) + GAME.xpEvent * r.ev : 0, max: GAME.xpCheckin + GAME.xpOnTime, today: key === todayKey });
+    } else {
+      const g = daily.byDay[key], done = !!(g && g.finished);
+      out.push({ key, label, date, kind: 'game', state: done ? 'done' : key === todayKey ? (g ? 'missed' : 'today') : key > todayKey ? 'locked' : 'missed',
+                 stars: done ? g.stars : 0, xp: done ? g.xp : 0, max: MINI.xpScramble, today: key === todayKey });
+    }
+  }
+  return out;
+}
+// Days in a row with something done (the brain break, or the check-in on check-in day), and this week's recap
+function webDayStreak_(byWeek, daily) {
+  const st = getSettings_(), today = startOfDay_(new Date()), todayKey = dayKey_(today);
+  const weekDue = d => { const x = new Date(d); for (let i = 0; i < 7 && DAYS[(x.getDay() + 6) % 7] !== st.mDueDay; i++) x.setDate(x.getDate() + 1); return dayKey_(x); };
+  const doneOn = d => isCheckinDay_(d, st) ? !!byWeek[weekDue(d)] : !!(daily.byDay[dayKey_(d)] && daily.byDay[dayKey_(d)].finished);
+  let streak = 0; const d = new Date(today);
+  if (!doneOn(d)) d.setDate(d.getDate() - 1);                     // today not played yet: the streak is still alive
+  for (let i = 0; i < 366 && doneOn(d); i++) { streak++; d.setDate(d.getDate() - 1); }
+  const mon = mondayOf_(today), recap = { xp: 0, stars: 0, days: 0, of: Math.round((today - mon) / 86400000) + 1 };
+  for (let x = new Date(mon); x <= today; x.setDate(x.getDate() + 1)) {
+    const key = dayKey_(x), g = daily.byDay[key];
+    if (isCheckinDay_(x, st)) { const r = byWeek[weekDue(x)]; if (r) { recap.days++; recap.stars += r.late ? 2 : 3; recap.xp += GAME.xpCheckin + (r.late ? 0 : GAME.xpOnTime) + GAME.xpEvent * r.ev; } }
+    else if (g && g.finished) { recap.days++; recap.stars += g.stars; recap.xp += g.xp; }
+  }
+  return { streak, recap, today: todayKey };
+}
+function dailyRowFor_(sh, email, key) {
+  if (sh.getLastRow() < 2) return -1;
+  const v = sh.getRange(2, 1, sh.getLastRow() - 1, 2).getDisplayValues();
+  for (let i = v.length - 1; i >= 0; i--) if (v[i][0] === key && emailOf_(v[i][1]) === email) return i + 2;
+  return -1;
+}
+// Open today's brain break. Opening it starts it: a game opened before and not finished is lost (no replays).
+function webDailyStart(token) {
+  return webSafe_(() => {
+    const s = webSession_(token);
+    if (!s) return { ok: false, signedOut: true };
+    const ss = webSheet_(), who = webRoles_(ss, s.e);
+    if (!who.member) return { ok: false, msg: 'Daily brain breaks are for active START scholars.' };
+    const now = new Date(), key = dayKey_(now);
+    if (isCheckinDay_(startOfDay_(now))) return { ok: false, checkin: true, msg: 'Today is check-in day: your check-in is today\'s challenge.' };
+    const sh = dailyTab_(ss), lock = docLock_();
+    if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try again.' };
+    try {
+      const row = dailyRowFor_(sh, who.email, key);
+      if (row > 0) {
+        const r = sh.getRange(row, 1, 1, DAILY_HEAD.length).getDisplayValues()[0];
+        if (!r[9]) { sh.getRange(row, 6, 1, 5).setValues([[r[4] + ' · left before the end', 0, 0, r[8], new Date()]]); }
+        return { ok: true, over: true, msg: 'Today\'s brain break is already used. A new one opens tomorrow.' };
+      }
+      const game = webMiniFor_(who.email, key, miniProgram_(ss, who.email));
+      sh.appendRow([key, who.email, who.member.name || who.name || '', who.member.school || '', game.kind, 'Started', 0, 0, new Date(), '', game.id]);
+      sh.getRange(sh.getLastRow(), 1).setNumberFormat('@').setValue(key);
+      return { ok: true, day: key, game };
+    } finally { lock.releaseLock(); }
+  });
+}
+// Finish it: the answer is checked here, once. sent = { day, id, answer, tries } · { day, id, picks } · { day, id, skip }
+function webDailyFinish(token, sent) {
+  return webSafe_(() => {
+    const s = webSession_(token);
+    if (!s) return { ok: false, signedOut: true };
+    const ss = webSheet_(), who = webRoles_(ss, s.e);
+    if (!who.member) return { ok: false, msg: 'Daily brain breaks are for active START scholars.' };
+    sent = sent || {};
+    const key = String(sent.day || ''), sh = dailyTab_(ss), lock = docLock_();
+    if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try again.' };
+    let res;
+    try {
+      const row = dailyRowFor_(sh, who.email, key);
+      if (row < 0) return { ok: false, msg: 'This game was not started. Open today\'s brain break from your Journey.' };
+      const r = sh.getRange(row, 1, 1, DAILY_HEAD.length).getValues()[0];
+      if (r[9]) return { ok: true, already: true, member: JSON.parse(JSON.stringify(webMember_(ss, who))) };
+      const game = webMiniFor_(who.email, key, miniProgram_(ss, who.email));
+      const late = !(r[8] instanceof Date) || Date.now() - r[8].getTime() > DAILY_GRACE_MIN * 60000;
+      res = late ? [miniResult_(game, null)[0].replace('not played', 'too late'), 0, 0] : miniResult_(game, Object.assign({}, sent, { id: String(r[10]) === game.id ? sent.id : '' }));
+      sh.getRange(row, 6, 1, 5).setValues([[res[0], res[1], res[2], r[8], new Date()]]);
+    } finally { lock.releaseLock(); }
+    try { webForget_(who.email); } catch (e) { /* cache */ }
+    return { ok: true, xp: res[1], stars: res[2], member: JSON.parse(JSON.stringify(webMember_(ss, who))) };
+  });
 }
 
 function webSubmitCheckin(token, a) {
@@ -1561,6 +1868,7 @@ function webLead_(ss, schools, st) {
   const data = focalData_(ss);
   const link = (() => { try { return checkinUrl_(); } catch (e) { return ''; } })();
   const rrName = String(st.rrName || '').trim() || 'your Regional Representative';
+  const tools = leadToolsData_(ss, schools);
   return schools.map(name => {
     const s = data.find(x => x.name === name);
     if (!s) return null;
@@ -1576,7 +1884,10 @@ function webLead_(ss, schools, st) {
     return {
       school: s.name, done: !!s.thisWeek, due: webFmt_(s.due, 'EEEE, MMM d'), streak: s.streak, term: s.term, active: s.active,
       answers: P.answers, answered: P.answered, members: P.members.length, link: link || s.link || '', todo,
-      cols: P.cols.map(c => c[0]), rows: P.rows.map(x => ({ cells: x.cells.map(webCell_), tone: webTone_(x.chip), me: !!x.me })),
+      cols: P.cols.map(c => c[0]), rows: P.rows.map(x => ({ cells: x.cells.map(webCell_), tone: webTone_(x.chip), me: !!x.me, email: x.email || '',
+        account: x.email ? (((webAccount_(x.email) || {}).h) ? 'ready' : 'setup') : '', contacted: x.email ? (tools.contacted[name + '|' + x.email] || '') : '' })),
+      joins: tools.joins.filter(j => j.school === name), attend: (() => { try { return leadRecentEvents_(ss, name, tools.att); } catch (e) { Logger.log('Lead events: ' + e.message); return []; } })(),
+      note: leadNote_(name),
       history: s.checkins.slice(0, 4).map(x => ({ date: webFmt_(x.date, 'EEE, MMM d'), events: String(x.events || '—'), help: String(x.help || '—') })),
       events: webEvents_(ss, s.name, true),
       weekly: P.answers ? (() => { try { return weeklyRates_(ss, 10, s.name); } catch (e) { return []; } })() : [],
@@ -1591,6 +1902,13 @@ function webScholarRoster_(ss, md) {
   if (!sh || sh.getLastRow() < 2) return [];
   const width = Math.min(sh.getMaxColumns(), 18);
   const leads = schoolRows_(ss);
+  const leadKeys = new Set(leads.filter(s => s.focal && s.email).map(s => s.focal + '\n' + s.email));
+  const members = new Map();
+  if (md) Object.keys(md.bySchool).forEach(school => {
+    const byEmail = new Map();
+    md.bySchool[school].members.forEach(m => { if (m.email && !byEmail.has(m.email)) byEmail.set(m.email, m); });
+    members.set(school, byEmail);
+  });
   return sh.getRange(2, 1, sh.getLastRow() - 1, width).getValues()
     .map((r, i) => ({ row: i + 2, name: String(r[0] || '').trim(), school: String(r[1] || '').trim(),
       program: String(r[2] || '').trim(), awarded: String(r[3] || '').trim(), contact: String(r[4] || '').trim(),
@@ -1598,8 +1916,8 @@ function webScholarRoster_(ss, md) {
       campus: String(r[7] || '').trim(), hometown: String(r[8] || '').trim(), role: String(r[9] || '').trim(),
       otherEmails: String(r[10] || '').trim(), scholarship: String(r[11] || '').trim(), verified: !!r[17] }))
     .map(p => {
-      const member = md && md.bySchool[p.school] && md.bySchool[p.school].members.find(m => m.email === p.email);
-      p.role = leads.some(s => s.focal === p.name && s.email === p.email) ? ROLES[1] : ROLES[0];
+      const byEmail = members.get(p.school), member = byEmail && byEmail.get(p.email);
+      p.role = leadKeys.has(p.name + '\n' + p.email) ? ROLES[1] : ROLES[0];
       p.checkin = member ? (member.now ? 'Submitted' : 'Pending') : '';
       p.needsHelp = !!(member && member.now && memberRank_(member) === 0);
       return p;
@@ -1727,6 +2045,187 @@ function webScholarUpdate_(ss, actor, arg) {
   return { ok: true, msg: 'Scholar details saved.' + (newEmail !== oldEmail ? ' The new email must set up its START password.' : '') };
 }
 
+// Editable database fields for the RR website. Formula columns are deliberately excluded.
+function webSchoolRecords_(ss) {
+  const sh = ss.getSheetByName(TAB.schools);
+  if (!sh) return [];
+  return sh.getRange(2, 1, CONFIG.maxSchools, 15).getValues().map((v, i) => ({
+    row: i + 2, name: String(v[0] || '').trim(), province: String(v[1] || '').trim(),
+    lead: String(v[3] || '').trim(), inactive: String(v[5] || '').trim().toUpperCase() === 'Y',
+    info: v.slice(8, 15).map(x => String(x || '').trim()),
+  })).filter(s => s.name);
+}
+
+function webSettingRecords_(ss) {
+  const sh = ss.getSheetByName(TAB.settings);
+  if (!sh) return [];
+  const vals = sh.getRange(2, 2, SETTINGS.length, 1).getValues();
+  const derived = ['remDay', 'fuDay', 'mDueDay'];
+  return SETTINGS.map((s, i) => {
+    const key = s[0], raw = vals[i] ? vals[i][0] : '', date = raw instanceof Date;
+    return { key, label: s[1], help: s[3],
+      value: date ? webFmt_(raw, 'yyyy-MM-dd') : raw == null ? '' : raw,
+      type: CHECKBOX_SETTINGS.indexOf(key) !== -1 ? 'check' : date || ['dFocal', 'dReeng', 'dcStart', 'dcEnd', 'termStart'].indexOf(key) !== -1 ? 'date' :
+            ['quietDays', 'tFocal', 'tReeng', 'tRate'].indexOf(key) !== -1 ? 'number' : 'text',
+      options: key === 'region' ? regionChoices_() : ['day', 'dueDay', 'mOpenDay'].indexOf(key) !== -1 ? DAYS :
+               ['hour', 'remHour'].indexOf(key) !== -1 ? HOURS : [],
+      readonly: DB_MODE && derived.indexOf(key) !== -1 };
+  });
+}
+
+function webOutreachRecords_(ss) {
+  const sh = ss.getSheetByName(TAB.outreach);
+  if (!sh || sh.getLastRow() < 2) return [];
+  return sh.getRange(2, 1, Math.min(sh.getLastRow() - 1, 100), OUTREACH_HEAD.length).getValues()
+    .map((r, i) => ({ row: i + 2, date: webFmt_(r[0], 'yyyy-MM-dd'), school: String(r[1] || ''),
+      person: String(r[2] || ''), channel: String(r[3] || ''), outcome: String(r[4] || ''),
+      next: String(r[5] || ''), follow: webFmt_(r[6], 'yyyy-MM-dd') }))
+    .filter(r => r.school);
+}
+
+function webEventRecords_(ss) {
+  const sh = ss.getSheetByName(TAB.events);
+  if (!sh || sh.getLastRow() < 2) return [];
+  const webTime = v => { const n = minutesOf_(v); return n === null ? '' :
+    String(Math.floor(n / 60)).padStart(2, '0') + ':' + String(n % 60).padStart(2, '0'); };
+  return sh.getRange(2, 1, sh.getLastRow() - 1, EV_EDIT).getValues().map((r, i) => ({
+    row: i + 2, date: webFmt_(r[EV.date], 'yyyy-MM-dd'), start: webTime(r[EV.start]),
+    end: webTime(r[EV.end]), title: String(r[EV.title] || ''), type: String(r[EV.type] || ''),
+    who: String(r[EV.who] || ''), rep: String(r[EV.rep] || ''), until: webFmt_(r[EV.until], 'yyyy-MM-dd'),
+    place: String(r[EV.place] || ''), details: String(r[EV.details] || ''), invite: r[EV.invite] === true,
+  })).filter(r => r.title).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 100);
+}
+
+function webValidDate_(value) {
+  if (!value) return '';
+  const s = String(value), m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const d = new Date(+m[1], +m[2] - 1, +m[3]);
+  return d.getFullYear() === +m[1] && d.getMonth() === +m[2] - 1 && d.getDate() === +m[3] ? d : null;
+}
+
+function webOutreachSave_(ss, actor, arg) {
+  arg = arg || {};
+  const school = String(arg.school || '').trim(), date = webValidDate_(arg.date), follow = webValidDate_(arg.follow);
+  if (!schoolRows_(ss).some(s => s.name === school) || !date || follow === null ||
+      OUTREACH_CHANNELS.indexOf(arg.channel) < 0 || OUTREACH_OUTCOMES.indexOf(arg.outcome) < 0 ||
+      [arg.person, arg.next].some(x => String(x || '').length > 500 || /^\s*=/.test(String(x || ''))))
+    return { ok: false, msg: 'Check the school, date, channel, outcome and notes.' };
+  const lock = docLock_();
+  if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try again.' };
+  try { saveOutreach(arg, ss); } finally { lock.releaseLock(); }
+  webBumpData_();
+  try { renderCalView_(ss); } catch (e) { Logger.log('Outreach calendar view: ' + e.message); }
+  Logger.log('RR saved outreach by ' + actor);
+  return { ok: true, msg: 'Contact recorded.' };
+}
+
+function webEventSave_(ss, actor, arg) {
+  arg = arg || {};
+  const title = String(arg.title || '').trim(), date = webValidDate_(arg.date), until = webValidDate_(arg.until);
+  const schoolNames = schoolRows_(ss).map(s => s.name);
+  const text = [title, arg.place, arg.details];
+  if (!title || title.length > 150 || !date || until === null ||
+      EV_TYPES.indexOf(arg.type) < 0 || [WHO.all, WHO.leads, WHO.me].concat(schoolNames).indexOf(arg.who) < 0 ||
+      EV_REPEATS.indexOf(arg.rep) < 0 || arg.rep !== 'Never' && (!until || until < date) ||
+      text.some(x => String(x || '').length > 500 || /^\s*=/.test(String(x || ''))))
+    return { ok: false, msg: 'Check the event title, dates, type, audience and details.' };
+  const start = String(arg.start || ''), end = String(arg.end || '');
+  if (start && minutesOf_(start) === null || end && (!start || minutesOf_(end) === null || minutesOf_(end) <= minutesOf_(start)))
+    return { ok: false, msg: 'Choose a valid start and later end time, or leave both blank.' };
+  const sh = ss.getSheetByName(TAB.events);
+  const row = Number(arg.row || 0);
+  if (row && (!sh || !Number.isInteger(row) || row < 2 || row > sh.getLastRow()))
+    return { ok: false, msg: 'Event not found. Reload and try again.' };
+  const lock = docLock_();
+  if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try again.' };
+  let message = 'Event saved.';
+  try {
+    if (!row) message = addEventFromBox(arg, ss);
+    else {
+      const old = sh.getRange(row, EV.title + 1).getValue();
+      if (String(old || '').trim() !== String(arg.original || '').trim())
+        return { ok: false, msg: 'This event changed. Reload and try again.' };
+      const fmt = t => t ? Utilities.formatDate(new Date(2000, 0, 1, Math.floor(minutesOf_(t) / 60), minutesOf_(t) % 60), CONFIG.timezone, 'h:mm a') : '';
+      sh.getRange(row, 1, 1, EV_EDIT).setValues([[
+        date, fmt(start), fmt(end), title, arg.type, arg.who, arg.rep, arg.rep === 'Never' ? '' : until,
+        String(arg.place || '').trim(), String(arg.details || '').trim(), arg.invite === true,
+      ]]);
+      try { renderCalView_(ss); } catch (e) { Logger.log('Event calendar view: ' + e.message); }
+    }
+  } finally { lock.releaseLock(); }
+  if (row) try { eventsChanged_(ss); } catch (e) { Logger.log('Event sync: ' + e.message); message = 'Event saved. Calendar sync will retry.'; }
+  webBumpData_();
+  Logger.log('RR saved event by ' + actor);
+  return { ok: true, msg: message };
+}
+
+function webEventDelete_(ss, actor, arg) {
+  const sh = ss.getSheetByName(TAB.events), row = Number(arg && arg.row);
+  if (!sh || !Number.isInteger(row) || row < 2 || row > sh.getLastRow())
+    return { ok: false, msg: 'Event not found. Reload and try again.' };
+  const lock = docLock_();
+  if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try again.' };
+  try {
+    if (String(sh.getRange(row, EV.title + 1).getValue() || '').trim() !== String(arg.original || '').trim())
+      return { ok: false, msg: 'This event changed. Reload and try again.' };
+    sh.getRange(row, 1, 1, EV_EDIT).clearContent();
+    try { renderCalView_(ss); } catch (e) { Logger.log('Event calendar view: ' + e.message); }
+  } finally { lock.releaseLock(); }
+  try { eventsChanged_(ss); } catch (e) { Logger.log('Event removal sync: ' + e.message); }
+  webBumpData_();
+  Logger.log('RR removed event by ' + actor);
+  return { ok: true, msg: 'Event removed.' };
+}
+
+// RR editing lists are loaded when their page opens, so the overview stays small and quick.
+function webAdminPage(token, page) {
+  return webTimed_('admin ' + String(page || '').replace(/[^a-z]/gi, ''), () => {
+    const session = webSession_(token);
+    if (!session) return { ok: false, signedOut: true };
+    const ss = webSheet_(), who = webRoles_(ss, session.e);
+    if (!who.admin || who.suspended) return { ok: false, msg: 'Only an active Regional Representative can view this page.' };
+    if (page === 'schools') return { ok: true, schoolRecords: webSchoolRecords_(ss), schoolInfoHeaders: SCHOOL_INFO_HEADERS };
+    if (page === 'settings') return { ok: true, settings: webSettingRecords_(ss) };
+    if (page === 'outreach') return { ok: true, outreach: webOutreachRecords_(ss),
+      outreachChannels: OUTREACH_CHANNELS, outreachOutcomes: OUTREACH_OUTCOMES };
+    if (page === 'events') return { ok: true, eventRecords: webEventRecords_(ss),
+      eventTypes: EV_TYPES, eventRepeats: EV_REPEATS, calendarEvents: webCalendarEvents_(ss, who) };
+    if (page === 'diagnostics') return { ok: true, diagnostics: healthRows_().slice(0, 100) };
+    if (page === 'scholars') {
+      let md = null;
+      try { if (checkinOn_()) md = memberData_(ss); } catch (e) { Logger.log('Scholar check-ins: ' + e.message); }
+      let joins = [];
+      try { joins = webJoins_(ss); } catch (e) { Logger.log('Join requests: ' + e.message); }
+      let dataQuality = { count: 0, issues: [] };
+      try { dataQuality = dataFlowQuality_(ss); } catch (e) { Logger.log('Data quality: ' + e.message); }
+      const approved = joins.filter(j => /^Added/.test(j.status)).sort((a, b) => b.row - a.row);
+      const declined = joins.filter(j => /^Declined/.test(j.status)).sort((a, b) => b.row - a.row);
+      const checks = (() => { try { return leadJoinChecks_(ss); } catch (e) { return {}; } })();
+      joins.forEach(j => { if (checks[j.row]) j.leadCheck = checks[j.row]; });
+      return { ok: true, scholars: webScholarRoster_(ss, md), dataQuality,
+        joins: joins.filter(j => !/^Added|^Declined/.test(j.status)),
+        joinHistory: approved.slice(0, 20).concat(declined.slice(0, 20)),
+        joinHistoryTotal: { Approved: approved.length, Declined: declined.length } };
+    }
+    return { ok: false, msg: 'Unknown website page.' };
+  });
+}
+
+function webJoinHistory(token, kind, offset) {
+  return webTimed_('join history', () => {
+    const session = webSession_(token);
+    if (!session) return { ok: false, signedOut: true };
+    const ss = webSheet_(), who = webRoles_(ss, session.e);
+    if (!who.admin || who.suspended) return { ok: false, msg: 'Only an active Regional Representative can view this page.' };
+    if (['Approved', 'Declined'].indexOf(kind) < 0 || !Number.isInteger(offset) || offset < 0)
+      return { ok: false, msg: 'Invalid history page.' };
+    const prefix = kind === 'Approved' ? /^Added/ : /^Declined/;
+    const rows = webJoins_(ss).filter(j => prefix.test(j.status)).sort((a, b) => b.row - a.row);
+    return { ok: true, rows: rows.slice(offset, offset + 20), total: rows.length };
+  });
+}
+
 function webAdmin_(ss, st) {
   const data = focalData_(ss).filter(s => !s.inactive);
   let md = null; try { if (checkinOn_()) md = memberData_(ss); } catch (e) { md = null; }
@@ -1745,12 +2244,10 @@ function webAdmin_(ss, st) {
     due: md ? webFmt_(md.week.due, 'EEEE, MMM d') : webFmt_(reminderWeek_(new Date()).deadline, 'EEEE, MMM d'),
     totals: { schools: schools.length, leads: schools.filter(s => s.lead).length, leadsDone: schools.filter(s => s.lead && s.leadDone).length,
               members: sum('members'), answered: sum('answered'), help: sum('help') },
-    memberCheckins: !!md, schools, scholars: webScholarRoster_(ss, md), help, events: webEvents_(ss, undefined, true), tracker: ss.getUrl(), form,
-    dataQuality: (() => { try { return dataFlowQuality_(ss); } catch (e) { Logger.log('Data quality: ' + e.message); return { count: 0, issues: [] }; } })(),
+    memberCheckins: !!md, schools, help, events: webEvents_(ss, undefined, true), tracker: ss.getUrl(), form,
     scholarChoices: { schools: joinSchoolList_(ss).map(s => s.name), programs: START_PROGRAMS.list, scholarships: JOIN.kinds },
-    joins: (() => { try { return webJoins_(ss).filter(j => !/^Added|^Declined/.test(j.status)); } catch (e) { Logger.log('Join requests: ' + e.message); return []; } })(),
-    joinHistory: (() => { try { return webJoins_(ss).filter(j => /^Added|^Declined/.test(j.status)); } catch (e) { Logger.log('Join history: ' + e.message); return []; } })(),
     autoApprove: autoApproveOn_(),
+    leadBoard: (() => { try { return leadBoard_(ss, schools); } catch (e) { Logger.log('Lead board: ' + e.message); return []; } })(),
     weekly: md ? (() => { try { return weeklyRates_(ss, 10); } catch (e) { Logger.log('Weekly rate: ' + e.message); return []; } })() : [],
     // what used to come by email: quiet schools, the tracker check, the monthly report
     quiet: (() => { try { return missedSchools_(ss).slice(0, 12).map(q => ({ name: q.name, lead: q.focal ? displayName_(q.focal) : '', weeks: q.missed, msg: missedMessage_(q, st) })); } catch (e) { return []; } })(),
@@ -1844,13 +2341,14 @@ function showWebsite() {
  *  🎮 GAME (website): XP, levels, badges, streak saver, the weekly journey, postcards, the weekly goal,
  *  the school leaderboard. Everything is worked out from the Check-in answers tab: nothing new is stored.
  * ================================================================ */
-var GAME = { rankMin: 3, xpCheckin: 10, xpOnTime: 5, xpEvent: 5, journeyWeeks: 12 };
+var GAME = { rankMin: 3, xpCheckin: 20, xpOnTime: 10, xpEvent: 5, journeyWeeks: 12, mapBack: 10, mapAhead: 2 };   // check-in up to 30 XP + events; a daily game up to 10
 var LEVELS_DAVAO = ['Bagong Agila', 'Batang Apo', 'Lakad Samal', 'Agila sa Eden', 'Bantay Dabaw', 'Agila ng Apo'];
 var LEVELS_ANY = ['Rookie', 'Explorer', 'Achiever', 'Trailblazer', 'Leader', 'Legend'];
-var LEVEL_XP = [0, 50, 120, 220, 350, 520];
+var LEVEL_XP = [0, 100, 250, 450, 700, 1000];
 
 // mine = [{ t: Date, ev: events joined, late: true/false }] for one scholar
-function webGame_(ss, mine, spec) {
+function webGame_(ss, mine, spec, daily) {
+  daily = daily || { byDay: {}, total: 0, wins: 0 };
   const davao = typeof placesOn_ === 'function' && placesOn_();
   const byWeek = {};
   mine.forEach(r => { const k = memberWeekKey_(r.t); if (!byWeek[k] || r.t > byWeek[k].t) byWeek[k] = Object.assign({ k }, r); });
@@ -1868,7 +2366,7 @@ function webGame_(ss, mine, spec) {
     k = weekBefore(k);
   }
   // best run (no saver), totals, XP
-  let best = 0, run = 0, prev = '', events = 0, onTime = 0, xp = 0;
+  let best = 0, run = 0, prev = '', events = 0, onTime = 0, xp = daily.total, puzzles = daily.wins;
   keys.forEach(x => {
     run = prev && weekBefore(x) === prev ? run + 1 : 1; prev = x; best = Math.max(best, run);
     const r = byWeek[x]; events += r.ev; if (!r.late) onTime++;
@@ -1893,6 +2391,7 @@ function webGame_(ss, mine, spec) {
     ['ev1', 'Event goer', 'Join a START event', events, 1, 'events', 'bronze'],
     ['ev5', 'Regular', 'Join 5 START events', events, 5, 'events', 'silver'],
     ['time5', 'Always on time', 'Check in on time 5 times', onTime, 5, 'clock', 'silver'],
+    ['mini5', 'Puzzle pro', 'Win 5 daily brain breaks', puzzles, 5, 'bolt', 'silver'],
     davao ? ['cards', 'Postcard collector', 'Collect all ' + allCards + ' place postcards', nCards, allCards, 'star', 'gold']
           : ['ten', '10 check-ins', 'Answer 10 weekly check-ins', keys.length, 10, 'star', 'gold'],
   ].map(b => ({ id: b[0], name: b[1], desc: b[2], got: b[3] >= b[4], now: Math.min(b[3], b[4]), need: b[4], icon: b[5], tier: b[6] }));
@@ -1911,7 +2410,9 @@ function webGame_(ss, mine, spec) {
   const evThisWeek = spec && spec.q ? ((spec.q.find(q => q.k === 'events') || { choices: [] }).choices.length - (spec.q.some(q => q.k === 'events') ? 1 : 0)) : 0;
   const me = byWeek[nowKey];
   const goal = { total: 1 + Math.max(0, evThisWeek), done: (me ? 1 : 0) + (me ? Math.min(me.ev, Math.max(0, evThisWeek)) : 0) };
-  return { xp, level, streak, best, saver: { used: !!saved, available: !!termKey && !saved }, events, checkins: keys.length,
+  const days = webDayMap_(ss, byWeek, daily, spec);
+  const extra = webDayStreak_(byWeek, daily);
+  return { xp, level, streak, best, puzzles, days, dayStreak: extra.streak, recap: extra.recap, saver: { used: !!saved, available: !!termKey && !saved }, events, checkins: keys.length,
            badges, journey: journey.reverse(), cards: Object.keys(cards).map(Number), nCards, allCards, goal };
 }
 
@@ -1971,19 +2472,145 @@ function webMyAnswers_(ss, email) {
   return out;
 }
 
+/* ---------- 🧑‍🏫 Campus Lead tools (website) ----------
+ * Campus Leads take part of the follow-up work: they mark who they contacted, check join requests for their school,
+ * take event attendance and post a short note to their members. Everything is kept in the "Lead actions" tab
+ * (attendance also goes to "Event attendance", which already decides event XP). A Lead acts only for their own school. */
+var LEAD_TAB = 'Lead actions';
+var LEAD_HEAD = ['At', 'Week', 'School', 'Lead email', 'Action', 'About (email)', 'Value', 'Note'];
+function leadTab_(ss) {
+  let sh = ss.getSheetByName(LEAD_TAB);
+  if (!sh) { sh = ss.insertSheet(LEAD_TAB); sh.getRange(1, 1, 1, LEAD_HEAD.length).setValues([LEAD_HEAD]).setFontWeight('bold'); sh.setFrozenRows(1); sh.getRange(1, 2, sh.getMaxRows(), 1).setNumberFormat('@'); }
+  return sh;
+}
+function leadRows_(ss) {
+  const sh = ss.getSheetByName(LEAD_TAB);
+  if (!sh || sh.getLastRow() < 2) return [];
+  return sh.getRange(2, 1, sh.getLastRow() - 1, LEAD_HEAD.length).getValues().map((r, i) => ({ row: i + 2, at: r[0], week: String(r[1]), school: String(r[2]),
+    lead: emailOf_(r[3]), action: String(r[4]), about: emailOf_(r[5]) || String(r[5]), value: String(r[6]), note: String(r[7]) }));
+}
+// What the Lead pages need, read once: this week's "contacted" marks, pending join requests, attendance
+function leadToolsData_(ss, schools) {
+  const week = memberWeekKey_(new Date()), rows = leadRows_(ss), contacted = {};
+  rows.filter(r => r.week === week && r.action === 'contacted').forEach(r => { contacted[r.school + '|' + r.about] = webFmt_(r.at, 'EEE'); });
+  let joins = [];
+  try {
+    const checks = leadJoinChecks_(ss, rows);
+    joins = webJoins_(ss).filter(j => !/^Added|^Declined/.test(j.status) && schools.indexOf(j.school) !== -1)
+      .map(j => ({ row: j.row, school: j.school, name: j.name, program: j.program, year: j.year, awarded: j.awarded, when: j.when, check: checks[j.row] || null }));
+  } catch (e) { Logger.log('Lead joins: ' + e.message); }
+  let att = {}; try { att = attendanceMap_(ss); } catch (e) { att = {}; }
+  return { contacted, joins, att };
+}
+// The latest Lead check for each join request row: { row: { value: 'yes'|'no', by, at, note } }
+function leadJoinChecks_(ss, rows) {
+  const out = {};
+  (rows || leadRows_(ss)).filter(r => r.action === 'join-check').forEach(r => {
+    out[Number(r.note.split('|')[0])] = { value: r.value, by: r.lead, at: webFmt_(r.at, 'EEE, MMM d'), note: r.note.split('|').slice(1).join('|') }; });
+  return out;
+}
+// Events in the last 3 weeks for this school's members (all-member events and the school's own): who was marked present
+function leadRecentEvents_(ss, school, att) {
+  const sh = ss.getSheetByName(TAB.events);
+  if (!sh || sh.getLastRow() < 2) return [];
+  const today = startOfDay_(new Date()), from = new Date(today.getTime() - 21 * 86400000), to = new Date(today.getTime() + 86400000), out = [];
+  sh.getRange(2, 1, sh.getLastRow() - 1, EV_EDIT).getValues().forEach(r => {
+    const title = String(r[EV.title] || '').trim(), who = String(r[EV.who] || '').trim() || WHO.all;
+    if (!title || !(who === WHO.all || who === school)) return;
+    occurrences_(r, from, to).forEach(d => {
+      const key = attendKey_(title, d);
+      out.push({ key, title, date: ymd_(d), when: webFmt_(d, 'EEE, MMM d'), present: Object.keys((att || {})[key] || {}) });
+    });
+  });
+  return out.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
+}
+function leadNote_(school) {
+  try { const n = JSON.parse(docProps_().getProperty('LEAD_NOTE|' + school) || 'null');
+    return n && n.t && Date.now() - n.at < 21 * 86400000 ? { text: n.t, by: n.by, when: webFmt_(new Date(n.at), 'EEE, MMM d') } : null; } catch (e) { return null; }
+}
+// Active members of a school, by email (from the check-in data, or the Scholars tab)
+function schoolMemberEmails_(ss, school) {
+  const out = {};
+  try { if (checkinOn_()) (memberData_(ss).bySchool[school] || { members: [] }).members.forEach(m => { if (m.email) out[emailOf_(m.email)] = m.name; }); } catch (e) { /* Scholars below */ }
+  if (!Object.keys(out).length) scholarRows_(ss).forEach(r => { if (String(r[1]).trim() === school && emailOf_(r[4])) out[emailOf_(r[4])] = r[0]; });
+  return out;
+}
+// The RR's view: what each Campus Lead did this week
+function leadBoard_(ss, schools) {
+  const week = memberWeekKey_(new Date()), rows = leadRows_(ss).filter(r => r.week === week);
+  return schools.filter(s => s.lead).map(s => {
+    const mine = rows.filter(r => r.school === s.name);
+    return { school: s.name, lead: s.lead, checkedIn: !!s.leadDone, contacted: mine.filter(r => r.action === 'contacted').length,
+             joinChecks: mine.filter(r => r.action === 'join-check').length, attendance: mine.filter(r => r.action === 'attendance').length,
+             note: !!leadNote_(s.name), help: s.help || 0 };
+  }).sort((a, b) => (b.contacted + b.joinChecks + b.attendance) - (a.contacted + a.joinChecks + a.attendance) || a.school.localeCompare(b.school));
+}
+// One Lead action. act: contacted · join-check · attendance · note. arg.school must be one of the Lead's schools.
+function webLeadAction(token, act, arg) {
+  return webSafe_(() => {
+    const s = webSession_(token);
+    if (!s) return { ok: false, signedOut: true };
+    const ss = webSheet_(), who = webRoles_(ss, s.e);
+    arg = arg || {};
+    const school = String(arg.school || '');
+    if (!(who.leads || []).length || who.leads.indexOf(school) === -1) return { ok: false, msg: 'Only this school\'s Campus Lead can do that.' };
+    const week = memberWeekKey_(new Date()), sh = leadTab_(ss), lock = docLock_();
+    if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try again.' };
+    let msg = 'Saved.';
+    try {
+      const add = (action, about, value, note) => sh.appendRow([new Date(), week, school, who.email, action, about, value, String(note || '').slice(0, 300)]);
+      if (act === 'contacted') {
+        const email = emailOf_(arg.email);
+        if (!email || !schoolMemberEmails_(ss, school)[email]) return { ok: false, msg: 'That member is not on your school\'s list.' };
+        const old = leadRows_(ss).filter(r => r.week === week && r.school === school && r.action === 'contacted' && r.about === email);
+        if (old.length) { old.reverse().forEach(r => sh.deleteRow(r.row)); msg = 'Unmarked.'; }      // tap again to undo
+        else { add('contacted', email, arg.kind === 'help' ? 'help' : 'reminder'); msg = 'Marked as contacted.'; }
+      } else if (act === 'join-check') {
+        const row = Number(arg.row), value = arg.value === 'yes' ? 'yes' : arg.value === 'no' ? 'no' : '';
+        const j = webJoins_(ss).find(x => x.row === row);
+        if (!value || !j || j.school !== school || /^Added|^Declined/.test(j.status)) return { ok: false, msg: 'This request is no longer waiting for your school.' };
+        add('join-check', j.email, value, row + '|' + String(arg.note || '').slice(0, 200));
+        msg = value === 'yes' ? 'Thanks! Your RR will see that you confirmed them.' : 'Thanks! Your RR will see your note.';
+      } else if (act === 'attendance') {
+        const ev = leadRecentEvents_(ss, school, {}).find(e => e.title === String(arg.title || '') && e.date === String(arg.date || ''));
+        if (!ev) return { ok: false, msg: 'Pick an event from the last three weeks.' };
+        const members = schoolMemberEmails_(ss, school), chosen = (Array.isArray(arg.emails) ? arg.emails : []).map(emailOf_).filter(e => members[e]);
+        const at = ensureAttendanceTab_(ss);
+        if (at.getLastRow() > 1) {                                                     // replace this school's list for that event
+          const vals = at.getRange(2, 1, at.getLastRow() - 1, 3).getValues();
+          for (let i = vals.length - 1; i >= 0; i--) if (attendKey_(vals[i][0], vals[i][1]) === ev.key && members[emailOf_(vals[i][2])]) at.deleteRow(i + 2);
+        }
+        const d = new Date(ev.date + 'T12:00:00');
+        if (chosen.length) at.getRange(at.getLastRow() + 1, 1, chosen.length, 3).setValues(chosen.map(e => [ev.title, d, e]));
+        add('attendance', '', chosen.length, ev.title + ' · ' + ev.when);
+        msg = chosen.length + ' marked present for ' + ev.title + '.';
+      } else if (act === 'note') {
+        const text = String(arg.text || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+        if (text) docProps_().setProperty('LEAD_NOTE|' + school, JSON.stringify({ t: text, by: displayName_(who.name || who.email), at: Date.now() }));
+        else docProps_().deleteProperty('LEAD_NOTE|' + school);
+        add('note', '', text ? 'posted' : 'cleared', text);
+        msg = text ? 'Your note is on your members\' Home page.' : 'Note removed.';
+      } else return { ok: false, msg: 'Unknown action.' };
+    } finally { lock.releaseLock(); }
+    try { webForget_(who.email); } catch (e) { /* cache */ }
+    return { ok: true, msg, lead: JSON.parse(JSON.stringify(webLead_(ss, who.leads, getSettings_()))) };
+  });
+}
+
 // Schools ranked: this week's members answered (%), then the school's streak
 function webLeaderboard_(ss, mySchools) {
   const data = focalData_(ss).filter(s => !s.inactive);
   let md = null; try { if (checkinOn_()) md = memberData_(ss); } catch (e) { md = null; }
+  const stars = (() => { try { return dailyStarsBySchool_(ss); } catch (e) { return {}; } })();
   const all = data.map(s => {
     const m = (md && md.bySchool[s.name]) || { members: [], answered: 0 };
     const n = md ? m.members.length : 0;
-    return { name: s.name, rate: n ? Math.round(100 * m.answered / n) : 0, answered: m.answered || 0, members: n, streak: s.streak || 0,
+    return { name: s.name, rate: n ? Math.round(100 * m.answered / n) : 0, answered: m.answered || 0, members: n, streak: s.streak || 0, stars: stars[s.name] || 0,
              me: (mySchools || []).indexOf(s.name) !== -1 };
   });
   // fair: a school needs at least GAME.rankMin members to be ranked (1 of 1 is not "100%"); ties go to more answers, then the streak
   const ranked = all.filter(s => s.members >= GAME.rankMin)
-    .sort((a, b) => (b.rate - a.rate) || (b.answered - a.answered) || (b.streak - a.streak) || a.name.localeCompare(b.name))
+    .sort((a, b) => (b.rate - a.rate) || (b.answered - a.answered) || (b.stars - a.stars) || (b.streak - a.streak) || a.name.localeCompare(b.name))
     .map((s, i) => Object.assign(s, { rank: i + 1 }));
   const small = all.filter(s => s.members < GAME.rankMin).sort((a, b) => a.name.localeCompare(b.name))
     .map(s => Object.assign(s, { rank: null, small: true }));
@@ -1997,7 +2624,7 @@ function webRanksFor_(list, admin) {
   return { ranks: keep, hidden: list.length - keep.length };
 }
 
-// Postcards page: every place, with the picture only for the ones collected
+// Keep the postcard list tiny. A visible, unlocked card asks for its picture separately.
 function webPostcards(token, asEmail) {
   return webSafe_(() => {
     const s = webSession_(token);
@@ -2007,23 +2634,173 @@ function webPostcards(token, asEmail) {
     if (asEmail && who.admin) { who = webRoles_(ss, asEmail); s.e = who.email; }        // RR "View as" a member
     if (!who.member || !placesOn_()) return { ok: true, cards: [] };
     const got = {}; webGame_(ss, webMyAnswers_(ss, s.e), null).cards.forEach(i => { got[i] = true; });
-    return { ok: true, cards: PLACE_PICS.map((p, i) => ({ name: p.name, got: !!got[i], src: got[i] ? p.src : '' })) };
+    return { ok: true, cards: PLACE_PICS.map((p, i) => ({ index: i, name: p.name, got: !!got[i] })) };
   });
 }
 
-// RR on the website: send this week's reminder or follow-up now, or reset someone's password
+// These are decorative pictures only. Publish a copy once, then return its small URL.
+// If public sharing is unavailable, return just this requested image as a fallback.
+function webPostcardImage(token, index, asEmail) {
+  return webSafe_(() => {
+    const session = webSession_(token);
+    if (!session) return { ok: false, signedOut: true };
+    const ss = webSheet_(), actor = webRoles_(ss, session.e);
+    const who = asEmail && actor.admin ? webRoles_(ss, asEmail) : actor;
+    const i = Number(index);
+    if (!who.member || !placesOn_() || !Number.isInteger(i) || i < 0 || i >= PLACE_PICS.length)
+      return { ok: false, msg: 'Postcard unavailable.' };
+    const got = webGame_(ss, webMyAnswers_(ss, who.email), null).cards;
+    if (got.indexOf(i) === -1) return { ok: false, msg: 'Postcard locked.' };
+    const pic = PLACE_PICS[i], key = 'WEB_POSTCARD_' + i, props = docProps_();
+    let id = props.getProperty(key);
+    if (id) try {
+      const file = DriveApp.getFileById(id);
+      if (!file.isTrashed() && file.getSharingAccess() === DriveApp.Access.ANYONE_WITH_LINK)
+        return { ok: true, src: 'https://lh3.googleusercontent.com/d/' + id + '=w960' };
+    } catch (e) { id = ''; }
+    try {
+      const raw = String(pic.src || '').match(/^data:image\/webp;base64,(.+)$/);
+      if (!raw) throw new Error('Picture source missing');
+      const file = DriveApp.createFile(Utilities.newBlob(Utilities.base64Decode(raw[1]), 'image/webp',
+        'START postcard ' + i + '.webp'));
+      try { file.moveTo(pictureFolder_(true)); } catch (e) { /* keep in My Drive */ }
+      try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); }
+      catch (e) { file.setTrashed(true); throw e; }
+      props.setProperty(key, file.getId());
+      return { ok: true, src: 'https://lh3.googleusercontent.com/d/' + file.getId() + '=w960' };
+    } catch (e) {
+      Logger.log('Postcard picture link: ' + e.message);
+      return { ok: true, src: pic.src || '' };
+    }
+  });
+}
+
+// RR edits to Schools use the existing row as an optimistic concurrency check, then propagate renames.
+function webSchoolSave_(ss, actor, arg) {
+  arg = arg || {};
+  const sh = ss.getSheetByName(TAB.schools), row = arg.row == null || arg.row === '' ? 0 : Number(arg.row);
+  if (!sh) return { ok: false, msg: 'The Schools database is missing. Run setup first.' };
+  const clean = (v, n) => String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, n);
+  const name = clean(arg.name, 80), province = clean(arg.province, 100), lead = clean(arg.lead, 100);
+  const info = Array.isArray(arg.info) && arg.info.length === SCHOOL_INFO_HEADERS.length ? arg.info.map(v => clean(v, 250)) : null;
+  if (!name || !info || [name, province, lead].concat(info).some(v => /^=/.test(v)))
+    return { ok: false, msg: 'Enter a school name and valid details.' };
+  if (!Number.isInteger(row) || row < 0 || row === 1 || row > CONFIG.maxSchools + 1)
+    return { ok: false, msg: 'School row is invalid. Reload and try again.' };
+  const lock = docLock_();
+  if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try again.' };
+  let oldName = '', oldLead = '', oldEmail = '';
+  try {
+    const values = sh.getRange(2, 1, CONFIG.maxSchools, 6).getValues();
+    const index = row ? row - 2 : values.findIndex(v => !String(v[0] || '').trim());
+    if (index < 0) return { ok: false, msg: 'The Schools database is full.' };
+    const target = index + 2, old = values[index];
+    oldName = String(old[0] || '').trim(); oldLead = String(old[3] || '').trim(); oldEmail = emailOf_(old[4]);
+    if ((row && oldName !== String(arg.original || '').trim()) || (!row && oldName))
+      return { ok: false, msg: 'The school list changed. Reload and try again.' };
+    if (values.some((v, i) => i !== index && String(v[0] || '').trim().toLowerCase() === name.toLowerCase()))
+      return { ok: false, msg: 'That school is already listed.' };
+    if (lead && values.some((v, i) => i !== index && String(v[3] || '').trim().toLowerCase() === lead.toLowerCase()))
+      return { ok: false, msg: 'That Campus Lead is already assigned to another school.' };
+    const scholar = lead ? findScholar_(scholarRows_(ss), lead) : null;
+    if (scholar && String(scholar[1] || '').trim() !== name && String(scholar[1] || '').trim() !== oldName)
+      return { ok: false, msg: 'That scholar belongs to another school.' };
+    sh.getRange(target, 1, 1, 2).setValues([[name, province]]);
+    sh.getRange(target, 4).setValue(scholar ? String(scholar[0]).trim() : lead);
+    sh.getRange(target, 6).setValue(arg.inactive === true ? 'Y' : 'N');
+    sh.getRange(target, 9, 1, SCHOOL_INFO_HEADERS.length).setValues([info]);
+    if (oldName && oldName !== name) renameSchool_(ss, oldName, name);
+    SpreadsheetApp.flush();
+    syncRoles_(ss);
+  } finally { lock.releaseLock(); }
+  webBumpData_();
+  if (oldEmail) webForget_(oldEmail);
+  try { updateDropdown_(); } catch (e) { Logger.log('School form list: ' + e.message); }
+  try { calPeopleChanged_(ss); } catch (e) { Logger.log('Calendar sharing: ' + e.message); }
+  Logger.log('RR saved school ' + name + (oldName ? ' (was ' + oldName + ')' : ' (new)') + ' by ' + actor);
+  return { ok: true, msg: 'School saved.' };
+}
+
+function webSettingSave_(ss, actor, arg) {
+  arg = arg || {};
+  const index = SETTINGS.findIndex(s => s[0] === arg.key), sh = ss.getSheetByName(TAB.settings);
+  if (!sh || index < 0) return { ok: false, msg: 'Setting not found. Reload and try again.' };
+  const key = SETTINGS[index][0], spec = webSettingRecords_(ss)[index];
+  if (spec.readonly) return { ok: false, msg: 'This value follows the check-in deadline automatically.' };
+  let value = arg.value;
+  if (spec.type === 'check') value = value === true;
+  else if (spec.type === 'number') {
+    value = Number(value);
+    if (!Number.isInteger(value) || value < 1 || value > 365 || key === 'tRate' && value > 100)
+      return { ok: false, msg: 'Enter a whole number in the allowed range.' };
+  } else if (spec.type === 'date') {
+    value = String(value || '').trim();
+    if (value && !/^\d{4}-\d{2}-\d{2}$/.test(value)) return { ok: false, msg: 'Choose a valid date.' };
+    if (value) {
+      const d = new Date(value + 'T00:00:00+08:00');
+      if (isNaN(d.getTime()) || webFmt_(d, 'yyyy-MM-dd') !== value) return { ok: false, msg: 'Choose a valid date.' };
+      value = d;
+    }
+  } else {
+    value = String(value == null ? '' : value).trim();
+    if (value.length > 500 || /^=/.test(value)) return { ok: false, msg: 'That setting value is invalid.' };
+    if (spec.options.length && spec.options.indexOf(value) === -1) return { ok: false, msg: 'Choose a listed value.' };
+    if (key === 'replyTo' && value && emailOf_(value) !== value.toLowerCase()) return { ok: false, msg: 'Enter one valid reply address.' };
+    if (key === 'recipients' && value && value.split(/[,;\s]+/).some(e => emailOf_(e) !== e.toLowerCase()))
+      return { ok: false, msg: 'Enter valid summary email addresses, separated by commas.' };
+  }
+  const lock = docLock_();
+  if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try again.' };
+  try {
+    const cell = sh.getRange(index + 2, 2), old = cell.getValue();
+    const previous = old instanceof Date ? webFmt_(old, 'yyyy-MM-dd') : old == null ? '' : old;
+    if (String(previous) !== String(arg.previous == null ? '' : arg.previous))
+      return { ok: false, msg: 'This setting changed. Reload and try again.' };
+    cell.setValue(value);
+    if (key === 'autoApprove') setAutoApprove_(value);
+    if (key === 'region') applyRegion_(ss);
+    SpreadsheetApp.flush();
+  } finally { lock.releaseLock(); }
+  webBumpData_();
+  if (['day', 'hour', 'remHour', 'dueDay', 'autoWeekly'].indexOf(key) !== -1) {
+    try { if (claimIfFree_()) { applySchedule_(); docProps_().setProperty('SCHEDULE_SYNC', scheduleKey_()); } }
+    catch (e) { Logger.log('Website schedule update: ' + e.message); return { ok: true, msg: 'Setting saved. Run setup to refresh the email schedule.' }; }
+  }
+  if (key === 'region') { try { updateDropdown_(); } catch (e) { Logger.log('Region form list: ' + e.message); } }
+  Logger.log('RR saved setting ' + key + ' by ' + actor);
+  return { ok: true, msg: 'Setting saved.' };
+}
+
+// RR on the website: update database records or send a check-in reminder.
 function webAdminAction(token, action, arg) {
   return webSafe_(() => {
     const s = webSession_(token);
     if (!s) return { ok: false, signedOut: true };
     const ss = webSheet_(), who = webRoles_(ss, s.e);
-    if (!who.admin) return { ok: false, msg: 'Only the Regional Representative can do this.' };
+    if (!who.admin || who.suspended) return { ok: false, msg: 'Only an active Regional Representative can do this.' };
+    if (action === 'school-save') return webSchoolSave_(ss, s.e, arg);
+    if (action === 'school-import') {
+      if (!regionProfile_().schools.length) return { ok: false, msg: 'Choose a region in website Settings first.' };
+      const lock = docLock_();
+      if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try again.' };
+      let count = 0;
+      try { mergeUmMainSchool_(ss); count = writeSchoolList_(ss); syncRoles_(ss); }
+      finally { lock.releaseLock(); }
+      webBumpData_();
+      try { updateDropdown_(); } catch (e) { Logger.log('School import form list: ' + e.message); }
+      Logger.log('RR imported region schools by ' + s.e);
+      return { ok: true, msg: count + ' region schools loaded.' };
+    }
+    if (action === 'setting-save') return webSettingSave_(ss, s.e, arg);
+    if (action === 'outreach-save') return webOutreachSave_(ss, s.e, arg);
+    if (action === 'event-save') return webEventSave_(ss, s.e, arg);
+    if (action === 'event-delete') return webEventDelete_(ss, s.e, arg);
     if (action === 'scholar-status') return webScholarStatus_(ss, s.e, arg);
     if (action === 'scholar-update') return webScholarUpdate_(ss, s.e, arg);
     if (action === 'resetpw') return { ok: true, msg: resetWebPassword_(arg) };
     if (action === 'auto-approve') { const on = setAutoApprove_(arg === 'on');
       try { webForget_(s.e); } catch (e) { Logger.log('Auto-approve cache refresh: ' + e.message); }
-      return { ok: true, msg: on ? 'Auto-approve is ON: requests matching one active old masterlist record by name, school, program and award year are added at once. A recorded email must match too. Others wait for review.' : 'Auto-approve is OFF: every sign-up waits for you.' }; }
+      return { ok: true, msg: on ? 'Auto-approve is ON: valid sign-ups from listed schools are added at once, including people not on the old masterlist. Existing record conflicts still need review.' : 'Auto-approve is OFF: every sign-up waits for you.' }; }
     if (action === 'join-add' || action === 'join-decline' || action === 'join-clarify') {
       webForget_(s.e); return webJoinAction_(ss, action, Object.assign({}, arg || {}, { actor: s.e, auto: false })); }
     if (action === 'remind' || action === 'followup') {
@@ -2157,6 +2934,7 @@ function refreshJoinViews_(ss) {
 
 // Run this once to create the history sheets for existing applications.
 function setupJoinHistory() {
+  sheetUser_();                                   // sheet only: never from the website
   const totals = refreshJoinViews_(SpreadsheetApp.getActiveSpreadsheet());
   SpreadsheetApp.getActiveSpreadsheet().toast('Join history updated: ' + JSON.stringify(totals), 'START Tracker', 7);
 }
@@ -2294,7 +3072,7 @@ function webJoinRequest(email, name, school, note, d) {
       catch (e) { Logger.log('Join rate counter: ' + e.message); }
       try { refreshJoinViews_(ss); } catch (e) { Logger.log('Join views: ' + e.message); }
     } finally { lock.releaseLock(); }
-    // Eligible applications from a recognized school are activated immediately.
+    // Valid applications from a listed school are activated immediately when the switch is on.
     // The applicant must still prove control of their email before choosing a password.
     if (autoApproveOn_() && el.result === 'Eligible' && school !== JOIN.other && savedRow > 1) {
       try {
@@ -2311,7 +3089,7 @@ function webJoinRequest(email, name, school, note, d) {
       try { if (webAllowed_(webRoles_(ss, email))) return { ok: true, auto: true, hasPassword: !!(webAccount_(email) || {}).h, msg: 'Your START membership is approved. Confirm your email to set up your password.' }; }
       catch (e) { Logger.log('Auto-approve status: ' + e.message); }
     }
-    // Requests that do not meet all listed eligibility conditions remain for RR review.
+    // Requests that cannot be added safely remain for RR review.
     return done;
   });
 }
@@ -2366,9 +3144,8 @@ function joinMatch_(roster, name, school, email) {
   return { i: -1, plan: 'Adds a new row in Scholars with their program, year level and scholarship (check the ONSSE masterlist first)' };
 }
 
-// Automatic approval requires one active masterlist record matching all recorded details.
-// Older imported records often have no email. A recorded email must still match, and
-// the applicant must verify control of the requested email before creating a password.
+// A strict old-masterlist match can enrich a new automatic approval and mark that old row signed up.
+// It is optional for approval. A recorded email must match before using old-row details.
 function autoJoinMasterMatch_(ss, request, roster) {
   if (!autoApproveOn_() || String(request[2] || '').trim() === JOIN.other) return null;
   const norm = v => String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
@@ -2383,7 +3160,21 @@ function autoJoinMasterMatch_(ss, request, roster) {
   const hit = hits[0];
   return { at: hit.at, row: hit.r, text: [hit.r[0], hit.r[1], hit.r[2], hit.r[3]].filter(Boolean).join(' · ') };
 }
-function autoJoinEligible_(ss, request, roster) { return !!autoJoinMasterMatch_(ss, request, roster); }
+// Auto-approve any valid sign-up, including a new scholar absent from both masterlists.
+// An existing Scholars row is only safe to update when its identity, school and email agree.
+function autoJoinEligible_(ss, request, roster) {
+  const school = String(request[2] || '').trim(), email = emailOf_(request[3]);
+  if (!autoApproveOn_() || !email || !String(request[1] || '').trim() ||
+      !/^Eligible(?:\s|$)/.test(String(request[10] || '')) ||
+      START_PROGRAMS.list.indexOf(String(request[7] || '').trim()) === -1 ||
+      schoolRows_(ss).map(s => s.name).indexOf(school) === -1) return false;
+  const m = joinMatch_(roster, request[1], school, email);
+  if (m.i < 0) return true;
+  const found = roster[m.i], words = s => String(s || '').toLowerCase().replace(/[^a-zñ ]/g, ' ').split(' ').filter(w => w.length > 1).sort().join(' ');
+  return !m.alt && String(found[5] || '').trim() === 'Active' &&
+    String(found[1] || '').trim() === school && words(found[0]) === words(request[1]) &&
+    (!emailOf_(found[4]) || emailOf_(found[4]) === email);
+}
 
 // RR on the website: Add or Decline a request
 function webJoinAction_(ss, action, arg) {
@@ -2424,8 +3215,8 @@ function webJoinAction_(ss, action, arg) {
       return { ok: false, msg: 'Match ' + name + '\'s school to one on the list first (or add the school in the Schools tab).' };
     const sc = ss.getSheetByName(TAB.scholars);
     const n = Math.max(sc.getLastRow() - 1, 0), roster = n ? sc.getRange(2, 1, n, 6).getValues() : [];
+    if (o.auto && !autoJoinEligible_(ss, r, roster)) return { ok: false, msg: 'This request needs Regional Representative review.' };
     const autoHit = o.auto ? autoJoinMasterMatch_(ss, r, roster) : null;
-    if (o.auto && !autoHit) return { ok: false, msg: 'This request needs Regional Representative review.' };
     const m = joinMatch_(roster, name, school, email);
     if (m.i >= 0 && String(roster[m.i][5] || '').trim() !== 'Active')
       return { ok: false, msg: 'This scholar is not Active. Verify the record and change its status in Scholars before approving this request.' };
@@ -2434,7 +3225,7 @@ function webJoinAction_(ss, action, arg) {
     const yl = String(r[8] || '').trim(), year = /^\d(st|nd|rd|th) year$/i.test(yl) ? yl.replace(/year$/i, 'Year') : '';
     const kind = String(r[9] || '').trim() === 'Not sure' ? '' : String(r[9] || '').trim();
     const from = 'Join request · ' + stamp;
-    const oldHit = autoHit || oldMasterMatch_(oldMasterRows_(ss), name, school), ov = oldHit ? oldHit.row : [];
+    const oldHit = o.auto ? autoHit : oldMasterMatch_(oldMasterRows_(ss), name, school), ov = oldHit ? oldHit.row : [];
     const pick = (mine, k) => String(mine || '').trim() || String(ov[k] || '').trim();      // the request first, else the old masterlist
     const awarded = pick(r[15], 3), campus = pick(r[16], 7), hometown = pick(r[17], 8);
     const extras = c => {                                            // fills only EMPTY cells: your masterlist always wins
@@ -2723,8 +3514,8 @@ function alignScholarsTab_(ss) {
 
 
 /* ---------- auto-approve (Settings and the RR's Scholars page) ----------
- * ON: only a unique active old masterlist match is added automatically.
- * Other requests wait for review. OFF (the default): every request waits. */
+ * ON: valid sign-ups from listed schools are added automatically, even without an old
+ * masterlist match. Record conflicts wait for review. OFF: every request waits. */
 // Where this email's join request stands: 'waiting' | 'sorry' (not eligible) | 'declined' | 'added' | '' (none). Newest row wins.
 function joinStateOf_(ss, email) {
   email = emailOf_(email);
