@@ -1022,9 +1022,12 @@ function memberMessage_(ss, school) {
   const w = memberWeek_(new Date()), events = memberEventChoices_(ss, w)
     .filter(l => !/\(([^)]+)\) · /.test(l) || (school && l.indexOf('(' + school + ') · ') !== -1));
   // a short PERSONAL nudge for Messenger: only for members who have not answered yet (everyone else got it by email)
-  return `Hi! Friendly reminder: your START weekly check-in isn't in yet (1 minute lang!)\n` +
+  // on the due day it becomes the last call: the check-in closes at 11:59 PM that night
+  const last = ymd_(w.due) === ymd_(new Date());
+  return (last ? `Hi! Last call: your START weekly check-in closes TONIGHT at 11:59 PM and yours isn't in yet (1 minute lang!)\n`
+               : `Hi! Friendly reminder: your START weekly check-in isn't in yet (1 minute lang!)\n`) +
     `${link}\n` +
-    `Due: ${Utilities.formatDate(w.due, CONFIG.timezone, 'EEEE, MMM d')}. Sign in with the email you gave START. ` +
+    (last ? 'Due: today, 11:59 PM. ' : `Due: ${Utilities.formatDate(w.due, CONFIG.timezone, 'EEEE, MMM d')}, 11:59 PM. `) + 'Sign in with the email you gave START. ' +
     `(It's also in your email inbox.)` +
     (events.length ? `\n\nThis week's START events:\n${events.map(l => '• ' + l).join('\n')}` : '') +
     '\n\nSalamat!';
@@ -1653,5 +1656,30 @@ function cleanOldAnswers_(ss) {
     const old = new Date(Date.now() - 90 * 86400000);
     for (let r = un.getLastRow(); r >= 2; r--) { const t = un.getRange(r, 1).getValue(); if (t instanceof Date && t < old) { un.deleteRow(r); removed++; } }
   }
+  // Game attempts and Campus Lead activity contain scholar emails too. Apply the same
+  // two-year rule as check-in answers once a scholar is no longer Active.
+  const active = {};
+  Object.entries(scholarByEmail_(ss)).forEach(([e, p]) => { if (p.status === 'Active') active[e] = true; });
+  const cut = new Date(); cut.setFullYear(cut.getFullYear() - RETAIN_YEARS);
+  const trim = (name, width, dateOf, emailsOf) => {
+    const tab = ss.getSheetByName(name);
+    if (!tab || tab.getLastRow() < 2) return 0;
+    const lock = docLock_();
+    if (!lock.tryLock(30000)) return 0;
+    try {
+      const n = tab.getLastRow() - 1, vals = tab.getRange(2, 1, n, width).getValues();
+      const keep = vals.filter(v => {
+        const at = dateOf(v), people = emailsOf(v).map(emailOf_).filter(Boolean);
+        return !(at instanceof Date && !isNaN(at.getTime()) && at < cut && people.some(e => !active[e]));
+      });
+      if (keep.length === n) return 0;
+      tab.getRange(2, 1, n, width).clearContent();
+      if (keep.length) tab.getRange(2, 1, keep.length, width).setValues(keep);
+      return n - keep.length;
+    } finally { lock.releaseLock(); }
+  };
+  removed += trim('Daily games', 18, v => /^\d{4}-\d\d-\d\d$/.test(String(v[0])) ? new Date(String(v[0]) + 'T00:00:00Z') : v[8], v => [v[1]]);
+  removed += trim('Lead actions', 8, v => v[0], v => [v[3], v[5]]);
+  removed += trim('Reward requests', 9, v => v[0], v => [v[2]]);
   return removed;
 }

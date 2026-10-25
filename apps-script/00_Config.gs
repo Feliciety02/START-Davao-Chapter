@@ -1,5 +1,5 @@
 /* =====================================================================
- *  START SCHOLAR TRACKER  ·  00_Config   (version 2026-10-24p)
+ *  START SCHOLAR TRACKER  ·  00_Config   (version 2026-10-25k)
  *  ---------------------------------------------------------------------
  *  Inside: Settings, colours, tab names, form questions, shared helpers.
  *  To customise: The Settings tab rows, colours (THEME) and the form question titles (Q).
@@ -10,7 +10,7 @@
  *  Then in the Google Sheet: START Tracker › ① Set up / fix the tracker.
  *  You never need to run anything from here: use the START Tracker menu in the Sheet.
  * ===================================================================== */
-var START_MODULES = '2026-10-25d';
+var START_MODULES = '2026-10-25k';
 
 // The ▶ Run button runs the FIRST function of the open file: this one, so it is always safe.
 function about_00_Config() {
@@ -65,7 +65,7 @@ var START_PROGRAMS = {
   ]
 };
 // Code version: the website reports it, so 🩺 Check my tracker can tell when "New version" was not deployed
-var CODE_VERSION = '2026-10-25d';
+var CODE_VERSION = '2026-10-25k';
 // Menu paths named in messages (the short database menu groups them differently)
 var MENU_CAL = DB_MODE ? '🛠 Setup tools › 📅 Set up / update calendars' : '📅 Events & calendar › Set up / update calendars';
 var MENU_REPORT = DB_MODE ? '🛠 Setup tools › 📄 End-of-term report' : '📄 Reports & backups › Make an end-of-term report';
@@ -189,7 +189,7 @@ var SETTINGS = [
   ['termStart',  'Term start date',                    '',
    'Counts "this term" (streaks, end-of-term report) from this date.'],
   ['autoApprove', 'Auto-approve verified join requests (tick = ON)', false,
-   'Valid sign-ups from listed schools are approved automatically, including scholars not on the old masterlist. Existing record conflicts wait for your review. The applicant confirms their email before setting a password.'],
+   'Everyone who registers from a listed school is approved at once (no masterlist check). Turning it on also approves requests already waiting. Only clashes with an existing record wait for you. The applicant confirms their email before setting a password.'],
 ];
 var CHECKBOX_SETTINGS = ['autoWeekly', 'missedAlert', 'autoClose', 'eventRemind', 'monthlyReport', 'selfCheck', 'backups', 'portalMembers', 'portalScholars', 'autoApprove'];
 var DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -444,7 +444,7 @@ function emailOf_(v) {
 function orderTabs_(ss) {
   const names = DB_MODE
     ? [TAB.settings, TAB.schools, TAB.scholars, 'Join requests', 'Join - Pending', 'Join - Approved', 'Join - Declined',
-       TAB.mcheckins, 'Daily games', 'Lead actions', TAB.checkins, 'Event attendance', TAB.events, TAB.outreach, 'Data change log', 'Weekly roster']
+       TAB.mcheckins, 'Daily games', 'Lead actions', 'Rewards', 'Reward requests', TAB.checkins, 'Event attendance', TAB.events, TAB.outreach, 'Data change log', 'Weekly roster']
     : [TAB.start, TAB.dashboard, TAB.links, TAB.schools, TAB.focal, TAB.outreach, TAB.calview,
        TAB.events, TAB.scholars, TAB.checkins, TAB.mcheckins, TAB.log, TAB.settings];
   names.filter(name => ss.getSheetByName(name)).forEach((name, i) => {

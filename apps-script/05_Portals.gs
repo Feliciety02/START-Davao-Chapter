@@ -453,7 +453,7 @@ function writePortal_(pss, s, rr) {
   let r = 11;
   merge(r, 1, NC).setValue('✅  TO DO THIS WEEK'); header_(sh.getRange(r, 1, 1, NC)); r++;
   const todo = [];
-  if (!s.thisWeek) todo.push([`Answer your check-in by ${f(s.due, 'EEEE, MMM d')} (yellow button above).`, CHIP.yellow]);
+  if (!s.thisWeek) todo.push([`Answer your check-in by ${f(s.due, 'EEEE, MMM d')}, 11:59 PM (yellow button above).`, CHIP.yellow]);
   P.help.forEach(m => todo.push([`🆘 ${displayName_(m.name)} asked for help: message them today.`, CHIP.red]));
   if (P.answers && P.toMessage.length) todo.push([`Message the ${P.toMessage.length} member${P.toMessage.length === 1 ? '' : 's'} marked ⏳ below. Copy this:`, CHIP.yellow, P.message]);
   if (P.noEmail.length) todo.push([`${P.noEmail.length} member${P.noEmail.length === 1 ? ' has' : 's have'} no email yet (📭 below): ask them to email ${rr.name} (${rr.email}) the Google email they use.`, CHIP.grey]);
@@ -752,9 +752,6 @@ var WEB = { codeMins: 15, sessionDays: 30, shortHours: 12, maxTries: 5, perHour:
             lateDays: 2,          // a missed check-in can still be answered this many days after its due day (marked late)
             cacheSecs: 60 };      // a page is re-read from the sheet at most once a minute (faster on busy nights)
 
-// Original image served by DOST START. The website uses it directly as an <img>, never a CSS crop.
-var START_DOST_LOGO_URL = 'https://www.start-dost.org/_next/static/media/logo-s.7f4f7462.png';
-
 // The page itself
 function doGet(e) {
   if (e && e.parameter && e.parameter.ping) {                       // 🩺 Check my tracker: which code version is live?
@@ -766,7 +763,7 @@ function doGet(e) {
   try { const u = ScriptApp.getService().getUrl(); if (u && !docProps_().getProperty('WEB_URL_SET')) docProps_().setProperty('WEB_URL', u); } catch (err) { /* not deployed */ }
   const boot = {
     region: String(st.region || ''), regionName: String(st.regionName || ''), pics: webPics_(),
-    mark: START_DOST_LOGO_URL,
+    mark: typeof START_MARK === 'undefined' ? '' : START_MARK,
     place: (() => { try { return placeOfWeek_(); } catch (err) { return null; } })(),
     appOrigin: ''
   };
@@ -1314,14 +1311,14 @@ function webBuild_(ss, who) {
     const out = { ok: true, me: { email: who.email, name: displayName_(who.name || who.email),
                                  first: (typeof firstName_ === 'function' ? firstName_(who.name) : '') || 'there' },
                   region: st.region || '', regionName: st.regionName || '', rr: String(st.rrName || '').trim(), rrEmail: me_(),
-                  note: String(st.portalNote || '').trim(), updated: webFmt_(new Date(), 'MMM d, h:mm a'), cals: webCalendars_(who) };
+                  note: String(st.portalNote || '').trim(), updated: webFmt_(new Date(), 'MMM d, h:mm a'), cals: webCalendars_(who), version: CODE_VERSION };
     if (who.member) { try { out.member = webMember_(ss, who); } catch (e) { Logger.log('Website member: ' + e.message); } }
     if (who.leads.length) { try { out.lead = webLead_(ss, who.leads, st); } catch (e) { Logger.log('Website Lead: ' + e.message); } }
     if (who.admin) { try { out.admin = webAdmin_(ss, st); } catch (e) { Logger.log('Website RR: ' + e.message); } }
-    // RR calendar and event records load together only when the Calendar page opens.
-    if (!who.admin) try { out.calendarEvents = webCalendarEvents_(ss, who); } catch (e) { Logger.log('Website calendar: ' + e.message); out.calendarEvents = []; }
+    // Full event feed for monthly navigation (home cards intentionally remain six).
+    try { out.calendarEvents = webCalendarEvents_(ss, who); } catch (e) { Logger.log('Website calendar: ' + e.message); out.calendarEvents = []; }
     try { out.logoV = schoolLogoVersion_(ss); } catch (e) { out.logoV = ''; }
-    if (!who.admin) try {
+    try {
       const r = webRanksFor_(webLeaderboard_(ss, (who.member ? [who.member.school] : []).concat(who.leads)), who.admin);
       out.ranks = r.ranks; out.ranksHidden = r.hidden;
     } catch (e) { Logger.log('Leaderboard: ' + e.message); }
@@ -1454,7 +1451,7 @@ function webMember_(ss, who) {
   let spec = null;
   return { school, lead: sc.focal ? displayName_(sc.focal) : '', done: !!me.now, streak: me.streak || 0,
            vibe: me.now ? me.now.vibe : '', help: me.now ? me.now.help : '',
-           due: d ? webFmt_(d.week.due, 'EEEE, MMM d') : '', near: d ? memberDeadlineNear_(d.week) : false,
+           due: d ? dueLabel_(d.week.due) : '', last: d ? isDueDay_(d.week.due) : false, near: d ? memberDeadlineNear_(d.week) : false,
            formUrl: url, open: !!d, checkin: (spec = webCheckinSpec_(ss, who.email)), game: (() => { try { return webGame_(ss, webMyAnswers_(ss, who.email), spec, webMyDaily_(ss, who.email)); } catch (e) { Logger.log('Game: ' + e.message); return null; } })(), history: history.slice(0, 5).map(h => ({ date: h.date, vibe: h.vibe, help: h.help })),
            events: webEvents_(ss, school, false), leadNote: leadNote_(school) };
 }
@@ -1484,7 +1481,7 @@ function webCheckinSpec_(ss, email) {
     q.push({ k: 'help', title: MQ.help, type: 'one', choices: M_HELP });
     q.push({ k: 'tea', title: MQ.tea, type: 'text' });
     return { open, late, lateUntil, opens: st.mOpenDay, week: ymd_(w.due), dueAt: w.due.getTime(),
-             due: webFmt_(w.due, 'EEEE, MMM d'), q, consent: CONSENT_AGREE, privacy: privacyNote_() };
+             due: dueLabel_(w.due), last: !late && isDueDay_(w.due), q, consent: CONSENT_AGREE, privacy: privacyNote_() };
   } catch (e) { Logger.log('Website check-in: ' + e.message); return null; }
 }
 
@@ -1509,7 +1506,7 @@ function webAnswerRow_(ss, email, weekKey, sh, c) {
  * odd one out or a number pattern (three hard rounds, timed). Questions follow the scholar's own program (Scholars › C),
  * with Davao Region rounds mixed in. Days cannot be replayed: a game counts only on its own day, opening it starts it,
  * and leaving before the end scores 0. The page shows the game; THIS file checks every answer and decides the XP.
- * Saved in the "Daily games" tab. XP from games and check-ins is one balance: levels now, rewards to redeem later. */
+ * Saved in the "Daily games" tab. XP from games and check-ins also funds reward requests. */
 var MINI = { xpScramble: 10, xpRound: 3, perfect: 1, rounds: 3, hearts: 1, programRounds: 2, secsScramble: 45, secsRound: 20 };
 // Number patterns (logic, for every program): [question, four choices, index of the answer, why]
 var MINI_PATTERNS = [
@@ -1599,9 +1596,14 @@ var MINI_PROGRAMS = {
   'Mechatronics Engineering': ['mech', 'hw'],
 };
 
-// Bytes 0-255 from the email + week (the same every time for the same person and week)
+// A private tracker secret keeps the answer sequence unpredictable even if the source is shared.
+// The calls that first create a game and later check it run under the document lock.
 function miniSeed_(email, week) {
-  return Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, 'mini|' + emailOf_(email) + '|' + week).map(b => b & 255);
+  const props = docProps_();
+  let secret = props.getProperty('MINI_SECRET');
+  if (!secret) { secret = Utilities.getUuid(); props.setProperty('MINI_SECRET', secret); }
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,
+    'mini|' + secret + '|' + emailOf_(email) + '|' + week).map(b => b & 255);
 }
 // The scholar's degree program from Scholars (column C), '' when not found
 function miniProgram_(ss, email) {
@@ -1618,7 +1620,7 @@ function miniBank_(program) {
   if (!sets) return { words: MINI_DAVAO.words, odd: [], own: false };
   return { words: [].concat.apply([], sets.map(k => MQ_[k].words)), odd: [].concat.apply([], sets.map(k => MQ_[k].odd)), own: true };
 }
-// The game for one scholar and week, as the page needs it (the answer is checked again on the server)
+// The full game stays on the server. Only miniPublic_ sends the current prompt to a browser.
 function webMiniFor_(email, week, program) {
   if (!email || !week) return null;
   const b = miniSeed_(email, week), bank = miniBank_(program);
@@ -1665,12 +1667,42 @@ function miniResult_(game, sent) {
 }
 
 var DAILY_TAB = 'Daily games';
-var DAILY_HEAD = ['Day', 'Email', 'Name', 'School', 'Game', 'Result', 'XP', 'Stars', 'Started', 'Finished', 'Game ID'];
+var DAILY_HEAD = ['Day', 'Email', 'Name', 'School', 'Game', 'Result', 'XP', 'Stars', 'Started', 'Finished', 'Game ID',
+                  'Round', 'Correct', 'Prompt at', 'Round state', 'Last pick', 'Was correct', 'Timed out'];
 var DAILY_GRACE_MIN = 20;                      // a game must be finished within this many minutes of opening it
 function dailyTab_(ss) {
   let sh = ss.getSheetByName(DAILY_TAB);
-  if (!sh) { sh = ss.insertSheet(DAILY_TAB); sh.getRange(1, 1, 1, DAILY_HEAD.length).setValues([DAILY_HEAD]).setFontWeight('bold'); sh.setFrozenRows(1); sh.getRange(1, 1, sh.getMaxRows(), 1).setNumberFormat('@'); }
+  if (!sh) { sh = ss.insertSheet(DAILY_TAB); sh.setFrozenRows(1); sh.getRange(1, 1, sh.getMaxRows(), 1).setNumberFormat('@'); }
+  if (sh.getMaxColumns() < DAILY_HEAD.length) sh.insertColumnsAfter(sh.getMaxColumns(), DAILY_HEAD.length - sh.getMaxColumns());
+  if (sh.getRange(1, DAILY_HEAD.length).getValue() !== DAILY_HEAD[DAILY_HEAD.length - 1])
+    sh.getRange(1, 1, 1, DAILY_HEAD.length).setValues([DAILY_HEAD]).setFontWeight('bold');
   return sh;
+}
+function miniCount_(game) { return game.kind === 'scramble' ? 1 : game.rounds.length; }
+function miniPrompt_(game, round) {
+  if (game.kind === 'scramble') return { letters: game.letters.slice(), clue: game.clue, length: game.answer.length };
+  const r = game.rounds[round];
+  return { title: r.title, choices: r.choices.slice(), topic: r.topic };
+}
+function miniPublic_(game, at, promptAt) {
+  const out = { id: game.id, kind: game.kind, xp: game.xp, secs: game.secs,
+    each: game.each, perfect: game.perfect, hearts: game.hearts,
+    deadline: promptAt.getTime() + game.secs * 1000, remainingMs: game.secs * 1000 };
+  if (game.kind === 'scramble') Object.assign(out, miniPrompt_(game, 0));
+  else { out.rounds = Array(miniCount_(game)).fill(null); out.rounds[at] = miniPrompt_(game, at); }
+  return out;
+}
+function miniScore_(game, right) {
+  const name = { scramble: 'Word scramble', odd: 'Odd one out', pattern: 'Number pattern' }[game.kind] || 'Brain break';
+  if (game.kind === 'scramble') return [name + ' · ' + (right ? 'solved' : 'not solved'), right ? MINI.xpScramble : 0, right ? 3 : 0];
+  return [name + ' · ' + right + ' of ' + miniCount_(game), right * MINI.xpRound + (right === miniCount_(game) ? MINI.perfect : 0), right];
+}
+function miniFeedback_(game, round, correct, right, late) {
+  const item = game.kind === 'scramble' ? null : game.rounds[round];
+  return { ok: true, round, correct, correctTotal: right, timeUp: late,
+    answer: item ? '' : game.answer, correctIndex: item ? item.odd : -1, why: item ? item.why : '',
+    last: round === miniCount_(game) - 1,
+    score: round === miniCount_(game) - 1 ? miniScore_(game, right)[1] : 0 };
 }
 // One scholar's daily games: { byDay: { 'yyyy-MM-dd': { row, kind, result, xp, stars, started, finished, id } }, total, wins }
 function webMyDaily_(ss, email) {
@@ -1686,6 +1718,20 @@ function webMyDaily_(ss, email) {
   return out;
 }
 function dayKey_(d) { return ymd_(d || new Date()); }
+// The check-in deadline is 11:59 PM of the due day: "Sunday, Oct 25, 11:59 PM", or "today, 11:59 PM" on the day itself
+function isDueDay_(d) { return d instanceof Date && ymd_(d) === ymd_(new Date()); }
+function dueLabel_(d) { return d instanceof Date ? (isDueDay_(d) ? 'today' : webFmt_(d, 'EEEE, MMM d')) + ', 11:59 PM' : ''; }
+
+// "Done" ticks on to-do items: kept for the current week only (Campus Lead per school, RR for the region)
+function doneList_(key, week) {
+  try { const v = JSON.parse(docProps_().getProperty(key) || 'null'); return v && v.w === week ? v.k || [] : []; } catch (e) { return []; }
+}
+function doneToggle_(key, week, item, undo) {
+  const list = doneList_(key, week).filter(k => k !== item);
+  if (!undo) list.push(item);
+  docProps_().setProperty(key, JSON.stringify({ w: week, k: list.slice(-60) }));
+  return list;
+}
 // Brain-break stars per school this week (Monday to today): a tie-breaker on the school leaderboard
 function dailyStarsBySchool_(ss) {
   const sh = ss.getSheetByName(DAILY_TAB), out = {};
@@ -1758,14 +1804,84 @@ function webDailyStart(token) {
         if (!r[9]) { sh.getRange(row, 6, 1, 5).setValues([[r[4] + ' · left before the end', 0, 0, r[8], new Date()]]); }
         return { ok: true, over: true, msg: 'Today\'s brain break is already used. A new one opens tomorrow.' };
       }
-      const game = webMiniFor_(who.email, key, miniProgram_(ss, who.email));
-      sh.appendRow([key, who.email, who.member.name || who.name || '', who.member.school || '', game.kind, 'Started', 0, 0, new Date(), '', game.id]);
+      const game = webMiniFor_(who.email, key, miniProgram_(ss, who.email)), started = new Date();
+      sh.appendRow([key, who.email, who.member.name || who.name || '', who.member.school || '', game.kind, 'Started', 0, 0,
+                    started, '', game.id, 0, 0, started, 'prompt', '', '', '']);
       sh.getRange(sh.getLastRow(), 1).setNumberFormat('@').setValue(key);
-      return { ok: true, day: key, game };
+      return { ok: true, day: key, game: miniPublic_(game, 0, started) };
     } finally { lock.releaseLock(); }
   });
 }
-// Finish it: the answer is checked here, once. sent = { day, id, answer, tries } · { day, id, picks } · { day, id, skip }
+// Each pick is checked once, under a lock, against the prompt time stored in the sheet.
+function webDailyPick(token, sent) {
+  return webSafe_(() => {
+    const s = webSession_(token);
+    if (!s) return { ok: false, signedOut: true };
+    const ss = webSheet_(), who = webRoles_(ss, s.e);
+    if (!who.member) return { ok: false, msg: 'Daily brain breaks are for active START scholars.' };
+    sent = sent || {};
+    const key = String(sent.day || ''), sh = dailyTab_(ss), lock = docLock_();
+    if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try again.' };
+    try {
+      if (key !== dayKey_()) return { ok: false, msg: 'This brain break has closed.' };
+      const row = dailyRowFor_(sh, who.email, key);
+      if (row < 0) return { ok: false, msg: 'Open today\'s brain break first.' };
+      const r = sh.getRange(row, 1, 1, DAILY_HEAD.length).getValues()[0];
+      const game = webMiniFor_(who.email, key, miniProgram_(ss, who.email));
+      const round = Number(r[11]), at = r[13], now = new Date();
+      if (r[9] || sent.id !== r[10] || r[10] !== game.id ||
+          Number(sent.round) !== round || round < 0 || round >= miniCount_(game))
+        return { ok: false, msg: 'This round has already been answered.' };
+      if (r[14] === 'answered' && String(r[15]) === String(sent.pick))
+        return miniFeedback_(game, round, r[16] === true, Number(r[12] || 0), r[17] === true);
+      if (r[14] !== 'prompt') return { ok: false, msg: 'This round has already been answered.' };
+      const late = !(at instanceof Date) || now.getTime() - at.getTime() > game.secs * 1000 ||
+        !(r[8] instanceof Date) || now.getTime() - r[8].getTime() > DAILY_GRACE_MIN * 60000;
+      let correct = false;
+      if (game.kind === 'scramble') {
+        correct = !late && String(sent.pick || '').toUpperCase().replace(/[^A-Z]/g, '') === game.answer;
+      } else {
+        const item = game.rounds[round];
+        correct = !late && String(sent.pick).trim() !== '' && Number.isInteger(Number(sent.pick)) && Number(sent.pick) === item.odd;
+      }
+      const right = Number(r[12] || 0) + (correct ? 1 : 0);
+      sh.getRange(row, 12, 1, 7).setValues([[round, right, at, 'answered', String(sent.pick), correct, late]]);
+      return miniFeedback_(game, round, correct, right, late);
+    } finally { lock.releaseLock(); }
+  });
+}
+function webDailyNext(token, sent) {
+  return webSafe_(() => {
+    const s = webSession_(token);
+    if (!s) return { ok: false, signedOut: true };
+    const ss = webSheet_(), who = webRoles_(ss, s.e);
+    if (!who.member) return { ok: false, msg: 'Daily brain breaks are for active START scholars.' };
+    sent = sent || {};
+    const key = String(sent.day || ''), sh = dailyTab_(ss), lock = docLock_();
+    if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try again.' };
+    try {
+      if (key !== dayKey_()) return { ok: false, msg: 'This brain break has closed.' };
+      const row = dailyRowFor_(sh, who.email, key);
+      if (row < 0) return { ok: false, msg: 'Open today\'s brain break first.' };
+      const r = sh.getRange(row, 1, 1, DAILY_HEAD.length).getValues()[0];
+      const game = webMiniFor_(who.email, key, miniProgram_(ss, who.email));
+      const round = Number(r[11]);
+      if (r[9] || sent.id !== r[10] || r[10] !== game.id || round >= miniCount_(game))
+        return { ok: false, msg: 'The next round is not ready.' };
+      if (r[14] === 'prompt' && Number(sent.round) === round - 1) {
+        if (!(r[13] instanceof Date)) return { ok: false, msg: 'The next round is not ready.' };
+        return { ok: true, round, prompt: miniPrompt_(game, round),
+          remainingMs: Math.max(0, r[13].getTime() + game.secs * 1000 - Date.now()) };
+      }
+      if (r[14] !== 'answered' || Number(sent.round) !== round || round >= miniCount_(game) - 1)
+        return { ok: false, msg: 'The next round is not ready.' };
+      const next = round + 1, now = new Date();
+      sh.getRange(row, 12, 1, 7).setValues([[next, Number(r[12] || 0), now, 'prompt', '', '', '']]);
+      return { ok: true, round: next, prompt: miniPrompt_(game, next), remainingMs: game.secs * 1000 };
+    } finally { lock.releaseLock(); }
+  });
+}
+// Finish only from the server's recorded round results. Client answers never award XP.
 function webDailyFinish(token, sent) {
   return webSafe_(() => {
     const s = webSession_(token);
@@ -1782,10 +1898,13 @@ function webDailyFinish(token, sent) {
       const r = sh.getRange(row, 1, 1, DAILY_HEAD.length).getValues()[0];
       if (r[9]) return { ok: true, already: true, member: JSON.parse(JSON.stringify(webMember_(ss, who))) };
       const game = webMiniFor_(who.email, key, miniProgram_(ss, who.email));
-      const late = !(r[8] instanceof Date) || Date.now() - r[8].getTime() > DAILY_GRACE_MIN * 60000;
-      res = late ? [miniResult_(game, null)[0].replace('not played', 'too late'), 0, 0] : miniResult_(game, Object.assign({}, sent, { id: String(r[10]) === game.id ? sent.id : '' }));
+      const complete = key === dayKey_() && !sent.skip && sent.id === r[10] && r[10] === game.id &&
+        r[14] === 'answered' && Number(r[11]) === miniCount_(game) - 1 &&
+        r[8] instanceof Date && r[13] instanceof Date && r[13].getTime() - r[8].getTime() <= DAILY_GRACE_MIN * 60000;
+      res = complete ? miniScore_(game, Number(r[12] || 0)) : [miniScore_(game, 0)[0] + ' · left before the end', 0, 0];
       sh.getRange(row, 6, 1, 5).setValues([[res[0], res[1], res[2], r[8], new Date()]]);
     } finally { lock.releaseLock(); }
+    webBumpData_();
     try { webForget_(who.email); } catch (e) { /* cache */ }
     return { ok: true, xp: res[1], stars: res[2], member: JSON.parse(JSON.stringify(webMember_(ss, who))) };
   });
@@ -1866,6 +1985,8 @@ function webSubmitCheckin(token, a) {
 // A START Campus Lead: the same things as their portal sheet, for each school they lead
 function webLead_(ss, schools, st) {
   const data = focalData_(ss);
+  // One properties read for all member account badges on the Lead page.
+  const accountProps = docProps_().getProperties();
   const link = (() => { try { return checkinUrl_(); } catch (e) { return ''; } })();
   const rrName = String(st.rrName || '').trim() || 'your Regional Representative';
   const tools = leadToolsData_(ss, schools);
@@ -1873,19 +1994,28 @@ function webLead_(ss, schools, st) {
     const s = data.find(x => x.name === name);
     if (!s) return null;
     const P = portalMembers_(s, st);
-    const todo = [];
-    if (!s.thisWeek) todo.push({ tone: 'yellow', text: `Answer your check-in by ${webFmt_(s.due, 'EEEE, MMM d')}.` });
-    P.help.forEach(m => todo.push({ tone: 'red', text: `${displayName_(m.name)} asked for help: message them today.` }));
-    if (P.answers && P.toMessage.length) todo.push({ tone: 'yellow', copy: P.message,
-      text: `Message the ${P.toMessage.length} member${P.toMessage.length === 1 ? ' who has' : 's who have'} not answered yet. You can copy this:` });
-    if (P.noEmail.length) todo.push({ tone: 'grey',
+    const todo = [], week = memberWeekKey_(new Date()), done = doneList_('LEAD_DONE|' + name, week);
+    const lastDay = isDueDay_(P.due instanceof Date ? P.due : s.due);
+    if (!s.thisWeek) todo.push({ tone: lastDay ? 'red' : 'yellow', text: `Answer your check-in by ${dueLabel_(s.due)}.` });
+    P.help.forEach(m => todo.push({ tone: 'red', key: 'help|' + (m.email || m.name), text: `${displayName_(m.name)} asked for help: message them today.` }));
+    if (P.answers && P.toMessage.length) {
+      const n = P.toMessage.length, names = P.toMessage.slice(0, 8).map(m => displayName_(m.name)).join(', ') + (n > 8 ? ` and ${n - 8} more` : '');
+      todo.push(lastDay
+        ? { tone: 'red', key: 'last', copy: P.message, last: true,
+            text: `Last day! ${n} member${n === 1 ? ' has' : 's have'} not answered yet (${names}). The check-in closes tonight at 11:59 PM. Send this last reminder:` }
+        : { tone: 'yellow', key: 'remind', copy: P.message,
+            text: `${n} member${n === 1 ? ' has' : 's have'} not answered yet (${names}). Remind them before ${dueLabel_(P.due instanceof Date ? P.due : s.due)}. You can copy this:` });
+    }
+    if (P.noEmail.length) todo.push({ tone: 'grey', key: 'noemail',
       text: `${P.noEmail.length} member${P.noEmail.length === 1 ? ' has' : 's have'} no email on file: ask them to email ${rrName} (${me_()}) the Google email they use.` });
-    if (!todo.length) todo.push({ tone: 'green', text: 'Nothing to do: you and your members are all in. Salamat!' });
+    const doneCount = todo.filter(t => t.key && done.indexOf(t.key) !== -1).length;
+    for (let i = todo.length - 1; i >= 0; i--) if (todo[i].key && done.indexOf(todo[i].key) !== -1) todo.splice(i, 1);
+    if (!todo.length) todo.push({ tone: 'green', text: doneCount ? 'All done for this week. Salamat!' : 'Nothing to do: you and your members are all in. Salamat!' });
     return {
-      school: s.name, done: !!s.thisWeek, due: webFmt_(s.due, 'EEEE, MMM d'), streak: s.streak, term: s.term, active: s.active,
+      school: s.name, done: !!s.thisWeek, due: dueLabel_(s.due), lastDay, doneCount, streak: s.streak, term: s.term, active: s.active,
       answers: P.answers, answered: P.answered, members: P.members.length, link: link || s.link || '', todo,
       cols: P.cols.map(c => c[0]), rows: P.rows.map(x => ({ cells: x.cells.map(webCell_), tone: webTone_(x.chip), me: !!x.me, email: x.email || '',
-        account: x.email ? (((webAccount_(x.email) || {}).h) ? 'ready' : 'setup') : '', contacted: x.email ? (tools.contacted[name + '|' + x.email] || '') : '' })),
+        account: x.email ? (/"h"\s*:/.test(accountProps[webAcctKey_(x.email)] || '') ? 'ready' : 'setup') : '', contacted: x.email ? (tools.contacted[name + '|' + x.email] || '') : '' })),
       joins: tools.joins.filter(j => j.school === name), attend: (() => { try { return leadRecentEvents_(ss, name, tools.att); } catch (e) { Logger.log('Lead events: ' + e.message); return []; } })(),
       note: leadNote_(name),
       history: s.checkins.slice(0, 4).map(x => ({ date: webFmt_(x.date, 'EEE, MMM d'), events: String(x.events || '—'), help: String(x.help || '—') })),
@@ -2192,6 +2322,7 @@ function webAdminPage(token, page) {
     if (page === 'events') return { ok: true, eventRecords: webEventRecords_(ss),
       eventTypes: EV_TYPES, eventRepeats: EV_REPEATS, calendarEvents: webCalendarEvents_(ss, who) };
     if (page === 'diagnostics') return { ok: true, diagnostics: healthRows_().slice(0, 100) };
+    if (page === 'rewards') return { ok: true, rewardPending: rewardPending_(ss), rewardCatalog: rewardCatalog_(ss) };
     if (page === 'scholars') {
       let md = null;
       try { if (checkinOn_()) md = memberData_(ss); } catch (e) { Logger.log('Scholar check-ins: ' + e.message); }
@@ -2241,13 +2372,15 @@ function webAdmin_(ss, st) {
                  what: [h.help, h.vibe, h.tea].filter(Boolean).join(' · ') })) : [];
   let form = ''; try { form = WEB_CHECKIN ? '' : checkinUrl_(); } catch (e) { form = ''; }
   return {
-    due: md ? webFmt_(md.week.due, 'EEEE, MMM d') : webFmt_(reminderWeek_(new Date()).deadline, 'EEEE, MMM d'),
+    due: md ? dueLabel_(md.week.due) : dueLabel_(reminderWeek_(new Date()).deadline),
+    attnDone: doneList_('RR_DONE', memberWeekKey_(new Date())),
     totals: { schools: schools.length, leads: schools.filter(s => s.lead).length, leadsDone: schools.filter(s => s.lead && s.leadDone).length,
               members: sum('members'), answered: sum('answered'), help: sum('help') },
     memberCheckins: !!md, schools, help, events: webEvents_(ss, undefined, true), tracker: ss.getUrl(), form,
     scholarChoices: { schools: joinSchoolList_(ss).map(s => s.name), programs: START_PROGRAMS.list, scholarships: JOIN.kinds },
     autoApprove: autoApproveOn_(),
     leadBoard: (() => { try { return leadBoard_(ss, schools); } catch (e) { Logger.log('Lead board: ' + e.message); return []; } })(),
+    rewardPending: (() => { try { return rewardPending_(ss); } catch (e) { Logger.log('Rewards: ' + e.message); return []; } })(),
     weekly: md ? (() => { try { return weeklyRates_(ss, 10); } catch (e) { Logger.log('Weekly rate: ' + e.message); return []; } })() : [],
     // what used to come by email: quiet schools, the tracker check, the monthly report
     quiet: (() => { try { return missedSchools_(ss).slice(0, 12).map(q => ({ name: q.name, lead: q.focal ? displayName_(q.focal) : '', weeks: q.missed, msg: missedMessage_(q, st) })); } catch (e) { return []; } })(),
@@ -2416,6 +2549,107 @@ function webGame_(ss, mine, spec, daily) {
            badges, journey: journey.reverse(), cards: Object.keys(cards).map(Number), nCards, allCards, goal };
 }
 
+/* ---------- XP rewards ----------
+ * The RR edits Rewards in the spreadsheet. Requests keep a price snapshot and reserve XP
+ * while pending, so two requests cannot spend the same points. Only an RR can decide.
+ */
+var REWARD_TAB = 'Rewards';
+var REWARD_REQUEST_TAB = 'Reward requests';
+var REWARD_HEAD = ['Reward', 'XP cost', 'Details', 'Active (Y/N)'];
+var REWARD_REQUEST_HEAD = ['Requested at', 'Request ID', 'Scholar email', 'School', 'Reward', 'XP cost', 'Status', 'Decided at', 'Decision note'];
+function ensureRewardTabs_(ss) {
+  [[REWARD_TAB, REWARD_HEAD], [REWARD_REQUEST_TAB, REWARD_REQUEST_HEAD]].forEach(pair => {
+    let sh = ss.getSheetByName(pair[0]);
+    if (!sh) sh = ss.insertSheet(pair[0]);
+    sh.getRange(1, 1, 1, pair[1].length).setValues([pair[1]]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  });
+}
+function rewardCatalog_(ss) {
+  const sh = ss.getSheetByName(REWARD_TAB);
+  if (!sh || sh.getLastRow() < 2) return [];
+  return sh.getRange(2, 1, sh.getLastRow() - 1, REWARD_HEAD.length).getValues().map((r, i) => ({
+    id: String(i + 2), name: String(r[0] || '').trim().slice(0, 100), cost: Number(r[1]),
+    details: String(r[2] || '').trim().slice(0, 300), active: /^(y|yes|true|1)$/i.test(String(r[3] || '').trim())
+  })).filter(r => r.name && Number.isInteger(r.cost) && r.cost > 0 && r.active);
+}
+function rewardRequests_(ss) {
+  const sh = ss.getSheetByName(REWARD_REQUEST_TAB);
+  if (!sh || sh.getLastRow() < 2) return [];
+  return sh.getRange(2, 1, sh.getLastRow() - 1, REWARD_REQUEST_HEAD.length).getValues().map((r, i) => ({
+    row: i + 2, at: r[0], id: String(r[1]), email: emailOf_(r[2]), school: String(r[3]),
+    name: String(r[4]), cost: Number(r[5]) || 0, status: String(r[6]), decidedAt: r[7], note: String(r[8] || '')
+  }));
+}
+function rewardEarned_(ss, email) {
+  return webGame_(ss, webMyAnswers_(ss, email), null, webMyDaily_(ss, email)).xp;
+}
+function rewardState_(ss, email) {
+  const mine = rewardRequests_(ss).filter(r => r.email === email);
+  const earned = rewardEarned_(ss, email);
+  const reserved = mine.filter(r => r.status === 'Pending' || r.status === 'Approved').reduce((n, r) => n + r.cost, 0);
+  return { earned, available: Math.max(0, earned - reserved), rewards: rewardCatalog_(ss),
+    requests: mine.slice(-10).reverse().map(r => ({ id: r.id, name: r.name, cost: r.cost, status: r.status,
+      when: webFmt_(r.at, 'MMM d, yyyy'), note: r.note })) };
+}
+function webRewards(token) {
+  return webSafe_(() => {
+    const session = webSession_(token);
+    if (!session) return { ok: false, signedOut: true };
+    const ss = webSheet_(), who = webRoles_(ss, session.e);
+    if (!who.member || who.suspended) return { ok: false, msg: 'Only an active scholar can redeem XP.' };
+    return { ok: true, state: rewardState_(ss, who.member.primary || who.email) };
+  });
+}
+function webRewardRequest(token, rewardId) {
+  return webSafe_(() => {
+    const session = webSession_(token);
+    if (!session) return { ok: false, signedOut: true };
+    const ss = webSheet_(), who = webRoles_(ss, session.e);
+    if (!who.member || who.suspended) return { ok: false, msg: 'Only an active scholar can redeem XP.' };
+    const lock = docLock_();
+    if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try again.' };
+    try {
+      const email = who.member.primary || who.email;
+      const reward = rewardCatalog_(ss).find(r => r.id === String(rewardId));
+      if (!reward) return { ok: false, msg: 'That reward is no longer available.' };
+      const state = rewardState_(ss, email);
+      if (state.available < reward.cost) return { ok: false, msg: 'You need ' + (reward.cost - state.available) + ' more XP for this reward.' };
+      ensureRewardTabs_(ss);
+      ss.getSheetByName(REWARD_REQUEST_TAB).appendRow([new Date(), Utilities.getUuid(), email, who.member.school || '', reward.name,
+        reward.cost, 'Pending', '', '']);
+      webBumpData_();
+      return { ok: true, msg: 'Request sent to your Regional Representative.', state: rewardState_(ss, email) };
+    } finally { lock.releaseLock(); }
+  });
+}
+function rewardPending_(ss) {
+  return rewardRequests_(ss).filter(r => r.status === 'Pending').map(r => ({ id: r.id, email: r.email, school: r.school,
+    name: r.name, cost: r.cost, when: webFmt_(r.at, 'MMM d, yyyy') }));
+}
+function rewardDecide_(ss, id, decision, note) {
+  if (decision !== 'Approved' && decision !== 'Declined') return { ok: false, msg: 'Choose Approve or Decline.' };
+  const lock = docLock_();
+  if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try again.' };
+  try {
+    const req = rewardRequests_(ss).find(r => r.id === String(id));
+    if (!req || req.status !== 'Pending') return { ok: false, msg: 'This request is no longer pending.' };
+    if (decision === 'Approved') {
+      const scholar = scholarByEmail_(ss)[req.email];
+      if (!scholar || scholar.status !== 'Active') return { ok: false, msg: 'This scholar is no longer active. Decline the request instead.' };
+      const state = rewardState_(ss, req.email);
+      // Pending requests already reserve their cost. A changed XP total must still cover all reservations.
+      if (state.earned < rewardRequests_(ss).filter(r => r.email === req.email &&
+          (r.status === 'Pending' || r.status === 'Approved')).reduce((n, r) => n + r.cost, 0))
+        return { ok: false, msg: 'This scholar no longer has enough XP. Decline the request instead.' };
+    }
+    const sh = ss.getSheetByName(REWARD_REQUEST_TAB);
+    sh.getRange(req.row, 7, 1, 3).setValues([[decision, new Date(), String(note || '').trim().slice(0, 300)]]);
+    webBumpData_();
+    return { ok: true, msg: decision === 'Approved' ? 'Reward approved. Please arrange delivery with the scholar.' : 'Request declined; XP is available again.' };
+  } finally { lock.releaseLock(); }
+}
+
 /* ---------- confirmed attendance (optional): the "Event attendance" tab ----------
  * Paste who really came to an event (e.g. from Google Meet or a sign-in sheet): Event title · Date · Email.
  * For an event listed there, only those people get event XP and badges. Events not listed: what scholars ticked counts. */
@@ -2540,7 +2774,9 @@ function leadBoard_(ss, schools) {
   const week = memberWeekKey_(new Date()), rows = leadRows_(ss).filter(r => r.week === week);
   return schools.filter(s => s.lead).map(s => {
     const mine = rows.filter(r => r.school === s.name);
-    return { school: s.name, lead: s.lead, checkedIn: !!s.leadDone, contacted: mine.filter(r => r.action === 'contacted').length,
+    const reminderSent = doneList_('LEAD_DONE|' + s.name, week).some(k => k === 'remind' || k === 'last');
+    return { school: s.name, lead: s.lead, checkedIn: !!s.leadDone, reminderSent,
+             contacted: mine.filter(r => r.action === 'contacted').length,
              joinChecks: mine.filter(r => r.action === 'join-check').length, attendance: mine.filter(r => r.action === 'attendance').length,
              note: !!leadNote_(s.name), help: s.help || 0 };
   }).sort((a, b) => (b.contacted + b.joinChecks + b.attendance) - (a.contacted + a.joinChecks + a.attendance) || a.school.localeCompare(b.school));
@@ -2584,6 +2820,12 @@ function webLeadAction(token, act, arg) {
         if (chosen.length) at.getRange(at.getLastRow() + 1, 1, chosen.length, 3).setValues(chosen.map(e => [ev.title, d, e]));
         add('attendance', '', chosen.length, ev.title + ' · ' + ev.when);
         msg = chosen.length + ' marked present for ' + ev.title + '.';
+      } else if (act === 'todo-done') {
+        const key = String(arg.key || '').slice(0, 120);
+        if (!/^(help\|.+|last|remind|noemail)$/.test(key)) return { ok: false, msg: 'That to-do item is gone. Reload the page.' };
+        doneToggle_('LEAD_DONE|' + school, week, key, !!arg.undo);
+        add('done', key.indexOf('help|') === 0 ? key.slice(5) : '', arg.undo ? 'undone' : key.split('|')[0]);
+        msg = arg.undo ? 'Back on your to-do list.' : 'Done! Removed from your to-do list.';
       } else if (act === 'note') {
         const text = String(arg.text || '').replace(/\s+/g, ' ').trim().slice(0, 300);
         if (text) docProps_().setProperty('LEAD_NOTE|' + school, JSON.stringify({ t: text, by: displayName_(who.name || who.email), at: Date.now() }));
@@ -2592,6 +2834,7 @@ function webLeadAction(token, act, arg) {
         msg = text ? 'Your note is on your members\' Home page.' : 'Note removed.';
       } else return { ok: false, msg: 'Unknown action.' };
     } finally { lock.releaseLock(); }
+    webBumpData_();
     try { webForget_(who.email); } catch (e) { /* cache */ }
     return { ok: true, msg, lead: JSON.parse(JSON.stringify(webLead_(ss, who.leads, getSettings_()))) };
   });
@@ -2768,6 +3011,10 @@ function webSettingSave_(ss, actor, arg) {
   }
   if (key === 'region') { try { updateDropdown_(); } catch (e) { Logger.log('Region form list: ' + e.message); } }
   Logger.log('RR saved setting ' + key + ' by ' + actor);
+  if (key === 'autoApprove' && value === true) {
+    const added = (() => { try { return approveWaitingJoins_(ss); } catch (e) { Logger.log('Auto-approve waiting: ' + e.message); return 0; } })();
+    return { ok: true, msg: 'Setting saved.' + (added ? ' ' + added + ' waiting request' + (added === 1 ? ' was' : 's were') + ' approved now.' : '') };
+  }
   return { ok: true, msg: 'Setting saved.' };
 }
 
@@ -2791,16 +3038,26 @@ function webAdminAction(token, action, arg) {
       Logger.log('RR imported region schools by ' + s.e);
       return { ok: true, msg: count + ' region schools loaded.' };
     }
+    if (action === 'attention-done') {
+      const key = String((arg && arg.key) || '').slice(0, 200);
+      if (!/^(quiet|check|report)\|/.test(key)) return { ok: false, msg: 'That item is gone. Reload the page.' };
+      doneToggle_('RR_DONE', memberWeekKey_(new Date()), key, !!(arg && arg.undo));
+      webForget_(s.e);
+      return { ok: true, msg: arg && arg.undo ? 'Back on the list.' : 'Done! Removed from Needs your attention.' };
+    }
     if (action === 'setting-save') return webSettingSave_(ss, s.e, arg);
     if (action === 'outreach-save') return webOutreachSave_(ss, s.e, arg);
     if (action === 'event-save') return webEventSave_(ss, s.e, arg);
     if (action === 'event-delete') return webEventDelete_(ss, s.e, arg);
+    if (action === 'reward-decide') return rewardDecide_(ss, arg && arg.id, arg && arg.decision, arg && arg.note);
     if (action === 'scholar-status') return webScholarStatus_(ss, s.e, arg);
     if (action === 'scholar-update') return webScholarUpdate_(ss, s.e, arg);
     if (action === 'resetpw') return { ok: true, msg: resetWebPassword_(arg) };
     if (action === 'auto-approve') { const on = setAutoApprove_(arg === 'on');
+      const added = on ? approveWaitingJoins_(ss) : 0;
       try { webForget_(s.e); } catch (e) { Logger.log('Auto-approve cache refresh: ' + e.message); }
-      return { ok: true, msg: on ? 'Auto-approve is ON: valid sign-ups from listed schools are added at once, including people not on the old masterlist. Existing record conflicts still need review.' : 'Auto-approve is OFF: every sign-up waits for you.' }; }
+      return { ok: true, msg: on ? 'Auto-approve is ON: everyone who registers from a listed school is added at once.' + (added ? ' ' + added + ' waiting request' + (added === 1 ? ' was' : 's were') + ' approved now.' : '') +
+        ' Only clashes with an existing record wait for you.' : 'Auto-approve is OFF: every sign-up waits for you.' }; }
     if (action === 'join-add' || action === 'join-decline' || action === 'join-clarify') {
       webForget_(s.e); return webJoinAction_(ss, action, Object.assign({}, arg || {}, { actor: s.e, auto: false })); }
     if (action === 'remind' || action === 'followup') {
@@ -3045,7 +3302,17 @@ function webJoinRequest(email, name, school, note, d) {
                : { ok: true, pending: true, msg: 'Your Regional Representative will review your details. Once approved, return here to set up your password.' };
     if (webAllowed_(webRoles_(ss, email))) return { ok: true, onList: true, hasPassword: !!(webAccount_(email) || {}).h, msg: 'Your START membership is already approved.' };
     const prior = joinStateOf_(ss, email);
-    if (prior === 'waiting') return { ok: true, pending: true, msg: 'Your Regional Representative is still reviewing this registration.' };
+    if (prior === 'waiting') {
+      if (autoApproveOn_()) {
+        try {
+          const jsh = joinTab_(ss, false), jr = jsh.getRange(2, 1, jsh.getLastRow() - 1, 5).getValues();
+          let at = -1; for (let q = jr.length - 1; q >= 0; q--) if (emailOf_(jr[q][3]) === email && /^(New|Asked for details)/.test(String(jr[q][4]).trim())) { at = q + 2; break; }
+          const res = at > 0 ? webJoinAction_(ss, 'join-add', { row: at, auto: true }) : null;
+          if (res && res.ok) { MEMBER_CACHE_ = null; return { ok: true, auto: true, hasPassword: !!(webAccount_(email) || {}).h, msg: 'Your START membership is approved. Confirm your email to set up your password.' }; }
+        } catch (e) { Logger.log('Auto-approve on retry: ' + e.message); }
+      }
+      return { ok: true, pending: true, msg: 'Your Regional Representative is still reviewing this registration.' };
+    }
     if (prior === 'added') return { ok: true, accessCheck: true, msg: 'Your request was approved, but account access needs a tracker check. Contact your Regional Representative. You do not need to register again.' };
     const props = docProps_(), now = Date.now();
     // one request per email a day, and a cap for the whole site (stops floods)
@@ -3160,20 +3427,34 @@ function autoJoinMasterMatch_(ss, request, roster) {
   const hit = hits[0];
   return { at: hit.at, row: hit.r, text: [hit.r[0], hit.r[1], hit.r[2], hit.r[3]].filter(Boolean).join(' · ') };
 }
-// Auto-approve any valid sign-up, including a new scholar absent from both masterlists.
-// An existing Scholars row is only safe to update when its identity, school and email agree.
+// Auto-approve: anyone who registers with a complete request (name, email, one of the 13 programs, a school on the list).
+// The old masterlist plays no part. Only a clash with an existing record waits for the RR: the same email on a
+// non-Active scholar, or the same name at the same school under another email (that could be someone else's account).
 function autoJoinEligible_(ss, request, roster) {
   const school = String(request[2] || '').trim(), email = emailOf_(request[3]);
-  if (!autoApproveOn_() || !email || !String(request[1] || '').trim() ||
-      !/^Eligible(?:\s|$)/.test(String(request[10] || '')) ||
+  if (!autoApproveOn_() || !email || !String(request[1] || '').trim() || String(request[10] || '').trim() !== 'Eligible' ||
       START_PROGRAMS.list.indexOf(String(request[7] || '').trim()) === -1 ||
       schoolRows_(ss).map(s => s.name).indexOf(school) === -1) return false;
   const m = joinMatch_(roster, request[1], school, email);
   if (m.i < 0) return true;
-  const found = roster[m.i], words = s => String(s || '').toLowerCase().replace(/[^a-zñ ]/g, ' ').split(' ').filter(w => w.length > 1).sort().join(' ');
-  return !m.alt && String(found[5] || '').trim() === 'Active' &&
-    String(found[1] || '').trim() === school && words(found[0]) === words(request[1]) &&
-    (!emailOf_(found[4]) || emailOf_(found[4]) === email);
+  const existing = roster[m.i];
+  const sameName = v => displayName_(v).toLowerCase().replace(/[^a-z\u00f1 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  return !m.alt && String(existing[5] || '').trim() === 'Active' &&
+    String(existing[1] || '').trim() === school && sameName(existing[0]) === sameName(request[1]);
+}
+// Approve every request still waiting (used when auto-approve is switched on). Returns how many were added.
+function approveWaitingJoins_(ss) {
+  const sh = joinTab_(ss, false);
+  if (!sh || sh.getLastRow() < 2 || !autoApproveOn_()) return 0;
+  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 5).getValues();
+  let n = 0;
+  rows.forEach((r, i) => {
+    if (!/^(New|Asked for details)/.test(String(r[4]).trim()) || outOfTime_(30000)) return;
+    try { const res = webJoinAction_(ss, 'join-add', { row: i + 2, auto: true }); if (res && res.ok) n++; }
+    catch (e) { Logger.log('Auto-approve waiting row ' + (i + 2) + ': ' + e.message); }
+  });
+  if (n) MEMBER_CACHE_ = null;
+  return n;
 }
 
 // RR on the website: Add or Decline a request
@@ -3216,7 +3497,7 @@ function webJoinAction_(ss, action, arg) {
     const sc = ss.getSheetByName(TAB.scholars);
     const n = Math.max(sc.getLastRow() - 1, 0), roster = n ? sc.getRange(2, 1, n, 6).getValues() : [];
     if (o.auto && !autoJoinEligible_(ss, r, roster)) return { ok: false, msg: 'This request needs Regional Representative review.' };
-    const autoHit = o.auto ? autoJoinMasterMatch_(ss, r, roster) : null;
+    const autoHit = null;                                                 // automatic approval never relies on the old masterlist
     const m = joinMatch_(roster, name, school, email);
     if (m.i >= 0 && String(roster[m.i][5] || '').trim() !== 'Active')
       return { ok: false, msg: 'This scholar is not Active. Verify the record and change its status in Scholars before approving this request.' };
@@ -3420,7 +3701,7 @@ function freshScholarList_(ss, force) {
  * Settings and the school list are the seed for new sign-ups. Every other tab is
  * removed after a complete private backup, including retired and unknown tabs. */
 var FRESH_KEEP = () => [TAB.settings, TAB.schools];
-var FRESH_PROPS = /^(WEB_A_|WEB_S_|WEB_SUSP_|WEB_C_|WEB_T_|WEB_D_|WEB_J_|WEB_JD_|SENT_LEDGER$|MAIL_QUEUE$|ANSWERS_SEEN$|ANSWERS_BACKUP$|LAST_CHECK$|LAST_REPORT$|PORTALS$|PORTALS_ON$|FOCAL_SYNC$)/;
+var FRESH_PROPS = /^(WEB_A_|WEB_S_|WEB_SUSP_|WEB_C_|WEB_T_|WEB_D_|WEB_J_|WEB_JD_|SENT_LEDGER$|MAIL_QUEUE$|ANSWERS_SEEN$|ANSWERS_BACKUP$|LAST_CHECK$|LAST_REPORT$|PORTALS$|PORTALS_ON$|FOCAL_SYNC$|MINI_SECRET$)/;
 
 function freshStart() {
   sheetUser_();                                   // sheet only: never from the website
@@ -3467,7 +3748,7 @@ function freshStart_(ss) {
     // Accounts, codes, sessions, sent-email ledger and waiting emails belong to the old data.
     const dp = docProps_(), all = dp.getProperties();
     Object.keys(all).forEach(k => { if (FRESH_PROPS.test(k)) { dp.deleteProperty(k); props++; } });
-    setAutoApprove_(false); // no masterlist remains to match against
+    setAutoApprove_(false); // a fresh database must not inherit automatic approval from the previous roster
     dp.setProperty('FRESH_LIST_DONE', String(Date.now()));
     ['TABLE_LOOK', 'SETUP_DONE', SETUP_KEY, DB_TIDY_KEY].forEach(k => dp.deleteProperty(k));
     removeTriggers_(['sendWaitingEmails', 'refreshPortalsAuto']);

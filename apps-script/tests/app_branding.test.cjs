@@ -13,9 +13,11 @@ assert.match(html, /<div class="brand">START<small>Region 11<\/small><\/div>/);
 assert.match(html, /return '<svg class="star '/);
 
 const web = fs.readFileSync(path.join(root, 'apps-script/Web_App.html'), 'utf8');
-assert.match(web, /logo-s\.7f4f7462\.png/);
-assert.match(web, /class="region-pill"/);
-assert.doesNotMatch(web, /function starMascot\(/);
+const portal = fs.readFileSync(path.join(root, 'apps-script/05_Portals.gs'), 'utf8');
+const look = fs.readFileSync(path.join(root, 'apps-script/07_Look.gs'), 'utf8');
+assert.match(portal, /mark: typeof START_MARK/);
+assert.match(look, /var START_MARK = 'data:image\/png;base64,/);
+assert.match(web, /function starMascot\(/); // the loading and game mascot remains the star
 
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8'));
 for (const icon of manifest.icons) {

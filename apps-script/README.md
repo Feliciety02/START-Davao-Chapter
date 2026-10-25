@@ -2,9 +2,13 @@
 
 These files are local copies of the pasted Apps Script project. The `.gs` and `.html` filenames match the names used in the Apps Script editor.
 
-`07_Look.gs` exists locally but is currently empty (0 bytes). Save the complete Look source into it before treating this folder as a complete project. It defines the spreadsheet table styling, picture helpers, school logos, and the `webLogos` server call. The web app entry now tolerates missing decorative images, but setup and some portal features still require this file.
+`07_Look.gs` defines the spreadsheet table styling, picture helpers, school logos, and the `webLogos` server call. Keep it together with the other Apps Script files when updating the project.
 
 Editing these files does not update the live Google Apps Script project. Changes must be copied into its editor or synced through a configured deployment workflow.
+
+## Rewards (2026-10-25)
+
+Run **Set up / fix the tracker** after updating the script. It creates **Rewards** and **Reward requests** tabs. In Rewards, fill **Reward**, a positive whole-number **XP cost**, optional **Details**, and **Y** under **Active (Y/N)**. Scholars request a reward from Journey. Pending requests reserve XP, and the RR approves or declines them on the website Overview. Approval spends the reserved XP; decline releases it. The RR arranges delivery with the scholar. Reward requests follow the same two-year privacy cleanup as check-in answers after a scholar leaves START.
 
 ## Website database controls (2026-10-25)
 
@@ -16,11 +20,11 @@ The website header displays the [original START-DOST logo](https://www.start-dos
 
 Weekly summary recipients no longer receive website admin access merely because their address is in Settings. Admin access is limited to the tracker owner and automation owner. Existing sessions are checked against that rule on every request.
 
-Sync all changed `.gs` files and `Web_App.html` to the bound Apps Script project, retaining its complete `07_Look.gs`. Run **Set up / fix the tracker** as the owner to apply protections, then redeploy the web app as a new version. Publish the root app files separately for the new installed icon. The local `07_Look.gs` is empty, so a live setup cannot be verified from this checkout. Local checks: `node --test apps-script/tests/*.test.cjs` from the workspace root.
+Sync all changed `.gs` files and `Web_App.html` to the bound Apps Script project, retaining its complete `07_Look.gs`. Run **Set up / fix the tracker** as the owner to apply protections, then redeploy the web app as a new version. Publish the root app files separately for the new installed icon. Local checks: `node --test apps-script/tests/*.test.cjs` from the workspace root. A live setup still needs verification in the bound tracker.
 
 ## Data flow update (2026-10-24)
 
-1. Make a backup of the live spreadsheet. In its bound Apps Script project, replace `02_Menu_Setup.gs`, `04_Emails.gs`, `05_Portals.gs`, `06_Calendar.gs`, `08_Tools.gs`, and `Web_App.html` with these versions. Add `09_Data_Flow.gs`. Keep the live project's complete `07_Look.gs` until the empty local file is replaced with its source.
+1. Make a backup of the live spreadsheet. In its bound Apps Script project, replace `02_Menu_Setup.gs`, `04_Emails.gs`, `05_Portals.gs`, `06_Calendar.gs`, `08_Tools.gs`, and `Web_App.html` with these versions. Add `09_Data_Flow.gs`. Keep the live project's complete `07_Look.gs` when updating it.
 2. Save the project and run `setup()` as the automation owner. Accept authorization prompts. If setup says it needs another click, run it again. Version `v61` adds stable Scholar and Join request IDs, status/update metadata, a data change log, check-in week/submission timestamps, and a weekly roster snapshot. It repairs school count formulas and the Scholars filter. Existing records remain in their original columns.
 3. In the spreadsheet, use **Events & calendar → Set up / update calendars** as the owner and authorize the Advanced Calendar service. The current Events rows show `calendar.events.insert` permission errors, so the owner must grant access before they can sync. Failed events and sharing now retry daily.
 4. Open the Regional Representative's **Scholars → Data quality** card. Fill missing scholar details and review any unmatched school or duplicate email. Existing historical weekly rates without snapshots are marked as estimates; snapshots preserve denominators from this release onward.
