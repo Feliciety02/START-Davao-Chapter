@@ -670,8 +670,8 @@ function showAddEvent() {
 }
 
 // Called by the box: one new row in the Events tab, then onto the calendar
-function addEventFromBox(v) {
-  const ss = SpreadsheetApp.getActive();
+function addEventFromBox(v, spreadsheet) {
+  const ss = spreadsheet || SpreadsheetApp.getActive();
   const sh = ss.getSheetByName(TAB.events) || buildEvents_(ss);
   const day = s => { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : ''; };
   const time = t => { const m = minutesOf_(t); return m === null ? '' : Utilities.formatDate(new Date(2000, 0, 1, Math.floor(m / 60), m % 60), CONFIG.timezone, 'h:mm a'); };

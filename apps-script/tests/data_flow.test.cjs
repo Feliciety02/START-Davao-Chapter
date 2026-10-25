@@ -9,30 +9,35 @@ for (const file of fs.readdirSync(root).filter(name => name.endsWith('.gs')).sor
   vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
 }
 
-// Auto-approval needs one active matching masterlist record. A recorded email must match.
+// Auto-approval covers valid sign-ups from listed schools, even without a masterlist row.
 const old = new Array(11).fill('');
 old[0] = 'Dela Cruz, Ana'; old[1] = 'USeP'; old[2] = 'BS Biology'; old[3] = '2023';
 old[4] = 'ana@example.com'; old[5] = 'Active';
 context.oldMasterRows_ = () => [{ r: old, at: 2 }];
 context.docProps_ = () => ({ getProperty: () => context.autoOn ? '1' : '0' });
+context.schoolRows_ = () => [{ name: 'USeP' }];
 const request = new Array(18).fill('');
 request[1] = old[0]; request[2] = old[1]; request[3] = old[4];
-request[7] = old[2]; request[15] = old[3];
+request[7] = 'Computer Science'; request[10] = 'Eligible'; request[15] = old[3];
 assert.equal(context.autoJoinEligible_({}, request, []), false);
 context.autoOn = true;
 assert.equal(context.autoJoinEligible_({}, request, []), true);
-request[3] = 'impostor@example.com';
-assert.equal(context.autoJoinEligible_({}, request, []), false);
+context.oldMasterRows_ = () => [];
+assert.equal(context.autoJoinEligible_({}, request, []), true, 'a new eligible scholar is approved without an old record');
+request[3] = 'new@example.com';
+assert.equal(context.autoJoinEligible_({}, request, []), true, 'a different email is allowed for a new scholar');
 request[3] = old[4];
 assert.equal(context.autoJoinEligible_({}, request, [[old[0], old[1], '', '', old[4], 'Suspended']]), false);
-const noEmail = old.slice(); noEmail[4] = '';
-context.oldMasterRows_ = () => [{ r: noEmail, at: 2 }];
-assert.equal(context.autoJoinEligible_({}, request, []), true, 'old masterlist records imported without email can match');
-request[7] = 'BS Mathematics';
+assert.equal(context.autoJoinEligible_({}, request, [[old[0], old[1], '', '', old[4], 'Active']]), true);
+assert.equal(context.autoJoinEligible_({}, request, [[old[0], old[1], '', '', 'other@example.com', 'Active']]), false, 'existing account email conflicts need review');
+assert.equal(context.autoJoinEligible_({}, request, [['Another Name', old[1], '', '', old[4], 'Active']]), false, 'a reused email needs review');
+request[7] = 'Not a listed program';
 assert.equal(context.autoJoinEligible_({}, request, []), false);
-request[7] = old[2];
-context.oldMasterRows_ = () => [{ r: old, at: 2 }, { r: old, at: 3 }];
+request[7] = 'Computer Science'; request[10] = 'Needs review (school not on the list)';
 assert.equal(context.autoJoinEligible_({}, request, []), false);
+request[10] = 'Eligible'; request[2] = 'Unlisted school';
+assert.equal(context.autoJoinEligible_({}, request, []), false);
+request[2] = old[1];
 
 // The Sheets checkbox controls the website switch. A matching legacy property is only a fallback
 // until setup adds the Settings row.
@@ -55,9 +60,10 @@ assert.equal(sheetToggle, false);
 assert.equal(savedToggle, '0');
 context.setAutoApprove_(true);
 
-// When another legacy row differs, automatic approval uses the unique matching row.
+// A strict legacy match can still enrich an automatic approval without deciding eligibility.
 const other = old.slice(); other[4] = 'other@example.com'; other[2] = 'BS Mathematics';
 context.oldMasterRows_ = () => [{ r: other, at: 2 }, { r: old, at: 3 }];
+request[7] = old[2];
 assert.equal(context.autoJoinMasterMatch_({}, request, []).at, 3);
 
 // A historical snapshot keeps its original denominator when the current roster grows.

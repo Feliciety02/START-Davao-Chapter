@@ -23,6 +23,7 @@ function about_03_Forms() {
  * ================================================================ */
 
 function refreshSchoolDropdown() {
+  sheetUser_();                                   // sheet only: never from the website
   requireSetup_();
   const n = updateDropdown_();
   notify_(n ? `The check-in form has been updated. It now lists ${n} school(s).`
@@ -195,6 +196,7 @@ function schoolNames_(ss, rows) {
  * ================================================================ */
 
 function showFocalMessage() {
+  sheetUser_();                                   // sheet only: never from the website
   requireSetup_();
   const st = getSettings_();
   const general = checkinLink_();
@@ -584,6 +586,7 @@ function memberForm_() {
 
 // Menu 🛠 Setup tools › 📝 Set up / update member check-in
 function setupMemberCheckin() {
+  sheetUser_();                                   // sheet only: never from the website
   requireSetup_();
   if (!ensureOwner_('run the member check-in')) return;
   const ss = SpreadsheetApp.getActive();
@@ -1029,6 +1032,7 @@ function memberMessage_(ss, school) {
 
 // Menu 📋 Copy a message for Messenger › For members
 function showMemberMessage() {
+  sheetUser_();                                   // sheet only: never from the website
   requireSetup_();
   const ss = SpreadsheetApp.getActive();
   const msg = memberMessage_(ss, '');
@@ -1120,7 +1124,7 @@ function portalMembers_(s, pst) {
       cells.push(status, m.now ? m.now.vibe || '' : '', m.now ? [m.now.help, m.now.tea].filter(Boolean).join(' · ') : '');
     }
     if (details) cells.push(x.level || '', x.program || '');
-    return { cells, chip, me: String(m.name).trim() === String(s.focal).trim() };
+    return { cells, chip, email: m.email && m.email !== 'x' ? m.email : '', me: String(m.name).trim() === String(s.focal).trim() };
   });
   return out;
 }
@@ -1350,6 +1354,7 @@ function refreshLeadForm_(ss, form) {
 
 /* ---------- 🖼 Connect the pictures folder: banners + memes, one folder or two (paste its Drive link) ---------- */
 function connectMemeFolder() {
+  sheetUser_();                                   // sheet only: never from the website
   requireSetup_();
   const ui = ui_();
   const r = ui.prompt('🖼 Connect the pictures folder',

@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..');
 const c = vm.createContext({ console });
 for (const file of fs.readdirSync(root).filter(name => name.endsWith('.gs')).sort())
   vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), c, { filename: file });
+c.Logger = { log: () => {} };
 
 const schools = [
   { name: 'AdDU', inactive: false },
@@ -41,7 +42,24 @@ c.webJoins_ = () => [];
 c.docProps_ = () => ({ getProperty: () => null });
 c.missedSchools_ = () => [];
 c.dataFlowQuality_ = () => ({ count: 0, issues: [] });
-assert.deepEqual([...c.webAdmin_(ss, {}).scholarChoices.schools].sort(), [...publicNames].sort(), 'RR roster and editor use the same schools');
+let heavyReads = 0;
+c.webScholarRoster_ = () => { heavyReads++; return []; };
+c.webSchoolRecords_ = () => { heavyReads++; return []; };
+c.webSettingRecords_ = () => { heavyReads++; return []; };
+c.webJoins_ = () => { heavyReads++; return []; };
+c.dataFlowQuality_ = () => { heavyReads++; return { count: 0, issues: [] }; };
+const overview = c.webAdmin_(ss, {});
+assert.deepEqual([...overview.scholarChoices.schools].sort(), [...publicNames].sort(), 'RR roster and editor use the same schools');
+assert.equal(heavyReads, 0, 'RR overview avoids editing lists and scans');
+
+assert.equal(c.webAdminPage('token', 'schools').ok, true);
+assert.equal(heavyReads, 1, 'Schools page reads its records when opened');
+assert.equal(c.webAdminPage('token', 'settings').ok, true);
+assert.equal(heavyReads, 2, 'Settings page reads its records when opened');
+assert.equal(c.webAdminPage('token', 'scholars').ok, true);
+assert.equal(heavyReads, 5, 'Scholars page reads its roster, quality, and joins once');
+c.webRoles_ = () => ({ admin: false });
+assert.equal(c.webAdminPage('token', 'scholars').ok, false, 'lazy RR data remains restricted');
 
 const html = fs.readFileSync(path.join(root, 'Web_App.html'), 'utf8');
 const start = html.indexOf('function joinCard(');
