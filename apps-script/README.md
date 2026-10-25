@@ -12,7 +12,7 @@ The RR website now has a Schools editor (including the region school list) and a
 
 The RR overview loads without the scholar roster, join history, data quality scan, event calendar expansion, or editing records. Scholars, Schools, Outreach, Settings, Events, and Diagnostics fetch their data when opened. The Scholars roster shows 50 rows at a time; join history loads 20 at a time. Outreach and Events can be edited on the website. Postcard pictures load only when their cards become visible. The website logs server and browser request times for diagnosing slow pages. A page's first visit still depends on Google Sheets response time; local tests cannot measure live Apps Script latency.
 
-The website header displays the [original START-DOST logo](https://www.start-dost.org/) as an image beside the yellow region pill. The app loader and install icons use the same mark with a REGION XI pill baked into the PNG. No circular frame is drawn around the mark. The logo source and icon build script are in `../icons/`.
+The website header displays the [original START-DOST logo](https://www.start-dost.org/) as an image beside the yellow region pill. The installed app icon uses the same mark with a REGION XI pill baked into the PNG. The loading screen keeps its animated star. The logo source and icon build script are in `../icons/`.
 
 Weekly summary recipients no longer receive website admin access merely because their address is in Settings. Admin access is limited to the tracker owner and automation owner. Existing sessions are checked against that rule on every request.
 
