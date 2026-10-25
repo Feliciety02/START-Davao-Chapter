@@ -8,8 +8,9 @@ const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const script = html.slice(html.indexOf('<script>') + 8, html.indexOf('</script>'));
 new vm.Script(script, { filename: 'index.html' });
 new vm.Script(fs.readFileSync(path.join(root, 'config.js'), 'utf8'), { filename: 'config.js' });
-assert.match(html, /icons\/mark-256\.png\?v=11/);
-assert.doesNotMatch(html, /\.splash-icon\s*\{[^}]*border-radius:\s*50%/);
+assert.match(html, /\$\('splashstar'\)\.innerHTML = star\(84, 'bob'\)/);
+assert.match(html, /<div class="brand">START<small>Region 11<\/small><\/div>/);
+assert.match(html, /return '<svg class="star '/);
 
 const web = fs.readFileSync(path.join(root, 'apps-script/Web_App.html'), 'utf8');
 assert.match(web, /logo-s\.7f4f7462\.png/);
