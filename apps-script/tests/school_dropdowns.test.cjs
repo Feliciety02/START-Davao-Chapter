@@ -38,6 +38,7 @@ c.webScholarRoster_ = () => [];
 c.webEvents_ = () => [];
 c.reminderWeek_ = () => ({ deadline: new Date() });
 c.webFmt_ = () => '';
+c.memberWeekKey_ = () => '2026-10-25';
 c.webJoins_ = () => [];
 c.docProps_ = () => ({ getProperty: () => null });
 c.missedSchools_ = () => [];

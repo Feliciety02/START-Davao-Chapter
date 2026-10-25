@@ -334,6 +334,7 @@ function setupSteps_(ss) {
     ['Schools tab',           () => buildSchools_(ss)],
     ['Use UM Main for the main campus', () => mergeUmMainSchool_(ss)],
     ['Data flow schema',      () => { ensureDataFlowSchema_(ss); captureWeeklyRoster_(ss); }],
+    ['Rewards tabs',          () => ensureRewardTabs_(ss)],
     ['Dashboard tab',         () => buildDashboard_(ss)],
     ['Links tab',             () => buildLinks_(ss)],
     ['Protections and automatic updates', () => {
@@ -371,7 +372,7 @@ function setupSteps_(ss) {
 // ① is QUICK once the tracker is built: everything you edit (names, emails, Campus Leads, schools, roles, events)
 // already updates by itself as you type. The full rebuild (all tabs, headings, banners, the form) only runs
 // the first time, after you replace code files with a newer version, or from 🛠 Setup tools › Full rebuild.
-var SETUP_VERSION = 'v61';
+var SETUP_VERSION = 'v62';
 var CORE_TABS_ = () => DB_MODE ? [TAB.settings, TAB.schools, TAB.scholars, TAB.checkins] : [TAB.settings, TAB.schools, TAB.scholars, TAB.dashboard, TAB.checkins];
 
 function requireLook_() {

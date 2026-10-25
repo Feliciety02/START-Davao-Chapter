@@ -10,7 +10,7 @@ START website, which runs on the START Tracker Google Sheet and Apps Script.
 
 The app icon uses the original [START-DOST logo](https://www.start-dost.org/) with a yellow **REGION XI** pill. The source image is saved as `icons/start-dost-logo.png`; `icons/build-icons.ps1` rebuilds the app, Apple touch, and favicon sizes without redrawing the logo. Run it with `powershell -NoProfile -ExecutionPolicy Bypass -File ./icons/build-icons.ps1` after changing the source. Publish the root app files for the new icon to reach installed devices. Some devices may keep the old home screen icon until the app is reinstalled.
 
-**Live app (Region XI · Davao Region):** https://feliciety02.github.io/start-app/
+**Live app (Region XI · Davao Region):** https://feliciety02.github.io/START-Davao-Chapter/
 
 ## Screenshots
 

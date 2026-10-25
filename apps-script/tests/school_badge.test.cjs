@@ -30,4 +30,7 @@ assert.equal(imageId('Ateneo de Davao University'), imageId('AdDU'));
 assert.equal(imageId('USeP Obrero'), imageId('USeP'));
 assert.equal(imageId('University of the Philippines Mindanao'), imageId('UP Mindanao'));
 assert.match(context.schoolBadge('UM Main', 40), /alt="UM Main logo"/);
+context.LOGOS['UM Main'] = 'data:image/png;base64,dGVzdA==';
+assert.match(context.schoolBadge('UM Main', 40), /data:image\/png;base64,dGVzdA==/, 'use the authenticated image first');
+assert.match(context.schoolCrest('Unknown school', 40), /<svg/, 'a failed image has a crest fallback');
 console.log('School badge logo checks passed');
