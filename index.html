@@ -178,18 +178,11 @@
   .softbg { position: absolute; inset: 0; opacity: 0; pointer-events: none;
     background: radial-gradient(ellipse at 50% 46%, rgba(255,255,255,.97) 0%, rgba(255,255,255,.86) 24%, rgba(255,255,255,.35) 52%, rgba(255,255,255,0) 72%),
                 linear-gradient(145deg, rgba(234,243,252,.55), rgba(255,255,255,.25) 50%, rgba(255,246,207,.5)); }
-  /* the yellow screen: one shape (navy border, darker edge, yellow body) whose 10 points glide from past the screen edges into the star */
-  .sun-screen { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; background: #FFD21F; }
-  .sun-screen.drawn { background: none; }
   .scard { position: relative; z-index: 3; max-width: 320px; padding: 20px; background: transparent; border-radius: 0; box-shadow: none; }
-  .mwrap { position: relative; width: var(--F, 112px); height: var(--F, 112px); margin: 0 auto 10px; transform-origin: 50% 50%; will-change: transform; }
+  .mwrap { position: relative; width: var(--F, 112px); height: var(--F, 112px); margin: 0 auto 10px; transform-origin: 50% 50%; }
   .mwrap > div, .mwrap > svg { position: absolute; inset: 0; }
   #splashstar { opacity: 0; } #splashstar .star { width: 100%; height: 100%; margin: 0; filter: drop-shadow(0 6px 8px rgba(18,32,58,.16)); }
-  .face { width: 100%; height: 100%; transform-origin: 50% 50%; z-index: 4; overflow: visible; }
-  .face g, .face path, .face ellipse { transform-box: view-box; }
-  #feyes { transform-origin: 50px 55px; } #fblink { transform-origin: 50px 55px; } #fcheeks { transform-origin: 50px 63px; }
-  #mw, #mbig { transform-origin: 50px 63px; } #mbig { opacity: 0; }
-  .face, .mwrap, .welcome, .softbg, #splashstar { will-change: transform, opacity; backface-visibility: hidden; }
+  .welcome, .softbg { will-change: opacity; }
   .drift { animation: drift 3.2s ease-in-out infinite; }
   @keyframes drift { 0%, 100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-4px) rotate(2.5deg); } 50% { transform: translateY(-7px) rotate(0); } 75% { transform: translateY(-4px) rotate(-2.5deg); } }
   #splash { transition: opacity .55s ease, transform .55s ease; } #splash.off { transform: scale(1.03); }
@@ -221,7 +214,7 @@
   .splash-install .pill { width:100%; margin-top:10px; padding:10px 14px; }
   @keyframes gem-light { 0%,22%,100% { background: #D6EDFC; transform: rotate(45deg) scale(.8); } 40%,60% { background: var(--sun); border-color: #E9A800; transform: rotate(45deg) scale(1.15); } }
   @keyframes sparkle { 0%,100% { opacity: .3; transform: scale(.7) rotate(-15deg); } 50% { opacity: 1; transform: scale(1.2) rotate(15deg); } }
-  @media (prefers-reduced-motion: reduce) { .quest-gems i, .face .blink, .drift { animation: none; } #splash.off { transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .quest-gems i, .drift { animation: none; } #splash.off { transform: none; } }
 </style>
 </head>
 <body>
@@ -229,9 +222,8 @@
 
 <div id="splash">
   <div class="softbg" id="softbg"></div>
-  <svg class="sun-screen" id="sunscreen" aria-hidden="true"></svg>
   <div class="scard">
-    <div class="mwrap" id="mwrap"><div id="splashstar"></div><svg class="face" id="face" viewBox="0 0 100 100" aria-hidden="true"></svg></div>
+    <div class="mwrap" id="mwrap"><div id="splashstar"></div></div>
     <div class="welcome" id="welcome">
       <span class="hello">Welcome to</span>
       <div class="brand">DOST-START</div>
@@ -316,14 +308,13 @@
   function loadingBar() { show('<div class="quest-gems" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>'); }
   $('splashstar').innerHTML = star(112);
   // ---------- the opening ----------
-  // 1 · full-screen yellow with a simple face   2 · the yellow shrinks into the START star (same face)   3 · the star gets smaller
-  // and moves up, the background softens and "Welcome to DOST-START" appears. START opens as soon as both the intro and the website are ready.
-  var INTRO = { M: 168, F: 112 };              // size of the star while it forms, and its final size
+  // One star, start to finish: it appears big in the middle and blinks once, then zooms out and moves up while
+  // "Welcome to DOST-START" comes in. START opens as soon as both the intro and the website are ready.
+  var INTRO = { M: 168, F: 112 };              // the star's size in the middle, and its final size
   var introDone = false, introWait = [];
   function afterIntro(fn) { if (introDone) fn(); else introWait.push(fn); }
   function finishIntro() {
     if (introDone) return; introDone = true; morphFinished();
-    $('sunscreen').style.display = 'none'; $('face').style.display = 'none';
     var st = $('splashstar'); st.style.opacity = 1; st.firstChild.style.filter = '';
     var sb = st.querySelector('.blink'); if (sb) sb.style.animation = '';
     try { document.getAnimations().forEach(function (a) { var t = a.effect && a.effect.target; if (t && $('splash').contains(t) && a.playState === 'finished') a.cancel(); }); } catch (e) {}
@@ -336,100 +327,30 @@
   function afterMorph(fn) { if (morphDone) fn(); else morphWait.push(fn); }
   function morphFinished() { if (morphDone) return; morphDone = true; morphWait.splice(0).forEach(function (f) { f(); }); }
   function intro() {
-    var face = $('face'), sun = $('sunscreen'), mw = $('mwrap'), star0 = $('splashstar');
-    // the face alone: the star's own eyes, cheeks and mouth, plus a big smile for the hello
-    face.innerHTML = '<g id="feyes"><g id="fblink"><ellipse cx="40.5" cy="55" rx="4.8" ry="6.2" fill="#12203A"/><ellipse cx="59.5" cy="55" rx="4.8" ry="6.2" fill="#12203A"/>' +
-      '<circle cx="42.3" cy="52.4" r="2" fill="#fff"/><circle cx="61.3" cy="52.4" r="2" fill="#fff"/></g></g>' +
-      '<g id="fcheeks"><ellipse cx="31.5" cy="63" rx="4.6" ry="2.8" fill="#FF8FA3" opacity=".7"/><ellipse cx="68.5" cy="63" rx="4.6" ry="2.8" fill="#FF8FA3" opacity=".7"/></g>' +
-      '<path id="mw" d="M45.6 62.4 q2.2 3 4.4 0 q2.2 3 4.4 0" fill="none" stroke="#12203A" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>' +
-      '<path id="mbig" d="M43.6 60.8 h12.8 q0 7.4 -6.4 7.4 t-6.4 -7.4z" fill="#12203A" stroke="#12203A" stroke-width="1.4" stroke-linejoin="round"/>';
-    // the finished star (and the words below it) are a little bigger on big screens
-    var sh = Math.min(innerWidth, innerHeight), F = sh >= 900 ? 170 : sh >= 700 ? 140 : 112; INTRO.F = F; mw.style.setProperty('--F', F + 'px');
+    var mw = $('mwrap'), star0 = $('splashstar'), W = innerWidth, H = innerHeight, S = Math.min(W, H);
+    var sh = S, F = sh >= 900 ? 170 : sh >= 700 ? 140 : 112; INTRO.F = F; mw.style.setProperty('--F', F + 'px');
     var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (calm || !face.animate || !window.requestAnimationFrame) { morphFinished(); finishIntro(); return; }
-    var W = innerWidth, H = innerHeight, S = Math.min(W, H);
-    var M = Math.round(Math.max(140, Math.min(S * 0.36, 230))), k = M / 100;      // the star while it forms: phone 140 px … desktop 230 px
-    INTRO.M = M;
-    // while it forms, the star sits in the middle of the screen
+    if (calm || !mw.animate) { morphFinished(); finishIntro(); return; }
+    var M = Math.round(Math.max(150, Math.min(S * 0.42, 260)));                 // the star in the middle: big, but never cramped
     var box = mw.getBoundingClientRect();
-    var formed = 'translateY(' + (H / 2 - (box.top + box.height / 2)).toFixed(1) + 'px) scale(' + (M / INTRO.F).toFixed(3) + ')';
-    mw.style.transform = formed;
-    star0.style.opacity = 0; star0.firstChild.style.filter = 'none';
-    var sb = star0.querySelector('.blink'); if (sb) sb.style.animation = 'none';
-    var BIG = Math.max(2, Math.min(S * 0.9 / M, 3.4));               // the face on the yellow screen: about the width of the screen's short side
-    face.style.transform = 'scale(' + BIG + ')'; face.style.opacity = 0;
-
-    // ---- the morph shape: 10 points. Start: a decagon past the screen corners (all yellow). End: the mascot's star ----
-    var cx = W / 2, cy = H / 2 + 5 * k, start = [], end = [];
-    var far = Math.hypot(W, H) / 2 / Math.cos(Math.PI / 10) * 1.12 + 16 * k;
-    for (var i = 0; i < 10; i++) {
-      var a = -Math.PI / 2 + i * Math.PI / 5, r = (i % 2 ? 26 : 41) * k;
-      start.push([cx + far * Math.cos(a), cy + far * Math.sin(a)]); end.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
-    }
-    sun.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-    sun.innerHTML = '<g id="sg"><path id="s1" fill="#12203A" stroke="#12203A" stroke-width="' + 16 * k + '" stroke-linejoin="round" transform="translate(0 ' + 3.5 * k + ')"/>' +
-      '<path id="s2" fill="#12203A" stroke="#12203A" stroke-width="' + 16 * k + '" stroke-linejoin="round"/>' +
-      '<path id="s3" fill="#E9A800" stroke="#E9A800" stroke-width="' + 10 * k + '" stroke-linejoin="round" transform="translate(0 ' + 3 * k + ')"/>' +
-      '<path id="s4" fill="#FFD21F" stroke="#FFD21F" stroke-width="' + 10 * k + '" stroke-linejoin="round"/></g>';
-    var paths = ['s1', 's2', 's3', 's4'].map($);
-    var inOut = function (t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };       // cubic
-    var inOutQ = function (t) { return t < .5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2; };   // quartic: inner corners pull in later
-    var shape = function (t) {
-      var po = inOut(t), pi = inOutQ(t), d = '';
-      for (var i = 0; i < 10; i++) { var p = i % 2 ? pi : po, x = start[i][0] + (end[i][0] - start[i][0]) * p, y = start[i][1] + (end[i][1] - start[i][1]) * p;
-        d += (i ? ' L' : 'M') + x.toFixed(2) + ' ' + y.toFixed(2); }
-      d += 'Z'; for (var j = 0; j < 4; j++) paths[j].setAttribute('d', d);
-    };
-    shape(0); sun.classList.add('drawn');
-
-    // ---- the timeline (ms from now) ----
-    var T = { hello: 0, morph: 2100, morphFor: 1500, center: 3600, up: 4500, upFor: 1000, words: 4800 };
-    var ease = 'cubic-bezier(.45,0,.2,1)', soft = 'cubic-bezier(.22,1,.36,1)';
-    var at = function (el, frames, o) { o.fill = o.fill || 'forwards'; return el.animate(frames, o); };
-    // 1 · hello: fade in, look left, look right, blink, a big smile (cheeks up)
-    at(face, [{ opacity: 0 }, { opacity: 1 }], { duration: 500, easing: 'ease-out' });
-    at($('feyes'), [{ transform: 'translate(0,0)' }, { transform: 'translate(-3.4px,.6px)', offset: .2 }, { transform: 'translate(-3.4px,.6px)', offset: .38 },
-      { transform: 'translate(3.4px,.6px)', offset: .58 }, { transform: 'translate(3.4px,.6px)', offset: .74 }, { transform: 'translate(0,-1px)', offset: .9 }, { transform: 'translate(0,0)' }],
-      { duration: 1700, delay: 350, easing: 'ease-in-out' });
-    [1180, 1760].forEach(function (d) { at($('fblink'), [{ transform: 'scaleY(1)' }, { transform: 'scaleY(.08)', offset: .45 }, { transform: 'scaleY(1)' }], { duration: 200, delay: d, fill: 'none' }); });
-    // mouth changes never overlap (no grey mid-fade): the small smile tucks away, then the big one opens
-    at($('mw'), [{ opacity: 1, transform: 'scale(1)' }, { opacity: 1, transform: 'scale(.6,.3)', offset: .85 }, { opacity: 0, transform: 'scale(.6,.3)' }], { duration: 200, delay: 1480, easing: 'ease-in' });
-    at($('mbig'), [{ opacity: 0, transform: 'scale(.6,.2)' }, { opacity: 1, transform: 'scale(.6,.2)', offset: .08 }, { opacity: 1, transform: 'scale(1.08)', offset: .7 }, { opacity: 1, transform: 'scale(1)' }], { duration: 420, delay: 1680, easing: 'ease-out' });
-    at($('fcheeks'), [{ transform: 'scale(1)' }, { transform: 'scale(1.25)' }], { duration: 420, delay: 1560, easing: 'ease-out' });
-    // the face goes back to its everyday smile during the morph, so it matches the mascot exactly
-    at($('mbig'), [{ opacity: 1, transform: 'scale(1)' }, { opacity: 1, transform: 'scale(.6,.2)', offset: .9 }, { opacity: 0, transform: 'scale(.6,.2)' }], { duration: 300, delay: T.morph + 450, easing: 'ease-in' });
-    at($('mw'), [{ opacity: 0, transform: 'scale(.6,.3)' }, { opacity: 1, transform: 'scale(.6,.3)', offset: .1 }, { opacity: 1, transform: 'scale(1)' }], { duration: 320, delay: T.morph + 750, easing: 'ease-out' });
-    at($('fcheeks'), [{ transform: 'scale(1.25)' }, { transform: 'scale(1)' }], { duration: 500, delay: T.morph + 500, easing: 'ease-in-out' });
-
-    // 2 · the morph: the shape and the face move on the same frames (the face shrinks with the star)
-    var t0 = performance.now();
-    (function frameStep(now) {
-      var t = Math.min(1, Math.max(0, (now - t0 - T.morph) / T.morphFor));
-      if (now - t0 >= T.morph) { shape(t); face.style.transform = 'scale(' + (BIG + (1 - BIG) * inOut(t)).toFixed(4) + ')'; }
-      if (INTRO.skip) return;
-      if (t < 1) requestAnimationFrame(frameStep); else handover();
-    })(t0);
-
-    // 3 · the star in the middle: the full mascot (shine, shadow) takes over, a happy little bounce, a moment to say hi
-    function handover() {
-      if (INTRO.skip) return;
-      at(star0, [{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: 'ease-out' });
-      at(face, [{ opacity: 1 }, { opacity: 0 }], { duration: 300, delay: 120, easing: 'ease-out' });
-      setTimeout(function () { sun.style.display = 'none'; }, 320);
-      at(star0, [{ transform: 'scale(1)' }, { transform: 'scale(1.07,.94)', offset: .3 }, { transform: 'scale(.97,1.04)', offset: .6 }, { transform: 'scale(1)' }],
-        { duration: 700, delay: 120, easing: 'ease-in-out', fill: 'none' });
-      at(star0.firstChild, [{ filter: 'drop-shadow(0 0 0 rgba(18,32,58,0))' }, { filter: 'drop-shadow(0 6px 8px rgba(18,32,58,.16))' }], { duration: 800, delay: 200, easing: 'ease-out' });
-      morphFinished();
-      // 4 · up and smaller, the background softens, then the words rise in one after another
-      var wait = Math.max(0, T.up - (performance.now() - t0));
-      at(mw, [{ transform: formed }, { transform: 'none' }], { duration: T.upFor, delay: wait, easing: ease, fill: 'both' });
-      at($('softbg'), [{ opacity: 0 }, { opacity: 1 }], { duration: T.upFor + 400, delay: wait, easing: 'ease-in-out', fill: 'both' });
-      var w = $('welcome'); w.style.opacity = 1;
-      [].forEach.call(w.children, function (el, i) {
-        at(el, [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 700, delay: wait + (T.words - T.up) + i * 140, easing: soft, fill: 'both' });
-      });
-      setTimeout(finishIntro, wait + (T.words - T.up) + w.children.length * 140 + 720);
-    }
+    var mid = 'translateY(' + (H / 2 - (box.top + box.height / 2)).toFixed(1) + 'px) scale(' + (M / F).toFixed(3) + ')';
+    mw.style.transform = mid;
+    var sb = star0.querySelector('.blink'); if (sb) sb.style.animation = 'none';  // its own blink waits; one blink is timed below
+    var T = { in: 0, blink: 900, up: 1500, upFor: 1100, words: 1850 };
+    var glide = 'cubic-bezier(.45,0,.15,1)', soft = 'cubic-bezier(.22,1,.36,1)';
+    var at = function (el, frames, o) { o.fill = o.fill || 'both'; return el.animate(frames, o); };
+    // 1 · the star appears in the middle (a soft fade and a slight settle) and blinks once
+    at(star0, [{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 520, delay: T.in, easing: soft });
+    if (sb) at(sb, [{ transform: 'scaleY(1)' }, { transform: 'scaleY(.1)', offset: .45 }, { transform: 'scaleY(1)' }], { duration: 220, delay: T.blink, fill: 'none' });
+    setTimeout(morphFinished, 520);                                              // the website starts loading once the star is on screen
+    // 2 · the same star zooms out and moves up; the background softens; the words rise in
+    at(mw, [{ transform: mid }, { transform: 'none' }], { duration: T.upFor, delay: T.up, easing: glide });
+    at($('softbg'), [{ opacity: 0 }, { opacity: 1 }], { duration: T.upFor + 300, delay: T.up, easing: 'ease-in-out' });
+    var w = $('welcome'); w.style.opacity = 1;
+    [].forEach.call(w.children, function (el, i) {
+      at(el, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 650, delay: T.words + i * 120, easing: soft });
+    });
+    setTimeout(function () { if (!INTRO.skip) finishIntro(); }, T.words + w.children.length * 120 + 680);
   }
   // Start once the page font is ready (max 300 ms) and the rest of this script has run, so nothing below the star changes size mid-intro.
   (function () {
