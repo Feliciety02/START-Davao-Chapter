@@ -187,6 +187,10 @@
   #splashstar { opacity: 0; } #splashstar .star { width: 100%; height: 100%; margin: 0; filter: drop-shadow(0 6px 8px rgba(18,32,58,.16)); }
   .face { width: 100%; height: 100%; transform-origin: 50% 50%; z-index: 4; overflow: visible; }
   .face .blink { transform-origin: 50px 55px; animation: blink 3.4s infinite; }
+  .sun-screen, .face, .mwrap, .welcome, .softbg, #splashstar { will-change: transform, opacity; backface-visibility: hidden; }
+  .drift { animation: drift 3.2s ease-in-out infinite; }
+  @keyframes drift { 0%, 100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-4px) rotate(2.5deg); } 50% { transform: translateY(-7px) rotate(0); } 75% { transform: translateY(-4px) rotate(-2.5deg); } }
+  #splash { transition: opacity .55s ease, transform .55s ease; } #splash.off { transform: scale(1.03); }
   .welcome { opacity: 0; }
   .welcome .hello { display: block; font-size: 14px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: var(--ink2); }
   .welcome .brand { font-size: 34px; margin-top: 4px; }
@@ -205,7 +209,7 @@
   .splash-install .pill { width:100%; margin-top:10px; padding:10px 14px; }
   @keyframes gem-light { 0%,22%,100% { background: #D6EDFC; transform: rotate(45deg) scale(.8); } 40%,60% { background: var(--sun); border-color: #E9A800; transform: rotate(45deg) scale(1.15); } }
   @keyframes sparkle { 0%,100% { opacity: .3; transform: scale(.7) rotate(-15deg); } 50% { opacity: 1; transform: scale(1.2) rotate(15deg); } }
-  @media (prefers-reduced-motion: reduce) { .quest-gems i, .face .blink { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .quest-gems i, .face .blink, .drift { animation: none; } #splash.off { transform: none; } }
 </style>
 </head>
 <body>
@@ -308,7 +312,9 @@
   function finishIntro() {
     if (introDone) return; introDone = true;
     $('sunscreen').style.display = 'none'; $('face').style.display = 'none';
-    $('splashstar').style.opacity = 1; $('splashstar').firstChild.classList.add('bob');
+    var st = $('splashstar'); st.style.opacity = 1; st.firstChild.style.filter = '';
+    try { document.getAnimations().forEach(function (a) { var t = a.effect && a.effect.target; if (t && $('splash').contains(t) && a.playState === 'finished') a.cancel(); }); } catch (e) {}
+    st.firstChild.classList.add('drift');
     $('softbg').style.opacity = 1; $('welcome').style.opacity = 1; $('mwrap').style.transform = 'none';
     introWait.splice(0).forEach(function (f) { f(); });
   }
@@ -335,23 +341,27 @@
     var big = Math.hypot(W, H) / 2 / (31 * INTRO.M / 100) * 1.15;
     sun.style.transform = 'scale(' + big.toFixed(2) + ')';
     face.style.transform = 'scale(2.6)';
-    var ease = 'cubic-bezier(.65,0,.25,1)';
-    setTimeout(function () {                                          // 2 · shrink into the star
-      sun.animate([{ transform: 'scale(' + big.toFixed(2) + ')' }, { transform: 'scale(1)' }], { duration: 900, easing: ease, fill: 'forwards' });
-      face.animate([{ transform: 'scale(2.6)' }, { transform: 'scale(1)' }], { duration: 900, easing: ease, fill: 'forwards' });
-      setTimeout(function () {                                        // the real mascot takes over (outline, shine, shading)
-        $('splashstar').animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, fill: 'forwards' });
-        setTimeout(function () { sun.style.display = 'none'; }, 240);              // the mascot covers it exactly: no double edge
-        face.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1)' }], { duration: 260, fill: 'forwards' });
-        $('splashstar').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.08)' }, { transform: 'scale(1)' }], { duration: 420, easing: 'ease-out' });
-      }, 880);
-      setTimeout(function () {                                        // 3 · up and smaller; soft background; welcome
-        mw.animate([{ transform: formed }, { transform: 'none' }], { duration: 750, easing: ease, fill: 'forwards' });
-        $('softbg').animate([{ opacity: 0 }, { opacity: 1 }], { duration: 750, easing: 'ease-out', fill: 'forwards' });
-        $('welcome').animate([{ opacity: 0, transform: 'translateY(18px)' }, { opacity: 1, transform: 'none' }], { duration: 600, delay: 450, easing: 'ease-out', fill: 'forwards' });
-        setTimeout(finishIntro, 1100);
-      }, 1400);
-    }, 750);
+    // ONE timeline: every part starts now with its own delay, so the steps flow into each other (no gaps, no timers drifting).
+    // Only transform and opacity move, so the phone's graphics chip draws it smoothly even while START loads behind it.
+    var shrink = 'cubic-bezier(.76,0,.24,1)', glide = 'cubic-bezier(.45,0,.15,1)', soft = 'cubic-bezier(.22,1,.36,1)';
+    var T = { faceIn: 0, shrink: 380, shrinkFor: 1150, handover: 1330, up: 1450, upFor: 1000, words: 1800 };
+    var go = function (el, frames, o) { o.fill = o.fill || 'both'; return el.animate(frames, o); };   // later moves of the same element: fill forwards
+    var star0 = $('splashstar');
+    star0.style.opacity = 0;
+    star0.firstChild.style.filter = 'none';                                           // no shadow yet: it fades in on its own below
+    go(face, [{ opacity: 0, transform: 'scale(2.3)' }, { opacity: 1, transform: 'scale(2.6)' }], { duration: 420, delay: T.faceIn, easing: soft });
+    go(sun, [{ transform: 'scale(' + big.toFixed(2) + ')' }, { transform: 'scale(1)' }], { duration: T.shrinkFor, delay: T.shrink, easing: shrink });
+    go(face, [{ transform: 'scale(2.6)' }, { transform: 'scale(1)' }], { duration: T.shrinkFor, delay: T.shrink, easing: shrink, fill: 'forwards' });
+    // the mascot (outline, shine, shading) eases in over the shrinking star; the plain star leaves only once it is covered
+    go(star0, [{ opacity: 0 }, { opacity: 1 }], { duration: 320, delay: T.handover, easing: 'ease-out' });
+    go(face, [{ opacity: 1 }, { opacity: 0 }], { duration: 320, delay: T.handover + 60, easing: 'ease-out', fill: 'forwards' });
+    go(sun, [{ opacity: 1 }, { opacity: 1, offset: .99 }, { opacity: 0 }], { duration: 360, delay: T.handover, fill: 'forwards' });
+    go(star0.firstChild, [{ filter: 'drop-shadow(0 0 0 rgba(18,32,58,0))' }, { filter: 'drop-shadow(0 6px 8px rgba(18,32,58,.16))' }], { duration: 700, delay: T.handover + 200, easing: 'ease-out', fill: 'forwards' });
+    // up and smaller, the background softens, then the words rise in
+    go(mw, [{ transform: formed }, { transform: 'none' }], { duration: T.upFor, delay: T.up, easing: glide });
+    go($('softbg'), [{ opacity: 0 }, { opacity: 1 }], { duration: T.upFor + 300, delay: T.up, easing: 'ease-in-out' });
+    go($('welcome'), [{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }], { duration: 800, delay: T.words, easing: soft });
+    setTimeout(finishIntro, T.words + 820);
   })();
   $('hintstar').innerHTML = star(44);
 
