@@ -1358,9 +1358,26 @@ function webViewAs(token, role, key) {
       if (!who.member) return { ok: false, msg: 'That scholar is not Active in Scholars.' };
       who.admin = false;
       label = displayName_(who.name) + ' · ' + (who.leads.length ? 'Campus Lead and member' : 'Member') + ', ' + who.member.school;
+    } else if (role === 'all') {
+      // Test all three at once: your real RR pages, plus this school's Campus Lead page and one member's pages (practice only)
+      const k = typeof key === 'object' && key ? key : (() => { try { return JSON.parse(String(key || '{}')); } catch (e) { return {}; } })();
+      const sc = schoolRows_(ss).find(x => x.name === String(k.school || ''));
+      if (!sc) return { ok: false, msg: 'Choose a school to test with.' };
+      let email = emailOf_(k.email);
+      const byEmail = scholarByEmail_(ss), activeHere = e => { const p = byEmail[e]; return p && p.status === 'Active' && p.school === sc.name; };
+      if (!email || !activeHere(email)) {                 // no member chosen: the school's Lead (if a member there), else its first active scholar
+        email = sc.email && activeHere(sc.email) ? sc.email : (Object.keys(byEmail).filter(activeHere).sort()[0] || '');
+      }
+      const m = email ? byEmail[email] : null;
+      who = { email: email || s.e, name: m ? m.name : (webRoles_(ss, s.e).name || 'Test user'), member: m && m.status === 'Active' ? m : null, leads: [sc.name], admin: true };
+      label = 'All three · RR + Campus Lead of ' + sc.name + (m ? ' + member ' + displayName_(m.name) : ' (no active members yet)');
+      key = JSON.stringify({ school: sc.name, email: email || '' });
+      const out = webBuild_(ss, who);
+      out.viewAs = { role, key, label, school: sc.name, member: m ? email : '', memberName: m ? displayName_(m.name) : '' };
+      return JSON.parse(JSON.stringify(out));
     } else return { ok: false, msg: 'Choose a role.' };
     const out = webBuild_(ss, who);
-    out.viewAs = { role, key, label };
+    out.viewAs = { role, key, label, member: role === 'member' ? emailOf_(key) : '' };
     return JSON.parse(JSON.stringify(out));
   });
 }
@@ -1881,6 +1898,55 @@ function webDailyNext(token, sent) {
     } finally { lock.releaseLock(); }
   });
 }
+// RR test mode ("All three"): today's brain break for the test member, played for practice. Same game, same checks and
+// timer, but the progress lives in a 30-minute cache only: no row in Daily games, no XP, no streak. op: start · pick · next · finish
+function webDailyTest(token, op, sent) {
+  return webSafe_(() => {
+    const s = webSession_(token);
+    if (!s) return { ok: false, signedOut: true };
+    const ss = webSheet_();
+    if (!webRoles_(ss, s.e).admin) return { ok: false, msg: 'Only the Regional Representative can test.' };
+    sent = sent || {};
+    const as = emailOf_(sent.as), p = as ? scholarByEmail_(ss)[as] : null;
+    if (!p || p.status !== 'Active') return { ok: false, msg: 'Choose an active member to test with.' };
+    const key = dayKey_(), game = webMiniFor_(as, key, miniProgram_(ss, as)), now = Date.now();
+    const cache = CacheService.getUserCache ? CacheService.getUserCache() : CacheService.getScriptCache();
+    const ck = 'DTEST_' + webHash_(s.e + '|' + as + '|' + key);
+    const load = () => { try { return JSON.parse(cache.get(ck) || 'null'); } catch (e) { return null; } };
+    const save = st => cache.put(ck, JSON.stringify(st), 1800);
+    if (op === 'start') {
+      save({ id: game.id, round: 0, right: 0, at: now, started: now, state: 'prompt' });
+      return { ok: true, day: key, test: true, game: miniPublic_(game, 0, new Date(now)) };
+    }
+    const st = load();
+    if (!st || st.id !== game.id || sent.id !== game.id) return { ok: false, msg: 'Practice game expired. Open it again.' };
+    if (op === 'pick') {
+      const round = st.round;
+      if (Number(sent.round) !== round) return { ok: false, msg: 'This round has already been answered.' };
+      if (st.state === 'answered' && String(st.pick) === String(sent.pick)) return miniFeedback_(game, round, st.correct, st.right, st.late);
+      if (st.state !== 'prompt') return { ok: false, msg: 'This round has already been answered.' };
+      const late = now - st.at > game.secs * 1000 || now - st.started > DAILY_GRACE_MIN * 60000;
+      const correct = !late && (game.kind === 'scramble'
+        ? String(sent.pick || '').toUpperCase().replace(/[^A-Z]/g, '') === game.answer
+        : String(sent.pick).trim() !== '' && Number(sent.pick) === game.rounds[round].odd);
+      Object.assign(st, { state: 'answered', pick: String(sent.pick), correct, late, right: st.right + (correct ? 1 : 0) }); save(st);
+      return miniFeedback_(game, round, correct, st.right, late);
+    }
+    if (op === 'next') {
+      if (st.state !== 'answered' || Number(sent.round) !== st.round || st.round >= miniCount_(game) - 1) return { ok: false, msg: 'The next round is not ready.' };
+      Object.assign(st, { round: st.round + 1, at: now, state: 'prompt' }); save(st);
+      return { ok: true, round: st.round, prompt: miniPrompt_(game, st.round), remainingMs: game.secs * 1000 };
+    }
+    if (op === 'finish') {
+      const done = !sent.skip && st.state === 'answered' && st.round === miniCount_(game) - 1;
+      const res = done ? miniScore_(game, st.right) : [miniScore_(game, 0)[0] + ' · left', 0, 0];
+      cache.remove(ck);
+      return { ok: true, test: true, xp: res[1], stars: res[2] };
+    }
+    return { ok: false, msg: 'Unknown step.' };
+  });
+}
+
 // Finish only from the server's recorded round results. Client answers never award XP.
 function webDailyFinish(token, sent) {
   return webSafe_(() => {
@@ -3432,7 +3498,8 @@ function autoJoinMasterMatch_(ss, request, roster) {
 // non-Active scholar, or the same name at the same school under another email (that could be someone else's account).
 function autoJoinEligible_(ss, request, roster) {
   const school = String(request[2] || '').trim(), email = emailOf_(request[3]);
-  if (!autoApproveOn_() || !email || !String(request[1] || '').trim() || String(request[10] || '').trim() !== 'Eligible' ||
+  if (!autoApproveOn_() || !email || !String(request[1] || '').trim() || /^Not eligible/i.test(String(request[10] || '').trim()) ||   // older "Needs review" labels (masterlist era) no longer hold anyone back
+     
       START_PROGRAMS.list.indexOf(String(request[7] || '').trim()) === -1 ||
       schoolRows_(ss).map(s => s.name).indexOf(school) === -1) return false;
   const m = joinMatch_(roster, request[1], school, email);
