@@ -1496,13 +1496,13 @@ function ensureCheckinTabs_(ss) {
     if (sc && !String(sc.getRange(1, ALT_EMAIL_COL).getValue()).trim()) {
       sc.getRange(1, ALT_EMAIL_COL).setValue(ALT_EMAIL_HEAD).setNote('Optional. Other emails this scholar may sign in with (comma between them). ' +
         'START never emails these: every email goes to Contact (email), column E.');
-      try { sc.getRange(1, 10).copyTo(sc.getRange(1, ALT_EMAIL_COL), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false); } catch (e) { /* plain heading */ }
+      if (!DB_MODE) try { sc.getRange(1, 10).copyTo(sc.getRange(1, ALT_EMAIL_COL), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false); } catch (e) { /* plain heading */ }
     }
     SCHOLAR_EXTRA_HEAD.forEach(([c, h, note]) => {                       // L, M: added once, after K
       if (sc && !String(sc.getRange(1, c).getValue()).trim()) {
         if (sc.getMaxColumns() < c) sc.insertColumnsAfter(sc.getMaxColumns(), c - sc.getMaxColumns());
         sc.getRange(1, c).setValue(h).setNote(note);
-        try { sc.getRange(1, 10).copyTo(sc.getRange(1, c), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false); } catch (e) { /* plain heading */ }
+        if (!DB_MODE) try { sc.getRange(1, 10).copyTo(sc.getRange(1, c), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false); } catch (e) { /* plain heading */ }
       }
     });
   } catch (e) { Logger.log('Other emails column: ' + e.message); }

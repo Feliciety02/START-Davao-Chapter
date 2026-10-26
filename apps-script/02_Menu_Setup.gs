@@ -164,14 +164,27 @@ function safe_(fn) {
   }
   catch (e) {
     const m = String(e && e.message || e);
+    Logger.log('START menu error: ' + (e && e.stack || m));
     let msg;
-    if (/timed out|Service unavailable|try again/i.test(m)) {
+    if (/timed out|Service unavailable/i.test(m)) {
       msg = 'Google is slow right now.\n\nWait one minute, then click the same menu item again. It is safe to repeat.';
     } else if (/SETUP_FIRST/.test(m)) {
       msg = 'The tracker is not set up yet.\n\nClick START Tracker › ① Set up / fix the tracker first.';
     } else if (/authoriz|permission/i.test(m)) {
-      msg = 'Google needs your permission first.\n\nClick the menu item again and choose Allow. ' +
-            'See the "Start here" tab, step 2, if you get stuck.';
+      let url = '';
+      try {
+        const auth = ScriptApp.getAuthorizationInfo(ScriptApp.AuthMode.FULL);
+        if (auth.getAuthorizationStatus() === ScriptApp.AuthorizationStatus.REQUIRED) url = auth.getAuthorizationUrl() || '';
+      } catch (authError) { Logger.log('Authorization check: ' + authError.message); }
+      if (url) {
+        dlg_('START Tracker', '<p class="lead">Google authorization is needed</p>' +
+          '<p>Open Google’s permission page, choose your account, and allow the requested access. Then return to the Sheet and try this menu item once.</p>' +
+          '<p><a class="btn" href="' + esc_(url) + '" target="_blank" rel="noopener">Open Google permission page ↗</a></p>' +
+          '<p class="muted">If Google blocks access, ask the tracker owner to check the Apps Script deployment and requested permissions.</p>', 460, 300);
+        return;
+      }
+      msg = 'This action failed with a Google access error:\n\n' + m +
+            '\n\nThe tracker is already authorized, or Google could not offer a permission page. Open Extensions › Apps Script › Executions to see the failed run.';
     } else {
       msg = 'Something went wrong:\n\n' + m +
             '\n\nTry again in a minute. If it keeps happening, take a screenshot of this box and send it to your Regional Representative (RR).';
@@ -321,9 +334,12 @@ var SETUP_KEY = 'SETUP_PROGRESS';
 
 // [name, work, optional]  optional = a finishing touch: if it fails, setup keeps going
 function setupSteps_(ss) {
-  const NOT_IN_DB = ['Start here tab', 'Dashboard tab', 'Links tab', 'Reminder log tab', 'START Campus Leads tab', 'Calendar view tab', 'Tab header pictures'];
+  const NOT_IN_DB = ['Start here tab', 'Theme', 'Dashboard tab', 'Links tab', 'Reminder log tab',
+    'START Campus Leads tab', 'Calendar view tab', 'Tab header pictures', 'Scholars table look',
+    'Schools table look', 'Check-in answers tab', 'Same table look on every tab',
+    'Extras: check-in open/closed, email checks, leaderboard', 'Form school list'];
   return [
-    ['Start here tab',        () => { buildStartHere_(ss); applyTheme_(ss); }],
+    ['Start here tab',        () => buildStartHere_(ss)],
     ['Theme',                 () => applyTheme_(ss), true],
     ['Settings tab',          () => { buildSettings_(ss); docProps_().setProperty('SCHEDULE_SYNC', scheduleKey_());
                                       getOrCreate_(ss, TAB.scholars); getOrCreate_(ss, TAB.schools); }],
@@ -354,23 +370,40 @@ function setupSteps_(ss) {
     }, true],
     ['Scholars table look',   () => polishScholars_(ss), true],
     ['Schools table look',    () => polishSchools_(ss), true],
-    ['Campus Lead check-ins table look', () => polishCheckins_(ss), true],
+    [DB_MODE ? 'Campus Lead check-in formulas' : 'Campus Lead check-ins table look', () => polishCheckins_(ss), true],
     ['Reminder log tab',      () => buildLog_(ss), true],
-    ['Headings and banners',  () => applyColumnKinds_(ss), true],
+    [DB_MODE ? 'Database headings' : 'Headings and banners', () => DB_MODE ? ensureDatabaseHeaders_(ss) : applyColumnKinds_(ss), !DB_MODE],
     ['START Campus Leads tab', () => buildFocalTab_(ss), true],
     ['Form school list',      () => updateDropdown_(), true],
     ['Events tab',            () => { if (ss.getSheetByName(TAB.events)) buildEvents_(ss); }, true],
     ['Calendar view tab',     () => buildCalView_(ss), true],
     ['Check-in answers tab',  () => { if (checkinOn_()) styleMemberTab_(ss); }, true],
     ['Tab header pictures',   () => repairHeaders_(ss), true],                       // any tab still bare (e.g. pictures added later)
-    ['Plain database tabs',   () => { if (DB_MODE) tidyToDatabase_(ss); }, true],
+    ['Old tracker cleanup',   () => { if (DB_MODE) tidyToDatabase_(ss); }, true],
     ['Same table look on every tab', () => styleNewerTables_(ss, true), true],
-    ['Database protections', () => { if (DB_MODE) protect_(ss); }, true],
   ].filter(x => !DB_MODE || NOT_IN_DB.indexOf(x[0]) === -1);
 }
 
+// The database still needs column names, but painting and resizing every cell is unnecessary.
+function ensureDatabaseHeaders_(ss) {
+  const specs = columnSpecs_();
+  [TAB.schools, TAB.scholars].forEach(tab => {
+    const sh = ss.getSheetByName(tab);
+    if (!sh) return;
+    const columns = specs[tab], width = Math.max(...columns.map(col => col[0]));
+    if (sh.getMaxColumns() < width) sh.insertColumnsAfter(sh.getMaxColumns(), width - sh.getMaxColumns());
+    const header = sh.getRange(1, 1, 1, width);
+    const values = header.getValues()[0];
+    let changed = false;
+    columns.forEach(col => {
+      if (values[col[0] - 1] !== col[2]) { values[col[0] - 1] = col[2]; changed = true; }
+    });
+    if (changed) header.setValues([values]);
+  });
+}
+
 // ① is QUICK once the tracker is built: everything you edit (names, emails, Campus Leads, schools, roles, events)
-// already updates by itself as you type. The full rebuild (all tabs, headings, banners, the form) only runs
+// already updates by itself as you type. The full rebuild only runs
 // the first time, after you replace code files with a newer version, or from 🛠 Setup tools › Full rebuild.
 var SETUP_VERSION = 'v62';
 var CORE_TABS_ = () => DB_MODE ? [TAB.settings, TAB.schools, TAB.scholars, TAB.checkins] : [TAB.settings, TAB.schools, TAB.scholars, TAB.dashboard, TAB.checkins];
@@ -388,56 +421,79 @@ function setup() {
   return built ? quickFix_() : setupFull();
 }
 
-// Fast repair: seconds, not minutes. Only fixes what can drift; nothing is rebuilt or restyled.
+// Fast repair: check live data and automation without rebuilding display-only tabs.
+function schoolsNeedRepair_(ss) {
+  const sh = ss.getSheetByName(TAB.schools), n = CONFIG.maxSchools;
+  if (!sh || sh.getMaxRows() < n + 1 || sh.getMaxColumns() < 17) return true;
+  const formulas = sh.getRange(2, 3, n, 6).getFormulas(); // C:H
+  const outreach = sh.getRange(2, 17, n, 1).getFormulas();
+  if (String(sh.getRange('E2').getFormula()).indexOf(TAB.scholars) === -1) return true;
+  return formulas.some((row, i) => !row[0] || !row[4] || !row[5] || !outreach[i][0]);
+}
+
 function quickFix_() {
-  const t0 = Date.now(), ss = SpreadsheetApp.getActive(), props = docProps_();
-  ss.toast('Quick check… a few seconds.', 'START Tracker', 15);
-  const done = [], later = [];
+  const ss = SpreadsheetApp.getActive(), props = docProps_();
+  ss.toast('Checking the tracker...', 'START Tracker', 15);
+  const done = [], later = [], errors = [];
   const step = (label, fn) => {
     if (outOfTime_(45 * 1000)) { later.push(label); return; }                 // Google's 6-minute limit: the rest next click
-    try { if (fn() !== false) done.push(label); } catch (e) { Logger.log(label + ': ' + e.message); }
+    try { if (fn() !== false) done.push(label); }
+    catch (e) {
+      const detail = String(e && e.message || e).slice(0, 240);
+      errors.push(label + ': ' + detail);
+      Logger.log(label + ': ' + (e && e.stack || detail));
+    }
   };
   migrateTabs_(ss);
   if (DB_MODE && tidyToDatabase_(ss) === 'later') return;
-  if (mergeUmMainSchool_(ss)) done.push('UM merged into UM Main');
-  if (!DB_MODE) step('Start here guide', () => { buildStartHere_(ss); });
-  step('Region (Settings drop-down, provinces)', () => { askRegionIfMissing_(); applyRegion_(ss); });
-  step('Emails in Schools read from Scholars', () => setSchoolEmailFormula_(ss.getSheetByName(TAB.schools)));
-  step('Scholar counts and database fields', () => { buildSchools_(ss); ensureDataFlowSchema_(ss); captureWeeklyRoster_(ss); });
+  if (!DB_MODE) step('Start here guide', () => buildStartHere_(ss));
+  step('Region settings', () => {
+    const region = regionProfile_();
+    if (props.getProperty('REGION_APPLIED') === region.code + '|' + region.label) return false;
+    askRegionIfMissing_(); applyRegion_(ss);
+  });
+  step('School names', () => mergeUmMainSchool_(ss));
+  step('School formulas', () => { if (!schoolsNeedRepair_(ss)) return false; buildSchools_(ss); });
+  step('Data flow schema and weekly roster', () => { ensureDataFlowSchema_(ss); captureWeeklyRoster_(ss); });
   step('Roles (one Campus Lead per school)', () => syncRoles_(ss));
-  if (WEB_CHECKIN) step('Check-in tabs and old Google Forms', () => { ensureCheckinTabs_(ss); return retireForms_(ss) > 0; });
-  if (WEB_CHECKIN) step('Fresh Scholars list (no-email rows -> Old masterlist)', () => freshScholarList_(ss) > 0);
-  else step('Form school list', () => { if (props.getProperty('FORM_SYNC') === syncKey_(ss)) return false; updateDropdown_(); });
-  if (!DB_MODE) step('START Campus Leads tab and portals', () => { if (!syncFocal_(ss)) buildFocalTab_(ss); });
-  step('Automatic emails and form handling', () => {
+  if (WEB_CHECKIN) {
+    step('Check-in tabs and old Google Forms', () => {
+      const needsTabs = !ss.getSheetByName(TAB.checkins) || !ss.getSheetByName(TAB.mcheckins) || !!ss.getSheetByName(OLD_MEMBER_TAB);
+      const oldForms = !!(props.getProperty('FORM_ID') || props.getProperty('MFORM_ID'));
+      if (!needsTabs && !oldForms) return false;
+      ensureCheckinTabs_(ss); return retireForms_(ss) > 0 || needsTabs;
+    });
+    if (!props.getProperty('FRESH_LIST_DONE')) step('Fresh Scholars list', () => freshScholarList_(ss) > 0);
+  } else {
+    step('Form school list', () => { if (props.getProperty('FORM_SYNC') === syncKey_(ss)) return false; updateDropdown_(); });
+    step('Campus Lead and member forms', () => { refreshLeadForm_(ss); if (memberForm_()) refreshMemberForm_(ss); });
+  }
+  if (!DB_MODE) step('Campus Lead assignments and portals', () => syncFocal_(ss));
+  step('Automatic updates', () => {
     if (!claimIfFree_()) return false;                               // another account runs them (20_Safety)
-    installSubmitTrigger_(ss); installSyncTrigger_(ss); applySchedule_();
+    installSubmitTrigger_(ss); installSyncTrigger_(ss); installExtrasTrigger_();
+    const handlers = ScriptApp.getProjectTriggers().map(t => t.getHandlerFunction());
+    const weeklyOn = getSettings_().autoWeekly === true;
+    const scheduleBroken = weeklyOn
+      ? ['weeklySummary', 'autoReminder'].some(name => handlers.indexOf(name) === -1)
+      : ['weeklySummary', 'autoReminder', 'autoFollowUp'].some(name => handlers.indexOf(name) !== -1);
+    if (props.getProperty('SCHEDULE_SYNC') !== scheduleKey_() || scheduleBroken) applySchedule_();
     if (!WEB_CHECKIN && !ScriptApp.getProjectTriggers().some(t => t.getHandlerFunction() === 'memberDaily')) {
       ScriptApp.newTrigger('memberDaily').timeBased().everyDays(1).atHour(6).inTimezone(CONFIG.timezone).create();
     }
     props.setProperty('SCHEDULE_SYNC', scheduleKey_());
   });
-  if (!WEB_CHECKIN) step('Campus Lead and member forms (this week\'s version)', () => { refreshLeadForm_(ss); if (memberForm_()) refreshMemberForm_(ss); });
-  step('Campus Lead check-ins: old questions hidden', () => { const sh = ss.getSheetByName(TAB.checkins); if (!sh) return false; hideOldQuestionCols_(sh); });
-  step('Same table look on every tab', () => styleNewerTables_(ss) > 0);
-  step('Check-in answers tab (name and look)', () => { if (!checkinOn_()) return false; styleMemberTab_(ss); });
-  step('Daily jobs, check-in open/closed, email checks', () => {
-    if (automationOwner_() === me_()) installExtrasTrigger_();
-    applyFormWindow_(); checkScholarEmails_(ss); writeLeaderboard_(ss);
-  });
   if (DB_MODE) step('Database protections', () => protect_(ss));
-  if (!DB_MODE) {
-    step('Calendar view', () => renderCalView_(ss));
-    step('Links tab (top part)', () => writeAutoLinks_(ss));
-    step('Tab header pictures (any missing ones)', () => repairHeaders_(ss) > 0);
-    step('"How to use" panels on every tab', () => { Object.keys(tutorials_()).forEach(n => { const sh = ss.getSheetByName(n); if (sh) placeTutorial_(sh); }); });
-  }
-  const secs = Math.round((Date.now() - t0) / 1000);
   if (later.length) {
-    notify_(`⏳ Part done\n\nGoogle allows a few minutes per click. Click ① again to finish (safe to repeat).\n\n• Still to do: ` + later.join(', '));
+    notify_('Part done. Click Set up / fix the tracker again to finish.\n\nStill to do: ' + later.join(', ') +
+      (errors.length ? '\n\nCould not repair: ' + errors.join(', ') + '. See Apps Script Executions.' : ''));
     return;
   }
-  notify_(`✅ All good\n\n• ` + done.join('\n• '));
+  if (errors.length) {
+    notify_('Some checks failed:\n\n' + errors.join('\n\n') + '\n\nCheck Apps Script Executions for details, then try again.');
+    return;
+  }
+  notify_('Tracker check complete.' + (done.length ? '\n\nChecked: ' + done.join(', ') + '.' : ''));
 }
 
 // The full build, in steps that continue where they stopped (Google allows 6 minutes per click)
@@ -521,7 +577,7 @@ function buildScholars_(ss) {
     .requireValueInRange(schoolList, true).setAllowInvalid(false)
     .setHelpText('Spell the school exactly as in the Schools tab (e.g. always "USeP").').build());
 
-  sh.setConditionalFormatRules([
+  if (!DB_MODE) sh.setConditionalFormatRules([
     SpreadsheetApp.newConditionalFormatRule()
       .whenFormulaSatisfied('=AND($A2<>"",COUNTIF($A$2:$A,$A2)>1)')
       .setBackground(THEME.orangeBg)
@@ -538,12 +594,13 @@ function buildScholars_(ss) {
   sh.getRange(2, 5, rows, 1).setDataValidation(SpreadsheetApp.newDataValidation()
     .requireFormulaSatisfied('=OR(E2="",REGEXMATCH(E2&"","@"))').setAllowInvalid(true)
     .setHelpText('Email address (used when this scholar becomes a START Campus Lead).').build());
-  sh.getRange(2, 7, rows, 1).setDataValidation(SpreadsheetApp.newDataValidation()
+  const yearLevel = sh.getRange(2, 7, rows, 1).setDataValidation(SpreadsheetApp.newDataValidation()
     .requireValueInList(['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'], true)
-    .setAllowInvalid(true).build()).setHorizontalAlignment('center');
+    .setAllowInvalid(true).build());
+  if (!DB_MODE) yearLevel.setHorizontalAlignment('center');
 
   // column widths are fitted to the headings and content by markColumns_ (12_Style)
-  placeTutorial_(sh);
+  if (!DB_MODE) placeTutorial_(sh);
   const f = sh.getFilter();
   if (f && f.getRange().getNumColumns() !== SCHOLAR_FILTER_COLS_) f.remove();
   addFilter_(sh, SCHOLAR_FILTER_COLS_);
@@ -679,11 +736,14 @@ function buildSchools_(ss) {
     lastCk.push([`=IF(A${r}="","",IF(COUNTIF(${C}!${SC}:${SC},A${r})=0,"",MAXIFS(${C}!A:A,${C}!${SC}:${SC},A${r})))`]);
     days.push([`=IF(G${r}="","",TODAY()-INT(G${r}))`]);
   }
-  sh.getRange(2, 3, n, 1).setFormulas(count).setHorizontalAlignment('center');
+  sh.getRange(2, 3, n, 1).setFormulas(count);
   sh.getRange(2, 7, n, 1).setFormulas(lastCk).setNumberFormat('yyyy-mm-dd');
   sh.getRange(2, 8, n, 1).setFormulas(days).setNumberFormat('0');
-  sh.getRange(2, 7, n, 2).setHorizontalAlignment('center');
-  sh.getRange(2, 6, n, 1).setHorizontalAlignment('center');
+  if (!DB_MODE) {
+    sh.getRange(2, 3, n, 1).setHorizontalAlignment('center');
+    sh.getRange(2, 7, n, 2).setHorizontalAlignment('center');
+    sh.getRange(2, 6, n, 1).setHorizontalAlignment('center');
+  }
 
   // D: START Campus Lead = pick from the Scholars list so the same name is used everywhere
   sh.getRange(2, 4, n, 1).setDataValidation(SpreadsheetApp.newDataValidation()
@@ -694,9 +754,10 @@ function buildSchools_(ss) {
   // E: the Campus Lead's email, read from Scholars (the ONE place emails are typed)
   setSchoolEmailFormula_(sh, true);
 
-  const area = sh.getRange(2, 1, n, 1);       // status colour on the School cell only
-  const q = `INDIRECT("${settingCell_('quietDays').replace(/\$/g, '')}")`;
-  sh.setConditionalFormatRules([
+  if (!DB_MODE) {
+    const area = sh.getRange(2, 1, n, 1);       // status colour on the School cell only
+    const q = `INDIRECT("${settingCell_('quietDays').replace(/\$/g, '')}")`;
+    sh.setConditionalFormatRules([
     // a Campus Lead without an email in Scholars: the Contact cell turns red
     SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied('=AND($D2<>"",$E2="")')
       .setBackground(THEME.redBg).setRanges([sh.getRange(2, 5, n, 1)]).build(),
@@ -706,7 +767,8 @@ function buildSchools_(ss) {
     SpreadsheetApp.newConditionalFormatRule()
       .whenFormulaSatisfied('=AND($A2<>"",ISNUMBER($H2),$H2<=7)')
       .setBackground(THEME.greenBg).setRanges([area]).build(),
-  ]);
+    ]);
+  }
 
   // School details I–O (from the ready-made school list) overlap with School/Province/Contact, so they are folded away (+ opens them)
   if (sh.getColumnGroupDepth(9) === 0) {
@@ -718,9 +780,10 @@ function buildSchools_(ss) {
   for (let r = 2; r <= last; r++) {
     lastC.push([`=IF(A${r}="","",IF(COUNTIF(${O}!B:B,A${r})=0,"",MAXIFS(${O}!A:A,${O}!B:B,A${r})))`]);
   }
-  sh.getRange(2, 17, n, 1).setFormulas(lastC).setNumberFormat('mmm d, yyyy').setHorizontalAlignment('center');
+  const lastContact = sh.getRange(2, 17, n, 1).setFormulas(lastC).setNumberFormat('mmm d, yyyy');
+  if (!DB_MODE) lastContact.setHorizontalAlignment('center');
   addFilter_(sh, 17);
-  placeTutorial_(sh);
+  if (!DB_MODE) placeTutorial_(sh);
 }
 
 // Schools › Contact (E) is ONE formula: the START Campus Lead's email from Scholars › Contact (email).
@@ -753,13 +816,19 @@ function protect_(ss) {
   const owned = ss.getProtections(SpreadsheetApp.ProtectionType.RANGE).concat(ss.getProtections(SpreadsheetApp.ProtectionType.SHEET))
     .filter(p => p.getDescription() === PROTECT_TAG);
   if (DB_MODE) {
-    const editors = [me_(), automationOwner_()].filter(Boolean);
+    const editors = [...new Set([me_(), automationOwner_()].filter(Boolean).map(email => String(email).toLowerCase()))];
     const tabs = [TAB.settings, TAB.schools];
-    owned.filter(p => {
-      try { return tabs.indexOf(p.getRange().getSheet().getName()) !== -1; }
-      catch (e) { return false; }
-    }).forEach(p => p.remove());
     tabs.map(name => ss.getSheetByName(name)).filter(Boolean).forEach(sh => {
+      const existing = owned.filter(p => {
+        try { return p.getRange().getSheet().getName() === sh.getName(); }
+        catch (e) { return false; }
+      });
+      if (existing.length === 1 && existing[0].getProtectionType() === SpreadsheetApp.ProtectionType.SHEET &&
+          !existing[0].isWarningOnly() && !existing[0].canDomainEdit()) {
+        const current = existing[0].getEditors().map(user => String(user.getEmail()).toLowerCase()).sort();
+        if (current.length === editors.length && current.every((email, i) => email === editors.slice().sort()[i])) return;
+      }
+      existing.forEach(p => p.remove());
       const p = sh.protect().setDescription(PROTECT_TAG);
       p.setWarningOnly(false);
       editors.forEach(email => p.addEditor(email));
@@ -845,9 +914,8 @@ function styleForm_(form, st) {
   if (banner && banner.getIndex() !== 0) retry_(() => form.moveItem(banner, 0));
 }
 
-/* ---------- database mode: one-time tidy (asks first) ----------
- * Removes the tabs the website now shows, closes the old Campus Lead portal files (they go to Drive's trash,
- * shared with nobody), and takes the pictures, "how to use" panels and tab colours off the tabs that stay. */
+/* ---------- database mode: one-time cleanup (asks first) ----------
+ * Removes old display tabs and closes old Campus Lead portal files, without formatting the tabs that stay. */
 var DB_TIDY_KEY = 'DB_TIDY';
 function tidyToDatabase_(ss) {
   const props = docProps_();
@@ -858,7 +926,7 @@ function tidyToDatabase_(ss) {
   if (gone.length || portals.length) {
     let ui = null; try { ui = SpreadsheetApp.getUi(); } catch (e) { ui = null; }
     if (!ui) return 'later';
-    const ans = ui.alert('Make the sheet a plain database?',
+    const ans = ui.alert('Clean up old tracker tabs?',
       [gone.length ? 'Remove these tabs (they\'re on the website now):\n• ' + gone.join('\n• ') : '',
        portals.length ? `Close ${portals.length} Campus Lead portal file${portals.length === 1 ? '' : 's'} (the website replaces them).` : '']
         .filter(Boolean).join('\n\n'), ui.ButtonSet.YES_NO);
@@ -878,26 +946,6 @@ function tidyToDatabase_(ss) {
   props.deleteProperty('PORTALS'); props.deleteProperty('PORTALS_ON');
   removeTriggers_(['refreshPortalsAuto']);
   gone.forEach(n => { const sh = ss.getSheetByName(n); if (sh && ss.getSheets().length > 1) ss.deleteSheet(sh); });
-  ss.getSheets().forEach(sh => plainTab_(sh));
   props.setProperty(DB_TIDY_KEY, '2');
   return 'done';
-}
-
-// One tab back to a plain table: no pictures, no "how to use" panel, normal header row, no tab colour
-function plainTab_(sh) {
-  try { sh.getImages().forEach(i => i.remove()); } catch (e) { /* none */ }
-  try {
-    const t = typeof tutorials_ === 'function' ? tutorials_()[sh.getName()] : null;
-    if (t) {
-      const col = tutorialCol_(sh, t);
-      if (col <= sh.getMaxColumns() && String(sh.getRange(t.row, col).getValue()).indexOf(TUTORIAL_MARK) === 0) {   // only the panel itself
-        const rows = Math.min(60, sh.getMaxRows() - t.row + 1);
-        sh.getRange(t.row, col, rows, 1).breakApart().clear();
-        sh.setColumnWidth(col, 100);
-        if (col > 1) sh.getRange(t.row, col - 1, rows, 1).clearFormat();                           // the thin gap column
-      }
-    }
-  } catch (e) { Logger.log('Panel (' + sh.getName() + '): ' + e.message); }
-  try { sh.setRowHeight(1, 32); sh.getRange(1, 1, 1, sh.getMaxColumns()).setVerticalAlignment('middle'); } catch (e) { /* ok */ }
-  try { sh.setTabColor(null); } catch (e) { /* ok */ }
 }

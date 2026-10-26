@@ -9,6 +9,16 @@ for (const file of fs.readdirSync(root).filter(name => name.endsWith('.gs')).sor
   vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
 }
 
+// Older styled trackers prefix database headings with icons; schema repair must accept them.
+let headingWrites = 0;
+const decoratedHeaders = {
+  getMaxColumns: () => 21,
+  getRange: () => ({ getValues: () => [['🔒 Request ID', '🔒 Updated at', '🔒 Updated by']], setValue: () => { headingWrites++; } }),
+  getName: () => 'Join requests'
+};
+context.ensureHeaderBlock_(decoratedHeaders, 19, ['Request ID', 'Updated at', 'Updated by']);
+assert.equal(headingWrites, 0);
+
 // Auto-approval covers valid sign-ups from listed schools, even without a masterlist row.
 const old = new Array(11).fill('');
 old[0] = 'Dela Cruz, Ana'; old[1] = 'USeP'; old[2] = 'BS Biology'; old[3] = '2023';
@@ -99,4 +109,29 @@ assert.equal(rates[1].members, 2);
 assert.equal(rates[1].answered, 1);
 assert.equal(rates[1].rate, 50);
 assert.equal(rates[0].estimated, false);
+
+// Repairing existing scholars should write metadata in one batch and preserve prior values.
+const scholarData = [
+  ['Ana', 'USeP', '', '', 'ana@example.com', 'Active'].concat(new Array(12).fill('')),
+  ['Ben', 'USeP', '', '', 'ben@example.com', 'Active'].concat(new Array(7).fill(''), ['existing-id', '', 'old-date', 'old-editor', ''])
+];
+let metadataWrites = 0, writtenMetadata;
+const scholarSheet = {
+  getMaxColumns: () => 18,
+  getLastRow: () => 3,
+  getRange: (row, col, count, width) => ({
+    getValues: () => row === 1 ? [context.SCHOLAR_META_COLS_] : scholarData,
+    setValues: values => { if (row === 2 && col === 14 && count === 2 && width === 5) { metadataWrites++; writtenMetadata = values; } }
+  })
+};
+context.dataLogTab_ = () => {};
+context.weeklyRosterTab_ = () => {};
+context.docProps_ = () => ({ getProperties: () => ({}) });
+context.webAcctKey_ = email => email;
+context.Utilities = { getUuid: () => 'new-id' };
+context.ensureDataFlowSchema_({ getSheetByName: name => name === context.TAB.scholars ? scholarSheet : null });
+assert.equal(metadataWrites, 1);
+assert.equal(writtenMetadata[0][0], 'new-id');
+assert.equal(writtenMetadata[1][0], 'existing-id');
+assert.equal(writtenMetadata[1][2], 'old-date');
 console.log('Data flow checks passed');

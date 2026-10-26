@@ -241,6 +241,12 @@ function buildOutreach_(ss) {
   body(4).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(OUTREACH_CHANNELS, true).setAllowInvalid(true).build());
   body(5).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(OUTREACH_OUTCOMES, true).setAllowInvalid(true).build());
 
+  if (DB_MODE) {
+    sh.getRange(1, 1, 1, OUTREACH_HEAD.length).setValues([OUTREACH_HEAD]);
+    sh.setFrozenRows(1);
+    return;
+  }
+
   bodyRows_(sh.getRange(2, 1, OUTREACH_ROWS, OUTREACH_HEAD.length));   // repair rows that copied the header
   tableLook_(sh, OUTREACH_ROWS, OUTREACH_HEAD.length, 26, THEME.tabs.outreach);
   band_(sh.getRange(2, 1, OUTREACH_ROWS, OUTREACH_HEAD.length));

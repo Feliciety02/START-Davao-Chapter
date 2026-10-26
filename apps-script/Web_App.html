@@ -556,8 +556,10 @@
   .pc img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .pc:nth-child(odd).got { transform: rotate(-1.5deg); } .pc:nth-child(even).got { transform: rotate(1.5deg); }
   .pc .lockbg { width: 100%; height: 100%; display: grid; place-items: center; background: repeating-linear-gradient(135deg, #EAF3FC 0 12px, #E1ECF8 12px 24px); color: #9AA6B8; }
-  .pc span { position: absolute; left: 8px; bottom: 8px; background: #fff; border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
-  .pc.locked span { color: var(--ink2); }
+  .pc > .pc-name { position: absolute; left: 8px; bottom: 8px; background: #fff; border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
+  .pc-unlock { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; max-width: calc(100% - 16px); padding: 8px 12px; border: 0; border-radius: 14px; background: #fff; color: var(--navy); font-family: inherit; font-size: 11px; font-weight: 800; line-height: 1.2; text-align: center; cursor: pointer; box-shadow: 0 3px 0 #C9D9EA; }
+  .pc-unlock:hover, .pc-unlock:focus-visible { background: var(--sun); }
+  .pc-unlock:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
   /* School ranks: the podium and simple standings from the START game style. */
   .rank-pagehead { margin:4px 4px 16px; }
   .rank-pagehead h1 { margin:0; font-size:clamp(26px,3vw,34px); font-weight:800; line-height:1.15; letter-spacing:-.5px; }
@@ -1139,7 +1141,7 @@
     .me-settings .linkrow { gap:10px; font-size:13px; }
   }
 
-/* START Region XI â€” light floating mobile navigation, preserving existing tabs and JS */
+/* START Region XI — light floating mobile navigation, preserving existing tabs and JS */
 @media (max-width: 860px) {
   nav.bottom {
     left: 12px;
@@ -1196,6 +1198,17 @@
     overflow: hidden;
   }
   .heroc.done::after { display: none; }
+  @media (min-width: 861px) {
+    .heroc, .heroc.done, .heroc.late { overflow: visible; z-index: 1; margin-bottom: 42px; }
+    .heroc .postcard, .heroc.done .postcard {
+      right: -14px;
+      top: 52%;
+      z-index: 2;
+      transform: translateY(-42%) rotate(6deg);
+      box-shadow: 0 16px 30px rgba(18,32,58,.24);
+    }
+    .heroc::after { border-radius: 0 0 28px 28px; }
+  }
   @media (max-width: 860px) {
     .heroc.done { padding: 20px; }
     .heroc.done .postcard {
@@ -1428,11 +1441,12 @@
   .dhit:focus-visible { outline:3px solid var(--sun); outline-offset:2px; }
   .dme { position:absolute; left:28px; top:-58px; z-index:2; pointer-events:none; }
   .dme .start-logo { animation:none; }
-  .rewards { display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:#fff; border-radius:22px; padding:12px 14px; margin:0 0 14px; box-shadow:0 4px 0 #DCE6F0; }
-  .rbal { display:inline-flex; align-items:center; gap:6px; background:var(--sun); border-radius:99px; padding:6px 14px; font-size:13px; font-weight:700; }
+  .rewards { display:grid; grid-template-columns:auto auto minmax(0,1fr); align-items:center; gap:8px; background:#fff; border-radius:18px; padding:9px 12px; margin:0 0 12px; box-shadow:0 3px 0 #DCE6F0; }
+  .rbal { display:inline-flex; align-items:center; gap:5px; white-space:nowrap; background:var(--sun); border-radius:99px; padding:5px 11px; font-size:12px; font-weight:700; }
   .rbal b { font-size:18px; } .rbal svg.ico { fill:var(--navy); stroke:none; }
-  .rtxt { flex:1; min-width:150px; font-size:13px; color:var(--ink2); font-weight:600; }
-  #redeem em { font-style:normal; font-size:10px; font-weight:800; letter-spacing:.8px; text-transform:uppercase; background:var(--navy); color:var(--sun); padding:2px 7px; border-radius:99px; margin-left:4px; }
+  .rewards #redeem { white-space:nowrap; padding:7px 13px; }
+  .rewards #pointshelp { justify-self:end; margin:0; padding:4px 2px; white-space:nowrap; font-size:12px; }
+  @media (max-width:360px) { .rewards { grid-template-columns:1fr auto; row-gap:2px; } .rewards #pointshelp { grid-column:1 / -1; } }
   .dailycard { display:flex; align-items:center; gap:12px; background:#fff; border-radius:22px; padding:12px 16px; margin:0 0 18px; box-shadow:var(--shadow); }
   .dailycard b { display:block; font-size:15.5px; } .dailycard .grow > span { display:block; font-size:13px; color:var(--ink2); }
   .dailycard .start-logo { animation:mgbob 2.6s ease-in-out infinite; }
@@ -1491,8 +1505,9 @@
     .kgrid { gap:14px; }
     .kgrid .mk { display:grid; grid-template-columns:auto minmax(0,1fr); grid-auto-rows:auto; column-gap:14px; row-gap:2px; align-items:center; align-content:center;
       text-align:left; padding:16px 18px; min-height:92px; }
-    .kgrid .mk i { grid-column:1; grid-row:1 / span 3; width:56px; height:56px; margin:0; align-self:center; }
-    .kgrid .mk i svg.ico { width:28px; height:28px; }
+    .kgrid .mk i { grid-column:1; grid-row:1 / span 3; width:62px; height:62px; margin:0; align-self:center; }
+    .kgrid .mk i svg.ico { width:32px; height:32px; }
+    .kgrid .mk i .material-icon { font-size:32px !important; }
     .kgrid .mk b, .kgrid .mk small, .kgrid .mk em { grid-column:2; padding:0; margin:0; }
     .kgrid .mk:has(i) b, .kgrid .mk:has(i) small, .kgrid .mk:has(i) em { justify-self:end; text-align:right; }   /* icon left, words right */
     .kgrid .mk:has(i) { padding-right:28px; }
@@ -1507,7 +1522,8 @@
   .mk { --bg:#fff; --edge:#D6E4F5; --ink:var(--navy); --chip:#fff; --chipInk:var(--navy); position:relative; display:flex; flex-direction:column; align-items:center; gap:2px;
     padding:12px 4px 10px; border-radius:18px; background:var(--bg); color:var(--ink); box-shadow:0 5px 0 var(--edge); text-align:center; overflow:hidden; }
   .mk::after { content:""; position:absolute; top:-18px; right:-14px; width:46px; height:46px; border-radius:50%; background:rgba(255,255,255,.22); }
-  .mk i { display:grid; place-items:center; width:32px; height:32px; border-radius:50%; background:var(--chip); color:var(--chipInk); font-style:normal; margin-bottom:4px; box-shadow:0 2px 0 rgba(18,32,58,.12); }
+  .mk i { display:grid; place-items:center; width:40px; height:40px; border-radius:50%; background:var(--chip); color:var(--chipInk); font-style:normal; margin-bottom:4px; box-shadow:0 2px 0 rgba(18,32,58,.12); }
+  .mk i svg.ico { width:24px; height:24px; }
   .mk b { font-size:22px; font-weight:800; line-height:1.05; overflow-wrap:anywhere; }
   .mk b small { font-size:11px; font-weight:700; letter-spacing:0; text-transform:none; opacity:.8; }
   .mk.ktxt b { font-size:15px; line-height:1.2; }
@@ -1539,7 +1555,7 @@
     </div>
   </aside>
   <div class="content">
-    <main id="app"><div class="loading">Loadingâ€¦</div></main>
+    <main id="app"><div class="loading">Loading…</div></main>
   </div>
 </div>
 <nav class="bottom" id="nav2" aria-label="Pages"></nav>
@@ -1593,9 +1609,9 @@ function initials(s) { return String(s || '').split(/[\s@.]+/).filter(Boolean).s
 function emo(t) { var m = String(t || '').match(/^(\S+)\s+(.*)$/); return m && !/[A-Za-z0-9]/.test(m[1]) ? [m[1], m[2]] : ['', String(t || '')]; }
 
 /* ---------- sign-in, like a Google sign-in ----------
- * email â†’ password (everyday)
- * email â†’ code from email â†’ create a password (new account)
- * password â†’ "Forgot password?" â†’ code â†’ new password
+ * email → password (everyday)
+ * email → code from email → create a password (new account)
+ * password → "Forgot password?" → code → new password
  */
 var AUTH = { step: 'choose', mode: '', purpose: 'new', ticket: '', joinStage: 0, busy: false, codeUntil: 0, codeTimer: null, readyNeedsSignIn: false, setupTo: '' };
 function showSignIn(note) {
@@ -1608,7 +1624,7 @@ function showSignIn(note) {
   };
   app('<div class="auth">' +
       '<div class="left">' + brand(36) + '<h1 id="h"></h1><p class="lede" id="lede"></p>' +
-        '<button class="who" id="who" style="display:none" title="Use another email"><span class="av" id="av"></span><span id="whoe"></span> â–¾</button>' +
+        '<button class="who" id="who" style="display:none" title="Use another email"><span class="av" id="av"></span><span id="whoe"></span> ▾</button>' +
         postcard('wide') + '</div>' +
       '<div class="right">' +
         '<div class="pane" id="p-choose" style="display:none"></div>' +
@@ -1619,11 +1635,11 @@ function showSignIn(note) {
           '<label class="show"><input type="checkbox" class="keepme" checked> Stay signed in on this device</label>' +
           '<p class="hint switch"><button type="button" class="linkish" id="setup-password">Set up or reset password</button></p></div>' +
         '<div class="pane" id="p-code">' + field('cd', '6-digit code', 'text', 'inputmode="numeric" autocomplete="one-time-code" maxlength="12"') +
-          '<p class="hint"><button class="linkish" id="again">Resend code</button> Â· <button class="linkish" id="codehelp">Still no code?</button></p>' +
+          '<p class="hint"><button class="linkish" id="again">Resend code</button> · <button class="linkish" id="codehelp">Still no code?</button></p>' +
           '<div class="joinbox" id="joinbox" style="display:none"><b>No code after 2 minutes?</b> Search your inbox, Spam and Promotions for "START", then resend the code. ' +
           'Still nothing? Message your Campus Lead or Regional Representative.<button class="linkish" id="joinlink" hidden></button></div></div>' +
         '<div class="pane" id="p-welcome">' +
-          '<p class="hint">Weâ€™ll send a code to <b id="welcome-email"></b>. If that address is wrong, ask your Regional Representative to update your account.</p></div>' +
+          '<p class="hint">We’ll send a code to <b id="welcome-email"></b>. If that address is wrong, ask your Regional Representative to update your account.</p></div>' +
         '<div class="pane" id="p-join"><div class="join-progress" id="joinprogress" aria-live="polite"><strong id="joincount"></strong><span id="joinlabel"></span><i></i></div>' +
           '<section class="join-step" data-join-step="0"><h2>Your name</h2><p>Use the name on your DOST scholarship record.</p>' +
             '<div class="jrow3">' + field('jln', 'Last name', 'text', 'autocomplete="family-name" maxlength="60"') + field('jfn', 'First name', 'text', 'autocomplete="given-name" maxlength="60"') +
@@ -1637,7 +1653,7 @@ function showSignIn(note) {
             '<div class="field sel" id="f-jc"><select id="jc"><option value="">Choose</option></select><label for="jc">DOST scholarship</label><span class="field-error" aria-live="polite"></span></div></div>' +
             '<div class="field sel" id="f-jprov"><select id="jprov"><option value="">Choose your province</option></select><label for="jprov">Province</label><span class="field-error" aria-live="polite"></span></div>' +
             '<div class="field sel" id="f-jcity"><select id="jcity" disabled><option value="">Choose your province first</option></select><label for="jcity">City or municipality</label><span class="field-error" aria-live="polite"></span></div>' +
-            '<div class="join-note">If your record qualifies for automatic approval, youâ€™ll confirm your email before START sends a code. Other requests go to your Regional Representative for review.</div></section></div>' +
+            '<div class="join-note">If your record qualifies for automatic approval, you’ll confirm your email before START sends a code. Other requests go to your Regional Representative for review.</div></section></div>' +
         '<div class="pane" id="p-joined"><div class="joined">' + startLogo(84) + '<p id="joinedt"></p></div></div>' +
         '<div class="pane" id="p-pending"><div class="join-note">' + ico('clock', 22) + ' <span id="pending-note"></span></div></div>' +
         '<div class="pane" id="p-newpass">' + field('np', 'New password', 'password', 'autocomplete="new-password"') +
@@ -1648,7 +1664,7 @@ function showSignIn(note) {
           '<label class="show"><input type="checkbox" class="keepme" checked> Stay signed in on this device</label></div>' +
         '<div class="pane" id="p-ready"><div class="joined">' + startLogo(84) + '<p>Your weekly check-in and school updates are waiting.</p></div></div>' +
         '<p class="statusnote" id="authstatus" role="status" aria-live="polite"></p>' +
-        '<div class="err" id="err" role="alert"><span>â“˜</span><span id="errt"></span></div>' +
+        '<div class="err" id="err" role="alert"><span>ⓘ</span><span id="errt"></span></div>' +
         '<div class="actions"><button class="linkish" id="alt"></button><button class="next" id="next">Next</button></div>' +
       '</div></div>' +
       '<div class="authfoot"><span></span><span>START will never ask for your password or code</span></div>');
@@ -1702,7 +1718,7 @@ function go(step) {
     join:     ['Register for START', 'A few details help us find your scholar record.', 'Back', function () { go('email'); }],
     pending:  ['Registration pending', '', 'Use another email', function () { go('email'); }],
     joined:   [AUTH.sorry ? 'Thank you!' : 'Request received', '', 'Use another email', function () { AUTH.purpose = 'new'; go('email'); }],
-    ready:    ['Youâ€™re all set!', AUTH.readyNeedsSignIn ? 'Sign in with your new password.' : '', '', null],
+    ready:    ['You’re all set!', AUTH.readyNeedsSignIn ? 'Sign in with your new password.' : '', '', null],
   }[step];
   $('next').textContent = { join: 'Continue with registration', joined: 'Use another email', signin: 'Sign in', email: reset ? 'Send reset code' : 'Continue', welcome: 'Set Up Password', pending: 'Check approval', ready: AUTH.readyNeedsSignIn ? 'Sign In' : 'Go to Dashboard', newpass: reset ? 'Save password' : 'Create password' }[step] || 'Next';
   $('next').style.display = step === 'choose' ? 'none' : '';
@@ -1742,7 +1758,7 @@ function busy(on) {
   if (AUTH.busy === !!on) return;
   AUTH.busy = !!on;
   var button = $('next'); if (!button) return;
-  if (on) { button.dataset.idleLabel = button.textContent; button.textContent = 'Workingâ€¦'; }
+  if (on) { button.dataset.idleLabel = button.textContent; button.textContent = 'Working…'; }
   else if (button.dataset.idleLabel) { button.textContent = button.dataset.idleLabel; delete button.dataset.idleLabel; }
   button.disabled = !!on; button.setAttribute('aria-busy', String(!!on));
 }
@@ -1775,8 +1791,8 @@ function joinOpen() {
   AUTH.joinFrom = 'email'; AUTH.sorry = false; AUTH.joinStage = 0;
   go('join');
   if ($('js').options.length > 1) return;
-  $('js').options[0].textContent = 'Loading schoolsâ€¦';
-  $('jp').options[0].textContent = 'Loading programsâ€¦';
+  $('js').options[0].textContent = 'Loading schools…';
+  $('jp').options[0].textContent = 'Loading programs…';
   call('webJoinSchools').then(function (r) {
     if (!r || !r.ok) { say((r && r.msg) || 'Could not load the form choices. Try again.'); return; }
     var opt = function (v, t) { return '<option value="' + esc(v) + '">' + esc(t == null ? v : t) + '</option>'; };
@@ -1972,7 +1988,7 @@ function changePassword() {
     '<div class="field" id="f-op"><input id="op" type="password" placeholder=" " autocomplete="current-password"><label for="op">Current password</label></div>' +
     '<div class="field" id="f-n1" style="margin-top:18px"><input id="n1" type="password" placeholder=" " autocomplete="new-password"><label for="n1">New password</label></div>' +
     '<div class="field" id="f-n2" style="margin-top:18px"><input id="n2" type="password" placeholder=" " autocomplete="new-password"><label for="n2">Confirm</label></div>' +
-    '<div class="err" id="cerr"><span>â“˜</span><span id="cerrt"></span></div>' +
+    '<div class="err" id="cerr"><span>ⓘ</span><span id="cerrt"></span></div>' +
     '<div class="actions"><button class="linkish" id="ccancel">Cancel</button><button class="next" id="csave">Save</button></div></div></div>';
   document.body.appendChild(box);
   var fail = function (t) { $('cerrt').textContent = t; $('cerr').classList.add('on'); };
@@ -2012,7 +2028,7 @@ function signOut() {
 
 /* ---------- loading and pages ---------- */
 function load(fresh) {
-  if (!S.data) app('<div class="loading">Loadingâ€¦</div>');
+  if (!S.data) app('<div class="loading">Loading…</div>');
   return call('webLoad', S.token, fresh === true).then(function (d) {
     if (!d || !d.ok) { S.token = null; keep('start_token', null); showSignIn(d && d.msg); return; }
     S.data = d; ADMIN_PAGE_PENDING = null; ADMIN_PAGE_ERROR = ''; ADMIN_OVERVIEW_DIRTY = false; document.body.classList.remove('out');
@@ -2116,7 +2132,7 @@ function draw() {
   if (ready) app((V[S.tab] || memberView)(d));
   else {
     app('<div class="card loading" role="status">' + (ADMIN_PAGE_ERROR ?
-      esc(ADMIN_PAGE_ERROR.message) + ' <button class="linkish" id="admin-page-retry">Try again</button>' : 'Loading ' + esc(adminPage) + 'â€¦') + '</div>');
+      esc(ADMIN_PAGE_ERROR.message) + ' <button class="linkish" id="admin-page-retry">Try again</button>' : 'Loading ' + esc(adminPage) + '…') + '</div>');
     if (!ADMIN_PAGE_PENDING && !ADMIN_PAGE_ERROR) {
       ADMIN_PAGE_PENDING = { data: d, page: adminPage };
       call('webAdminPage', S.token, adminPage).then(function (r) {
@@ -2217,7 +2233,7 @@ function draw() {
     var pick = document.querySelector('[data-jschool="' + row + '"]'); if (pick && pick.value) arg.school = pick.value;
     if (act === 'join-clarify') arg.note = $('jask' + row).querySelector('input').value;
     if (S.viewAs) { $('joinmsg').textContent = 'Preview only.'; return; }
-    b.disabled = true; $('joinmsg').textContent = 'Workingâ€¦';
+    b.disabled = true; $('joinmsg').textContent = 'Working…';
     call('webAdminAction', S.token, act, arg).then(function (r) {
       $('joinmsg').textContent = (r && r.msg) || 'Done'; if (r && r.ok) refreshAdminPage('scholars', r.msg); else b.disabled = false;
     }).catch(function () { b.disabled = false; $('joinmsg').textContent = 'Could not reach START. Try again.'; });
@@ -2269,12 +2285,16 @@ function draw() {
   }; });
   if ($('pointshelp')) $('pointshelp').onclick = showPointsHelp;
   if ($('mepoints')) $('mepoints').onclick = showPointsHelp;
+  if ($('pcgrid')) $('pcgrid').onclick = function (e) {
+    if (!e.target.closest('.pc-unlock')) return;
+    S.tab = 'home'; keep('start_tab', S.tab); draw(); window.scrollTo(0, 0);
+  };
   [].forEach.call(document.querySelectorAll('[data-go]'), function (b) { b.onclick = function (e) { e.preventDefault(); S.tab = b.getAttribute('data-go'); keep('start_tab', S.tab);
     if (S.tab === 'admin' && ADMIN_OVERVIEW_DIRTY) load(true); else draw(); window.scrollTo(0, 0); }; });
 }
 function copyText(b) {
   var text = $(b.getAttribute('data-copy')).textContent;
-  function done() { b.textContent = 'Copied âœ“'; setTimeout(function () { b.textContent = 'Copy message'; }, 2000); }
+  function done() { b.textContent = 'Copied ✓'; setTimeout(function () { b.textContent = 'Copy message'; }, 2000); }
   function fallback() {
     var t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select();
     try { document.execCommand('copy'); done(); } catch (e) { b.textContent = 'Select the text to copy it'; }
@@ -2357,8 +2377,8 @@ if (document.fonts && document.fonts.load) {
   }).catch(function () {});
 }
 // The answer choices start with an emoji (it keeps old answers readable); the site shows a START icon for it
-var EMO_ICON = { 'ðŸ”¥': 'flame', 'ðŸ™‚': 'smile', 'ðŸ˜µâ€ðŸ’«': 'wavy', 'ðŸ†˜': 'lifebuoy', 'ðŸ“ˆ': 'trend', 'ðŸ¢': 'gauge', 'ðŸ˜´': 'moon', 'ðŸ‘': 'thumb', 'ðŸ™‹': 'hand', 'ðŸš¨': 'siren', 'â³': 'hourglass', 'âœ…': 'check' };
-function noEmoji(t) { return String(t || '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{1F000}-\u{1F2FF}\u{FE0F}\u{200D}]/gu, '').replace(/\s{2,}/g, ' ').replace(/^[\sÂ·]+|[\sÂ·]+$/g, ''); }
+var EMO_ICON = { '🔥': 'flame', '🙂': 'smile', '😵‍💫': 'wavy', '🆘': 'lifebuoy', '📈': 'trend', '🐢': 'gauge', '😴': 'moon', '👍': 'thumb', '🙋': 'hand', '🚨': 'siren', '⏳': 'hourglass', '✅': 'check' };
+function noEmoji(t) { return String(t || '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{1F000}-\u{1F2FF}\u{FE0F}\u{200D}]/gu, '').replace(/\s{2,}/g, ' ').replace(/^[\s·]+|[\s·]+$/g, ''); }
 function emoIco(e, size) { return EMO_ICON[e] ? ico(EMO_ICON[e], size) : esc(e || ''); }
 
 /* ---------- the region's own pictures: a famous Davao place, a new one each week ----------
@@ -2397,7 +2417,7 @@ function postcard(cls) {
 }
 
 /* ---------- the START star mascot: the friendly guide everywhere (check-in coach, progress bar, games, notes) ----------
- * The START logo itself is used only as the brand. mood: idle Â· win (happy) Â· oops (wrong answer) Â· sad */
+ * The START logo itself is used only as the brand. mood: idle · win (happy) · oops (wrong answer) · sad */
 // The same drawing as the START app's star (start-app/index.html); only the face changes with the mood
 var STAR_D = (function () {
   var cx = 50, cy = 55, R = 41, r = 26, pts = [];
@@ -2447,7 +2467,7 @@ function goalCard(m) {
   return '<div class="card goal"><div class="goalring">' + ring(g.goal.done, g.goal.total, 104) + '</div><div class="grow"><h2>This week\'s goal</h2>' +
     '<div class="gl ' + (m.done ? 'ok' : '') + '">' + ico(m.done ? 'check' : 'pen', 18) + ' Weekly check-in</div>' +
     (evN > 0 ? '<div class="gl ' + (g.goal.done - (m.done ? 1 : 0) > 0 ? 'ok' : '') + '">' + ico('events', 18) + ' Join this week\'s event' + (evN > 1 ? 's (' + evN + ')' : '') + '</div>' : '') +
-    '<div class="xpbar"><div class="xpl"><b>' + esc(g.level.title) + '</b><span>' + (g.level.to ? g.xp + ' / ' + g.level.to + ' XP' : g.xp + ' XP Â· top level') + '</span></div><i><s style="width:' + g.level.pct + '%"></s></i></div></div></div>';
+    '<div class="xpbar"><div class="xpl"><b>' + esc(g.level.title) + '</b><span>' + (g.level.to ? g.xp + ' / ' + g.level.to + ' XP' : g.xp + ' XP · top level') + '</span></div><i><s style="width:' + g.level.pct + '%"></s></i></div></div></div>';
 }
 function noteCard(d) {
   return d.note ? '<div class="notecard">' + startLogo(54) + '<div class="say big"><b>' + esc(d.rr || 'Your RR') + '</b>' + esc(d.note) + '</div></div>' : '';
@@ -2458,7 +2478,7 @@ function todayKeyOf(days) { var t = (days || []).filter(function (x) { return x.
 function showRewards() {
   if (S.viewAs) { banner('Preview only: rewards cannot be requested here.'); return; }
   var box = document.createElement('div'); box.className = 'overlay';
-  box.innerHTML = '<div class="sure" style="max-width:520px;max-height:85vh;overflow:auto;text-align:left"><h2>Redeem XP</h2><div id="reward-content" role="status">Loading rewardsâ€¦</div><div class="actions"><button class="pillbtn light sm" id="rok">Close</button></div></div>';
+  box.innerHTML = '<div class="sure" style="max-width:520px;max-height:85vh;overflow:auto;text-align:left"><h2>Redeem XP</h2><div id="reward-content" role="status">Loading rewards…</div><div class="actions"><button class="pillbtn light sm" id="rok">Close</button></div></div>';
   document.body.appendChild(box);
   $('rok').onclick = function () { box.remove(); };
   box.onclick = function (e) { if (e.target === box) box.remove(); };
@@ -2466,11 +2486,11 @@ function showRewards() {
     if (!box.isConnected) return;
     var list = (state.rewards || []).map(function (r) {
       var can = state.available >= r.cost;
-      return '<li style="padding:12px 0;border-bottom:1px solid #D6E4F5"><b>' + esc(r.name) + '</b> <span class="muted">Â· ' + r.cost + ' XP</span>' +
+      return '<li style="padding:12px 0;border-bottom:1px solid #D6E4F5"><b>' + esc(r.name) + '</b> <span class="muted">· ' + r.cost + ' XP</span>' +
         (r.details ? '<div class="muted sm">' + esc(r.details) + '</div>' : '') +
         '<button class="pillbtn sm" data-reward="' + esc(r.id) + '"' + (can ? '' : ' disabled') + '>' + (can ? 'Request reward' : 'Need ' + (r.cost - state.available) + ' more XP') + '</button></li>';
     }).join('');
-    var history = (state.requests || []).map(function (r) { return '<li>' + esc(r.name) + ' Â· ' + r.cost + ' XP Â· <b>' + esc(r.status) + '</b>' + (r.note ? '<div class="muted sm">' + esc(r.note) + '</div>' : '') + '</li>'; }).join('');
+    var history = (state.requests || []).map(function (r) { return '<li>' + esc(r.name) + ' · ' + r.cost + ' XP · <b>' + esc(r.status) + '</b>' + (r.note ? '<div class="muted sm">' + esc(r.note) + '</div>' : '') + '</li>'; }).join('');
     $('reward-content').innerHTML = '<p><b>' + state.available + ' XP available</b> <span class="muted">of ' + state.earned + ' earned</span></p>' +
       (list ? '<ul style="list-style:none;padding:0">' + list + '</ul>' : '<p class="muted">No rewards are available yet. Your RR can add them in the Rewards tab.</p>') +
       (history ? '<h3>Your requests</h3><ul>' + history + '</ul>' : '') + '<p id="reward-msg" class="muted sm"></p>';
@@ -2493,7 +2513,7 @@ function showRewards() {
 /* ---------- the daily brain break: today only, opening it starts it, the tracker checks the answer ---------- */
 var GAME_NAMES = { scramble: 'Word scramble', odd: 'Odd one out', pattern: 'Number pattern' };
 function openDaily() {
-  if (S.viewAs) { banner('Preview only: brain breaks are not played for ' + S.viewAs.label.split(' Â· ')[0] + '.'); return; }
+  if (S.viewAs) { banner('Preview only: brain breaks are not played for ' + S.viewAs.label.split(' · ')[0] + '.'); return; }
   var t = (S.data.member && S.data.member.game && S.data.member.game.days || []).filter(function (x) { return x.today; })[0];
   call('webDailyStart', S.token).then(function (r) {
     if (r && r.signedOut) { signOut(); return; }
@@ -2608,7 +2628,7 @@ function journeyView(d) {
       (x.state === 'today' ? '<span class="dme">' + startLogo(44) + '</span><button class="dhit"' + act + ' aria-label="' + esc(x.label + ' ' + x.date + ': ' + (x.kind === 'checkin' ? 'check in' : 'play today\'s brain break') + ', up to ' + x.max + ' XP') + '"></button>' : '') +
       (x.state === 'done' ? '<span class="dxp">+' + x.xp + '</span>' : '') + '</div>';
   });
-  var rewards = '<div class="rewards"><span class="rbal">' + ico('star', 20) + '<b>' + g.xp + '</b> XP earned</span><span class="rtxt">Request a reward with your available XP.</span>' +
+  var rewards = '<div class="rewards"><span class="rbal" aria-label="' + g.xp + ' XP earned">' + ico('star', 20) + '<b>' + g.xp + '</b> XP</span>' +
     '<button class="pillbtn sm" id="redeem">Redeem</button><button class="bblink" id="pointshelp">How points work</button></div>';
   var board = rewards + '<div class="unit"><div><small>' + (g.dayStreak ? ico('flame', 13) + ' ' + g.dayStreak + '-DAY STREAK' : 'LAST TWO WEEKS') + '</small><b>' + played + ' day' + (played === 1 ? '' : 's') + ' played</b></div>' +
       '<div class="ubar"><i style="width:' + Math.round(100 * played / Math.max(1, (g.days || []).filter(function (x) { return x.state !== 'locked'; }).length)) + '%"></i></div></div>' +
@@ -2617,7 +2637,7 @@ function journeyView(d) {
       '<path d="' + road + '" fill="none" stroke="#D2E3F5" stroke-width="18" stroke-linejoin="miter" stroke-linecap="butt"/>' +
       '<path d="' + road + '" fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="8 10"/>' + svgTiles + '</svg>' + pins + '</div></div>';
   var cards = g.allCards ? '<div class="sech">Davao postcards <a>' + g.nCards + ' / ' + g.allCards + '</a></div><div class="pcgrid" id="pcgrid">' +
-    (S.cards ? pcGrid(S.cards) : '<div class="muted" style="padding:10px 4px">Loading postcardsâ€¦</div>') + '</div>' : '';
+    (S.cards ? pcGrid(S.cards) : '<div class="muted" style="padding:10px 4px">Loading postcards…</div>') + '</div>' : '';
   if (g.allCards && !S.cards) setTimeout(loadCards, 30);
   else if (g.allCards) setTimeout(loadVisiblePostcards, 30);
   setTimeout(function () { var t = document.querySelector('.dt.s-today') || document.querySelector('.dt.s-done'); if (t && S.tab === 'journey' && !S.mapSeen) { S.mapSeen = true; try { t.scrollIntoView({ block: 'center' }); } catch (e) {} } }, 60);
@@ -2627,8 +2647,9 @@ function pcGrid(cards) {
   S.cardSources = S.cardSources || {};
   return cards.map(function (c) {
     return '<div class="pc ' + (c.got ? 'got' : 'locked') + '"' + (c.got ? ' data-postcard="' + c.index + '"' : '') + '>' +
-      (c.got ? (S.cardSources[c.index] ? '<img src="' + esc(S.cardSources[c.index]) + '" loading="lazy" alt="">' : '<div class="lockbg"></div>') : '<div class="lockbg">' + ico('lock', 30) + '</div>') +
-      '<span>' + esc(c.got ? c.name : 'Check in to unlock') + '</span></div>';
+      (c.got ? (S.cardSources[c.index] ? '<img src="' + esc(S.cardSources[c.index]) + '" loading="lazy" alt="">' : '<div class="lockbg"></div>') :
+        '<div class="lockbg"><button type="button" class="pc-unlock">' + ico('lock', 24) + '<span>Check in to unlock</span></button></div>') +
+      (c.got ? '<span class="pc-name">' + esc(c.name) + '</span>' : '') + '</div>';
   }).join('');
 }
 function loadVisiblePostcards() {
@@ -2678,7 +2699,7 @@ function ranksView(d) {
   var rows = list.map(function (s) {
     var rate = Math.max(0, Math.min(100, Number(s.rate) || 0));
     return '<li class="rank-item' + (s.me ? ' me' : '') + (s.small ? ' small' : '') + (s.rank && s.rank <= 3 ? ' place-' + s.rank : '') + '">' +
-      '<span class="rank-position">' + (s.rank || 'â€”') + '</span>' +
+      '<span class="rank-position">' + (s.rank || '—') + '</span>' +
       '<div class="rank-detail"><div class="rank-school">' + schoolBadge(s.name, 28) + '<b class="rank-school-name">' + esc(s.name) + (s.me ? '<em>Your school</em>' : '') + '</b></div>' +
       (s.small ? '<small>Needs 3 members to enter the rankings</small>' : '<div class="rank-progress" role="meter" aria-label="' + esc(s.name) + ' check-in rate" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + rate + '"><i style="width:' + rate + '%"></i></div>') + '</div>' +
       '<strong class="rank-metrics">' + (s.small ? s.answered + '/' + s.members : s.rate + '%') + '</strong>' +
@@ -2695,7 +2716,7 @@ function ranksView(d) {
 function meView(d) {
   var m = d.member, g = m && m.game, name = d.me.name || d.me.email;
   var head = '<div class="card mehead me-profile-card"><span class="avwrap"><span class="av big">' + esc(initials(name)) + '</span></span><div class="grow"><h2 style="margin:0">' + esc(name) + '</h2><div class="muted">' + esc(d.me.email) + '</div>' + (m ? '<div class="mesch">' + schoolLine(m.school, 20) + '</div>' : '') +
-    (g ? '<div class="lvline">' + ico('shield', 18) + ' Level ' + g.level.n + ' Â· ' + esc(g.level.title) + '</div><div class="xpbar"><i><s style="width:' + g.level.pct + '%"></s></i>' +
+    (g ? '<div class="lvline">' + ico('shield', 18) + ' Level ' + g.level.n + ' · ' + esc(g.level.title) + '</div><div class="xpbar"><i><s style="width:' + g.level.pct + '%"></s></i>' +
       '<div class="xpl"><span>' + g.xp + ' XP</span><span>' + (g.level.to ? (g.level.to - g.xp) + ' XP to ' + esc(g.level.next) : 'Top level!') + '</span></div></div>' : '') + '</div></div>';
   var stats = g ? tiles([['Check-ins', String(g.checkins), 'sky', false, 'check'], ['Best streak', g.best + ' <small>week' + (g.best === 1 ? '' : 's') + '</small>', 'navy', false, 'flame'], ['Events joined', String(g.events), 'sunl', false, 'events']]) : '';
   var badges = g ? '<div class="sech">Badges <a>' + g.badges.filter(function (b) { return b.got; }).length + ' / ' + g.badges.length + '</a></div><div class="badges">' + g.badges.map(function (b) {
@@ -2714,15 +2735,15 @@ function meView(d) {
   var section = function (title, rows) { rows = rows.filter(Boolean); return rows.length ? '<section class="msec"><h3>' + esc(title) + '</h3><div class="mlist">' + rows.join('') + '</div></section>' : ''; };
   var has = {}; views(d).forEach(function (x) { has[x.id] = true; });
   var roles = [];
-  if (d.admin) roles.push('<span class="mrole r-rr">' + ico('region', 13) + ' Regional Representative' + (d.region ? ' Â· ' + esc(d.region) : '') + '</span>');
-  (d.lead || []).forEach(function (l) { roles.push('<span class="mrole r-lead">' + ico('school', 13) + ' Campus Lead Â· ' + esc(l.school) + '</span>'); });
-  if (m) roles.push('<span class="mrole r-mem">' + ico('user', 13) + ' Scholar Â· ' + esc(m.school) + '</span>');
+  if (d.admin) roles.push('<span class="mrole r-rr">' + ico('region', 13) + ' Regional Representative' + (d.region ? ' · ' + esc(d.region) : '') + '</span>');
+  (d.lead || []).forEach(function (l) { roles.push('<span class="mrole r-lead">' + ico('school', 13) + ' Campus Lead · ' + esc(l.school) + '</span>'); });
+  if (m) roles.push('<span class="mrole r-mem">' + ico('user', 13) + ' Scholar · ' + esc(m.school) + '</span>');
   var emailDiv = '<div class="muted">' + esc(d.me.email) + '</div>';
   var profile = head.replace(emailDiv, emailDiv + '<div class="mroles">' + roles.join('') + '</div>').replace('<div class="mesch">', '<div class="mesch" style="display:none">');
   var mstats = g ? tiles([['Check-ins', String(g.checkins), 'sky', false, 'check'], ['Best streak', String(g.best), 'navy', false, 'flame'],
     ['Events', String(g.events), 'sunl', false, 'events'], ['Day streak', String(g.dayStreak || 0), 'blue', false, 'bolt']]) : '';
   var badgeBox = badges ? '<details class="mbadges"><summary class="mrow"><span class="mic">' + ico('shield', 20) + '</span><span class="mtx"><b>Badges</b><small>' +
-    g.badges.filter(function (b) { return b.got; }).length + ' of ' + g.badges.length + ' unlocked Â· tap to see them all</small></span><span class="mchev">' + ico('arrow', 16) + '</span></summary>' + badges.replace(/^<div class="sech">[\s\S]*?<\/div>/, '') + '</details>' : '';
+    g.badges.filter(function (b) { return b.got; }).length + ' of ' + g.badges.length + ' unlocked · tap to see them all</small></span><span class="mchev">' + ico('arrow', 16) + '</span></summary>' + badges.replace(/^<div class="sech">[\s\S]*?<\/div>/, '') + '</details>' : '';
   var today = m && m.game && (m.game.days || []).filter(function (x) { return x.today; })[0];
   var ck = m && m.checkin;
   // only pages the phone's bottom bar does not show (the side menu on a computer already lists every page)
@@ -2742,7 +2763,7 @@ function meView(d) {
   var acct = S.viewAs ? [] : [row('key', 'Change password', 'Use a new password on every device', 'onclick="changePassword()"'),
     row('devices', 'Sign out of all devices', 'If you used START on a shared computer', 'onclick="signOutAll()"'),
     row('logout', 'Sign out', 'Only on this device', 'onclick="signOut()"', 'out')];
-  var about = '<p class="mabout">START ' + esc(d.region || '') + (d.version ? ' Â· version ' + esc(d.version) : '') + (d.updated ? ' Â· updated ' + esc(d.updated) : '') + '</p>';
+  var about = '<p class="mabout">START ' + esc(d.region || '') + (d.version ? ' · version ' + esc(d.version) : '') + (d.updated ? ' · updated ' + esc(d.updated) : '') + '</p>';
   return page('Me', '', '<div class="mewrap"><div class="mecol">' + profile + mstats + (short.length ? '<div class="phoneonly">' + section('More pages', short) + '</div>' : '') + section('Help', help) + '</div>' +
     '<div class="mecol">' + (badgeBox ? '<section class="msec"><h3>Progress</h3><div class="mlist">' + badgeBox + '</div></section>' : '') + section('Tools', tools) + section('Account', acct) + about + '</div></div>');
 }
@@ -2771,14 +2792,14 @@ function joinCard(list, auto) {
     '<ul class="list joins">' + list.map(function (j) {
       var facts = [
         ['School', j.schoolLabel + (j.typed ? ' (typed, not on the list)' : '')],
-        ['Program', j.program || 'â€”'],
-        ['Year', j.year || 'â€”'],
-        ['Awarded', j.awarded || 'â€”'],
-        ['Scholarship', (j.kind && j.kind !== 'Not sure') ? j.kind : 'â€”'],
-        ['Hometown', j.hometown || 'â€”'],
-        ['Submitted', j.when || 'â€”'],
-        ['Campus', j.campus || 'â€”']
-      ].filter(function (p) { return p[1] && p[1] !== 'â€”'; });
+        ['Program', j.program || '—'],
+        ['Year', j.year || '—'],
+        ['Awarded', j.awarded || '—'],
+        ['Scholarship', (j.kind && j.kind !== 'Not sure') ? j.kind : '—'],
+        ['Hometown', j.hometown || '—'],
+        ['Submitted', j.when || '—'],
+        ['Campus', j.campus || '—']
+      ].filter(function (p) { return p[1] && p[1] !== '—'; });
       return '<li class="joinitem"><span class="bubble">' + schoolBadge(j.typed ? '' : j.school, 30) + '</span><div class="grow">' +
         '<div class="jtop"><div><b>' + esc(j.name) + '</b><div class="muted sm jmail">' + esc(j.email) + '</div></div><span class="jel ' + (cls[j.elig] || 'rev') + '">' + esc(j.elig) + '</span></div>' +
         '<div class="joingrid">' + facts.map(function (f) { return '<span><b>' + esc(f[0]) + '</b>' + esc(f[1]) + '</span>'; }).join('') + '</div>' +
@@ -2788,13 +2809,13 @@ function joinCard(list, auto) {
         (/^Asked/.test(j.status) ? '<div class="plan">' + ico('mail', 14) + ' ' + esc(j.status) + (j.rrNote ? ': "' + esc(j.rrNote) + '"' : '') + '</div>' : '') +
         '<div class="plan">' + ico('info', 14) + ' ' + esc(j.plan) + '</div>' +
         (j.leadCheck ? '<div class="plan leadchk ' + (j.leadCheck.value === 'yes' ? 'ok' : 'no') + '">' + ico(j.leadCheck.value === 'yes' ? 'check' : 'info', 14) + ' Campus Lead ' +
-          (j.leadCheck.value === 'yes' ? 'confirmed this scholar' : 'says they are not from this school') + ' Â· ' + esc(j.leadCheck.at) + '</div>' : '') +
-        '<div class="jtools">' + (j.typed ? '<select data-jschool="' + j.row + '"><option value="">Match to a schoolâ€¦</option>' + schools.map(function (n) { return '<option>' + esc(n) + '</option>'; }).join('') + '</select>' : '') +
+          (j.leadCheck.value === 'yes' ? 'confirmed this scholar' : 'says they are not from this school') + ' · ' + esc(j.leadCheck.at) + '</div>' : '') +
+        '<div class="jtools">' + (j.typed ? '<select data-jschool="' + j.row + '"><option value="">Match to a school…</option>' + schools.map(function (n) { return '<option>' + esc(n) + '</option>'; }).join('') + '</select>' : '') +
           '<button class="pillbtn sm" data-join="join-add" data-row="' + j.row + '">Approve</button>' +
           '<button class="pillbtn light sm" data-jask="' + j.row + '">Ask for details</button>' +
           '<button class="pillbtn light sm" data-join="join-decline" data-row="' + j.row + '">Decline</button></div>' +
         '<div class="jtools" id="jask' + j.row + '" style="display:none"><input maxlength="300" placeholder="What do you need to know? e.g. Which year were you awarded?"><button class="pillbtn sm" data-join="join-clarify" data-row="' + j.row + '">Send</button></div></div></li>';
-    }).join('') + '</ul><p class="muted sm">Tip: check the ONSSE masterlist first. Requests marked â€œNot eligibleâ€ stay visible so you can still approve a real scholar if needed.</p><div class="qamsg" id="joinmsg"></div></div>';
+    }).join('') + '</ul><p class="muted sm">Tip: check the ONSSE masterlist first. Requests marked “Not eligible” stay visible so you can still approve a real scholar if needed.</p><div class="qamsg" id="joinmsg"></div></div>';
 }
 // RR history: approved and declined requests remain visible after decisions.
 function joinHistoryCard(list, totals) {
@@ -2805,7 +2826,7 @@ function joinHistoryCard(list, totals) {
   var item = function(j) {
     var facts = [j.schoolLabel || j.school, j.program, j.when && ('Submitted ' + j.when)].filter(Boolean);
     return '<li class="jhistrow">' + schoolBadge(j.school || j.schoolLabel, 34) + '<div class="jhistbody"><div class="jhisttop"><b>' + esc(j.name) + '</b><span class="jhiststatus">' + esc(j.status) + '</span></div>' +
-      '<div class="jhistmail">' + esc(j.email) + '</div><div class="jhistmeta">' + facts.map(esc).join(' Â· ') + '</div></div></li>';
+      '<div class="jhistmail">' + esc(j.email) + '</div><div class="jhistmeta">' + facts.map(esc).join(' · ') + '</div></div></li>';
   };
   var pane = function(title, rows) { var total = totals[title] == null ? rows.length : totals[title]; return '<section class="jhistgroup"><div class="jhisthead"><h3>' + title + '</h3><b class="jhistcount">' + total + '</b></div>' +
     (rows.length ? '<ul class="jhistlist">' + rows.map(item).join('') + '</ul>' +
@@ -2835,7 +2856,7 @@ function weekChart(list, title) {
   var avg = Math.round(list.slice(0, cur.now ? n - 1 : n).reduce(function (a, w) { return a + w.rate; }, 0) / Math.max(1, cur.now ? n - 1 : n));
   return '<div class="card wkc"><h2>' + esc(title || 'Weekly check-in rate') + '</h2>' +
     '<div class="wkhead"><div class="wkbig">' + cur.rate + '<small>%</small></div><div><b>' + (cur.now ? 'This week so far' : 'Last week') + '</b><span>' + cur.answered + ' of ' + cur.members + ' members answered</span></div>' +
-    (before ? '<span class="wkdiff ' + (diff > 0 ? 'up' : diff < 0 ? 'down' : '') + '">' + (cur.now ? 'Last week ' + fin.rate + '% Â· ' : '') + (diff > 0 ? '+' : '') + diff + ' pts vs the week before</span>' : '') + '</div>' +
+    (before ? '<span class="wkdiff ' + (diff > 0 ? 'up' : diff < 0 ? 'down' : '') + '">' + (cur.now ? 'Last week ' + fin.rate + '% · ' : '') + (diff > 0 ? '+' : '') + diff + ' pts vs the week before</span>' : '') + '</div>' +
     '<svg class="wkchart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Weekly check-in rate"><defs><linearGradient id="wkg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0099FF" stop-opacity=".35"/><stop offset="1" stop-color="#7CCBFF" stop-opacity=".02"/></linearGradient></defs>' +
     grid + '<path d="' + area + '" fill="url(#wkg)"/><path d="' + curve(done) + '" fill="none" stroke="#0099FF" stroke-width="4" stroke-linecap="round"/>' +
     (nowP ? '<path d="' + curve(nowP) + '" fill="none" stroke="#0099FF" stroke-width="4" stroke-dasharray="2 9" stroke-linecap="round"/>' : '') + dots + labels + '</svg>' +
@@ -2860,7 +2881,7 @@ function askSure(title, text, yes, confirmLabel) {
 function runAction(act) {
   var say = function (t) { $('qamsg').textContent = t; };
   var go = function (arg) {
-    say('Workingâ€¦');
+    say('Working…');
     call('webAdminAction', S.token, act, arg || '').then(function (r) { say((r && r.msg) || 'Done'); if (act !== 'resetpw') load(true); }).catch(function () { say('Could not reach START. Try again.'); });
   };
   if (act === 'resetpw') { var e = $('rpw').value.trim(); if (!e) return say('Type their email first.'); return go(e); }
@@ -2885,7 +2906,7 @@ var SCHOOL_LOGO_IDS = {
   'UP Mindanao': '13Ix7GaVFHFyyirhLFSMyjG7ZXwKp-gaO',
   'USeP': '1oswk1ChvneZmi009YopZ-QYgFjnSYp6z'
 };
-/* Other schools can still use logos added by the RR (ðŸ›  â€º ðŸ«), or an initials crest. */
+/* Other schools can still use logos added by the RR (🛠 › 🏫), or an initials crest. */
 var LOGOS = {};
 (function () { try { var c = JSON.parse(localStorage.getItem('start_logos') || 'null'); if (c && c.logos) { LOGOS = c.logos; LOGOS._v = c.v; } } catch (e) { /* none kept */ } })();
 function loadLogos(d) {
@@ -2963,10 +2984,10 @@ function attentionCard(a) {
     items.push('<li class="t-yellow"><b>' + esc(q.name) + '</b> has been quiet for ' + q.weeks + ' weeks' + (q.lead ? ' (Lead: ' + esc(q.lead) + ')' : '') +
       '<div class="copybox" id="qm' + i + '">' + esc(q.msg) + '</div><div class="tdrow"><button class="pillbtn sm" data-copy="qm' + i + '">' + ico('copy', 16) + ' Copy message</button>' + doneTick('data-adone', k) + '</div></li>');
   });
-  var bad = a.check && a.check.rows ? a.check.rows.filter(function (r) { return r[0] === 'âŒ'; }) : [];
+  var bad = a.check && a.check.rows ? a.check.rows.filter(function (r) { return r[0] === '❌'; }) : [];
   bad.forEach(function (r) { var k = 'check|' + r[1]; if (!keep(k)) return;
     items.push('<li class="t-red"><b>Tracker check:</b> ' + esc(r[1]) + (r[2] ? '<div class="muted sm">' + esc(r[2]) + '</div>' : '') + '<div class="tdrow">' + doneTick('data-adone', k, 'Fixed it') + '</div></li>'); });
-  if (a.report && keep('report|' + a.report.label)) items.push('<li class="t-green"><b>' + esc(a.report.label) + ' report is ready.</b> <a href="' + esc(a.report.url) + '" target="_blank" rel="noopener">Open it</a>, add your notes, then File â€º Download â€º PDF.' +
+  if (a.report && keep('report|' + a.report.label)) items.push('<li class="t-green"><b>' + esc(a.report.label) + ' report is ready.</b> <a href="' + esc(a.report.url) + '" target="_blank" rel="noopener">Open it</a>, add your notes, then File › Download › PDF.' +
     '<div class="tdrow">' + doneTick('data-adone', 'report|' + a.report.label) + '</div></li>');
   if (!items.length) return '';
   return '<div class="card" id="attn"><h2>Needs your attention <span class="cnt">' + items.length + '</span></h2><ul class="list todo">' + items.join('') + '</ul>' +
@@ -2984,7 +3005,7 @@ function viewAsWire() {
   var fill = function () {
     var L = VA.list; if (!L) return;
     $('vaschool').innerHTML = '<option value="">Choose a school</option>' + L.schools.map(function (x) {
-      return '<option value="' + esc(x.name) + '">' + esc(x.name) + (VA.role === 'lead' ? ' Â· ' + esc(x.lead || 'no Lead yet') : '') + '</option>'; }).join('');
+      return '<option value="' + esc(x.name) + '">' + esc(x.name) + (VA.role === 'lead' ? ' · ' + esc(x.lead || 'no Lead yet') : '') + '</option>'; }).join('');
     $('vaperson').style.display = VA.role === 'member' ? '' : 'none';
     $('vago').disabled = true;
   };
@@ -3006,7 +3027,7 @@ function viewAsWire() {
 }
 function openViewAs(role, key) {
   if (!key) return;
-  if ($('vamsg')) $('vamsg').textContent = 'Openingâ€¦';
+  if ($('vamsg')) $('vamsg').textContent = 'Opening…';
   call('webViewAs', S.token, role, key).then(function (d) {
     if (!d || !d.ok) { if ($('vamsg')) $('vamsg').textContent = (d && d.msg) || 'Could not open.'; return; }
     if (!S.real) S.real = { data: S.data, tab: S.tab };
@@ -3025,7 +3046,7 @@ function viewBanner() {
   if (!S.viewAs) { if (b) b.remove(); document.body.classList.remove('viewing'); return; }
   if (!b) { b = document.createElement('div'); b.id = 'vabar'; document.body.appendChild(b); }
   document.body.classList.add('viewing');
-  b.innerHTML = ico('eye', 18) + '<span>Viewing as <b>' + esc(S.viewAs.label) + '</b> Â· read-only</span><button id="vaswitch" class="ghost">Switch</button><button id="vaback">Back to RR view</button>';
+  b.innerHTML = ico('eye', 18) + '<span>Viewing as <b>' + esc(S.viewAs.label) + '</b> · read-only</span><button id="vaswitch" class="ghost">Switch</button><button id="vaback">Back to RR view</button>';
   $('vaback').onclick = exitViewAs; $('vaswitch').onclick = goSwitch;
 }
 function refresh() { if (S.viewAs) return openViewAs(S.viewAs.role, S.viewAs.key); return load(true); }
@@ -3111,7 +3132,7 @@ function tiles(list) {
   list = list.filter(Boolean);
   var tone = { navy: 'k-navy', sky: 'k-sky', sunl: 'k-sun', sun: 'k-sun', blue: 'k-blue' };
   return '<div class="kgrid c' + Math.min(list.length, 4) + '">' + list.map(function (c) {
-    return '<div class="mk ' + (tone[c[2]] || 'k-sky') + (c[3] ? ' ktxt' : '') + '">' + (c[4] ? '<i>' + ico(c[4], 18) + '</i>' : '') +
+    return '<div class="mk ' + (tone[c[2]] || 'k-sky') + (c[3] ? ' ktxt' : '') + '">' + (c[4] ? '<i>' + ico(c[4], 24) + '</i>' : '') +
       '<b>' + c[1] + '</b><small>' + esc(c[0]) + '</small>' + (c[5] ? '<em>' + esc(c[5]) + '</em>' : '') + '</div>';
   }).join('') + '</div>';
 }
@@ -3121,11 +3142,11 @@ function weeks(n) { return n + ' week' + (n === 1 ? '' : 's'); }
 function pair(a, b) { return a && b ? '<div class="grid2">' + a + b + '</div>' : (a || b || ''); }
 var HERO_BADGE = { '': 'This week', late: 'Late check-in', done: '' };
 function hero(cls, icon, title, sub, button) {
-  return '<div class="heroc ' + cls + '"><span class="sp sp1">' + ico('spark', 22) + '</span>' + (HERO_BADGE[cls] ? '<span class="badge">âœ¦ ' + esc(HERO_BADGE[cls]) + '</span>' : '') +
+  return '<div class="heroc ' + cls + '"><span class="sp sp1">' + ico('spark', 22) + '</span>' + (HERO_BADGE[cls] ? '<span class="badge">✦ ' + esc(HERO_BADGE[cls]) + '</span>' : '') +
     '<span class="peek" aria-hidden="true"><span class="ge"><i></i></span><span class="ge"><i></i></span></span>' +
     '<h3>' + esc(title) + '</h3><p>' + esc(sub) + '</p>' + (button || '') + postcard() + '</div>';
 }
-// Monâ€“Sun of this week; the due day in yellow (dark once answered), today circled
+// Mon–Sun of this week; the due day in yellow (dark once answered), today circled
 function weekStrip(dueDay, done) {
   var names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], now = new Date(), mon = new Date(now);
   mon.setDate(now.getDate() - ((now.getDay() + 6) % 7));
@@ -3133,15 +3154,15 @@ function weekStrip(dueDay, done) {
   return '<div class="week">' + names.map(function (n, i) {
     var d = new Date(mon); d.setDate(mon.getDate() + i);
     var cls = (d.toDateString() === now.toDateString() ? ' today' : '') + (i === due ? (done ? ' done' : ' due') : '');
-    return '<div class="wd' + cls + '">' + n + '<i>' + (i === due && done ? 'âœ“' : d.getDate()) + '</i></div>';
+    return '<div class="wd' + cls + '">' + n + '<i>' + (i === due && done ? '✓' : d.getDate()) + '</i></div>';
   }).join('') + '</div>';
 }
 function eventCards(list, column) {
   if (!list || !list.length) return '<div class="noev">' + ico('events', 28) + '<p class="muted">No events in the next 3 weeks.</p></div>';
   return '<div class="' + (column ? 'tklist' : 'tkrow') + '">' + list.map(function (e) {   // ticket stubs, like the check-in
-    var day = String(e.when || '').split(' Â· ')[0], time = String(e.when || '').split(' Â· ')[1] || '', m = day.match(/^(\w{3}),\s*(\w{3})\s+(\d+)/);
+    var day = String(e.when || '').split(' · ')[0], time = String(e.when || '').split(' · ')[1] || '', m = day.match(/^(\w{3}),\s*(\w{3})\s+(\d+)/);
     return '<div class="tk"><span class="tdate">' + (m ? '<small>' + esc(m[1]) + '</small><b>' + esc(m[3]) + '</b><small>' + esc(m[2]) + '</small>' : ico('events', 24)) + '</span>' +
-      '<div class="tbody"><b>' + esc(e.title) + '</b><span>' + esc(time + (e.place ? (time ? ' Â· ' : '') + e.place : '')) + '</span>' +
+      '<div class="tbody"><b>' + esc(e.title) + '</b><span>' + esc(time + (e.place ? (time ? ' · ' : '') + e.place : '')) + '</span>' +
       (e.add ? '<a class="gadd" href="' + esc(e.add) + '" target="_blank" rel="noopener">' + ico('calplus', 16) + ' Add to calendar</a>' : '') + '</div></div>';
   }).join('') + '</div>';
 }
@@ -3159,12 +3180,12 @@ function bars(list) {        // [[label, value 0-100, text]]
 /* ---------- member: home ---------- */
 function leadNoteHome(m) {
   var n = m.leadNote; if (!n) return '';
-  return '<div class="notecard leadnote">' + startLogo(48) + '<div class="say big"><b>' + esc(n.by) + ' Â· your Campus Lead</b>' + esc(n.text) + '</div></div>';
+  return '<div class="notecard leadnote">' + startLogo(48) + '<div class="say big"><b>' + esc(n.by) + ' · your Campus Lead</b>' + esc(n.text) + '</div></div>';
 }
 function recapCard(m) {
   var g = m.game, r = g && g.recap; if (!r) return '';
   var L = g.level, span = L.to ? L.to - L.from : 0, pct = span ? Math.max(0, Math.min(100, Math.round(100 * (g.xp - L.from) / span))) : 100;
-  return '<div class="recap"><div class="rhead"><b>This week</b><span>' + r.days + ' of ' + r.of + ' days played' + (g.dayStreak > 1 ? ' Â· ' + ico('flame', 14) + ' ' + g.dayStreak + '-day streak' : '') + '</span></div>' +
+  return '<div class="recap"><div class="rhead"><b>This week</b><span>' + r.days + ' of ' + r.of + ' days played' + (g.dayStreak > 1 ? ' · ' + ico('flame', 14) + ' ' + g.dayStreak + '-day streak' : '') + '</span></div>' +
     tiles([['XP', '+' + r.xp, 'blue', false, 'bolt'], ['Stars', String(r.stars), 'sunl', false, 'star'], ['Level', String(L.n), 'navy', false, 'shield']]) +
     '<div class="rbar"><i style="width:' + pct + '%"></i></div><small>' + (L.to ? Math.max(0, L.to - g.xp) + ' XP to ' + esc(L.next) : 'Top level reached!') + '</small></div>';
 }
@@ -3182,8 +3203,8 @@ function showPointsHelp() {
 function dailyCard(m) {
   var t = (m.game && m.game.days || []).filter(function (x) { return x.today; })[0];
   if (!t || t.kind !== 'game') return '';
-  var body = t.state === 'today' ? '<b>Today\'s brain break</b><span>One quick challenge Â· up to +' + t.max + ' XP</span>'
-    : t.state === 'done' ? '<b>Brain break done Â· +' + t.xp + ' XP</b><span>A new one opens tomorrow.</span>' : '<b>Today\'s brain break is used</b><span>A new one opens tomorrow.</span>';
+  var body = t.state === 'today' ? '<b>Today\'s brain break</b><span>One quick challenge · up to +' + t.max + ' XP</span>'
+    : t.state === 'done' ? '<b>Brain break done · +' + t.xp + ' XP</b><span>A new one opens tomorrow.</span>' : '<b>Today\'s brain break is used</b><span>A new one opens tomorrow.</span>';
   return '<div class="dailycard">' + startLogo(52, t.state === 'done' ? 'win' : 'idle') + '<div class="grow">' + body + '</div>' +
     (t.state === 'today' ? '<button class="pillbtn sm" data-daily>Play</button>' : '<button class="pillbtn light sm" data-go="journey">Map</button>') + '</div>';
 }
@@ -3199,7 +3220,7 @@ function memberView(d) {
   else if (ck) h = hero('done', 'hourglass', 'Check-in is closed', 'The next one opens on ' + ck.opens + '.');
   var hist = m.history.length ? '<div class="facetl">' + m.history.slice(0, 6).reverse().map(function (x) {
     var p = moodPos(x.vibe), w = p < 0 ? '' : MOOD[p].word;
-    return '<div class="ftl"><span class="fc">' + miniFace(p, 46) + '</span><b>' + esc(w || 'â€”') + '</b><small>' + esc(String(x.date).replace(/^\w{3},\s*/, '')) + '</small></div>';
+    return '<div class="ftl"><span class="fc">' + miniFace(p, 46) + '</span><b>' + esc(w || '—') + '</b><small>' + esc(String(x.date).replace(/^\w{3},\s*/, '')) + '</small></div>';
   }).join('') + '</div>' : '';
   return page(d.me.first, { school: m.school },
     noteCard(d) + leadNoteHome(m) + weekStrip(ck && ck.due, m.done) + h + dailyCard(m) + recapCard(m) + goalCard(m) +
@@ -3215,7 +3236,7 @@ var START_CAL_DAY = null;
 function startCalDate(ev) {
   // Use existing event date strings; omit dates that cannot safely be parsed.
   var raw = (ev && (ev.date || ev.when || ev.start || ''));
-  var d = raw instanceof Date ? new Date(raw) : /^\d{4}-\d{2}-\d{2}$/.test(String(raw)) ? new Date(String(raw)+'T12:00:00') : new Date(String(raw).split(' Â· ')[0]);
+  var d = raw instanceof Date ? new Date(raw) : /^\d{4}-\d{2}-\d{2}$/.test(String(raw)) ? new Date(String(raw)+'T12:00:00') : new Date(String(raw).split(' · ')[0]);
   return isNaN(d.getTime()) ? null : d;
 }
 function startCalendarView(list) {
@@ -3236,7 +3257,7 @@ function startCalendarView(list) {
   var label=isNaN(sel.getTime())?'Selected day':sel.toLocaleDateString('en-PH',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
   var upcoming=(list||[]).filter(function(e){var d=startCalDate(e);return !d || dayKey(d)!==pick;});
   var calendars=calButtons();
-  return '<div class="card startcal"><div class="startcal-head"><h2>'+month.toLocaleDateString('en-PH',{month:'long',year:'numeric'})+'</h2><div class="startcal-controls"><button type="button" data-calnav="-1" aria-label="Previous month">â€¹</button><button type="button" data-calnav="today">Today</button><button type="button" data-calnav="1" aria-label="Next month">â€º</button></div></div><div class="startcal-grid">'+days+'</div><div class="startcal-selection">'+esc(label)+'</div>'+(eventsOn.length?eventCards(eventsOn,true):'<p class="muted sm">No START events scheduled for this day.</p>')+'</div>' +
+  return '<div class="card startcal"><div class="startcal-head"><h2>'+month.toLocaleDateString('en-PH',{month:'long',year:'numeric'})+'</h2><div class="startcal-controls"><button type="button" data-calnav="-1" aria-label="Previous month">‹</button><button type="button" data-calnav="today">Today</button><button type="button" data-calnav="1" aria-label="Next month">›</button></div></div><div class="startcal-grid">'+days+'</div><div class="startcal-selection">'+esc(label)+'</div>'+(eventsOn.length?eventCards(eventsOn,true):'<p class="muted sm">No START events scheduled for this day.</p>')+'</div>' +
     (upcoming.length ? '<div class="sech">' + (eventsOn.length ? 'Other upcoming START events' : 'Upcoming START events') + '</div>' + eventCards(upcoming,true) : '') +
     (calendars ? card('Google Calendar', calendars) : '');
 }
@@ -3255,7 +3276,7 @@ function leadView(d) {
   var items = s.todo.filter(function (t) { return !/^Answer your check-in/.test(t.text); });
   var todo = items.length ? '<ul class="list todo">' + items.map(function (t, i) {
     var tools = (t.copy ? '<button class="pillbtn sm" data-copy="cp' + i + '">' + ico('copy', 16) + ' Copy message</button>' : '') + (t.key ? doneTick('data-ldone', t.key, t.copy ? 'Sent it' : /^help\|/.test(t.key) ? 'Messaged them' : 'Done') : '');
-    return '<li class="t-' + esc(t.tone) + (t.last ? ' lastcall' : '') + '">' + (t.last ? '<span class="lastchip">' + ico('clock', 14) + ' Last reminder Â· closes 11:59 PM</span>' : '') + esc(t.text) +
+    return '<li class="t-' + esc(t.tone) + (t.last ? ' lastcall' : '') + '">' + (t.last ? '<span class="lastchip">' + ico('clock', 14) + ' Last reminder · closes 11:59 PM</span>' : '') + esc(t.text) +
       (t.copy ? '<div class="copybox" id="cp' + i + '">' + esc(t.copy) + '</div>' : '') + (tools ? '<div class="tdrow">' + tools + '</div>' : '') + '</li>';
   }).join('') + '</ul>' : '';
   var members = '';
@@ -3266,7 +3287,7 @@ function leadView(d) {
           var e = emo(c), cell = i === 1 && s.answers ? pill(noEmoji(c), r.tone) : (e[0] && EMO_ICON[e[0]] ? emoIco(e[0], 16) + ' ' + esc(noEmoji(e[1])) : esc(noEmoji(c)));
           if (i === 0) cell += leadMemberTools(s, r);
           var cls = !c ? 'empty' : (String(c).length > 28 ? 'wide' : '');
-          return '<td' + (cls ? ' class="' + cls + '"' : '') + (i ? ' data-l="' + esc(s.cols[i]) + '"' : '') + '>' + (cell || '<span class="muted">â€”</span>') + '</td>';
+          return '<td' + (cls ? ' class="' + cls + '"' : '') + (i ? ' data-l="' + esc(s.cols[i]) + '"' : '') + '>' + (cell || '<span class="muted">—</span>') + '</td>';
         }).join('') + '</tr>';
       }).join('') + '</tbody></table></div>' : '<p class="muted">No members listed yet.</p>';
   }
@@ -3274,7 +3295,7 @@ function leadView(d) {
     tiles([['Week streak', String(s.streak), 'navy', false, 'flame'],
            s.answers ? ['Answered', s.answered + ' <small>of ' + s.members + '</small>', 'sky', false, 'user'] : ['Scholars', String(s.active), 'sky', false, 'user'],
            s.done ? ['Your check-in', 'Done', 'sunl', true, 'check'] : (act ? null : ['Due', esc(s.due), 'sunl', true, 'clock'])]) +
-    weekChart(s.weekly, 'Weekly check-in rate Â· ' + s.school) + (todo ? card('To do', todo) : '') + (members ? card('Members', members) : '') +
+    weekChart(s.weekly, 'Weekly check-in rate · ' + s.school) + (todo ? card('To do', todo) : '') + (members ? card('Members', members) : '') +
     leadJoinsCard(s) + leadAttendCard(s) + leadNoteCard(s));
 }
 // Lead tools: tags and the "contacted" button beside each member's name
@@ -3295,8 +3316,8 @@ function leadJoinsCard(s) {
   return '<div class="card"><h2>Join requests for ' + esc(s.school) + ' <span class="cnt">' + list.length + '</span></h2>' + ('<p class="muted sm">Do you know them as a DOST scholar at your school? Your answer goes to your Regional Representative, who makes the final decision.</p><ul class="list ljoins">' +
     list.map(function (j) {
       var c = j.check;
-      return '<li><div class="grow"><b>' + esc(j.name) + '</b><div class="muted sm">' + esc([j.program, j.year, j.awarded ? 'Awarded ' + j.awarded : ''].filter(Boolean).join(' Â· ')) + ' Â· sent ' + esc(j.when) + '</div>' +
-        (c ? '<span class="ltag ' + (c.value === 'yes' ? 'ok' : 'warn') + '">' + (c.value === 'yes' ? 'You confirmed them' : 'You said not from your school') + ' Â· ' + esc(c.at) + '</span>' : '') + '</div>' +
+      return '<li><div class="grow"><b>' + esc(j.name) + '</b><div class="muted sm">' + esc([j.program, j.year, j.awarded ? 'Awarded ' + j.awarded : ''].filter(Boolean).join(' · ')) + ' · sent ' + esc(j.when) + '</div>' +
+        (c ? '<span class="ltag ' + (c.value === 'yes' ? 'ok' : 'warn') + '">' + (c.value === 'yes' ? 'You confirmed them' : 'You said not from your school') + ' · ' + esc(c.at) + '</span>' : '') + '</div>' +
         (S.viewAs ? '' : '<div class="ljbtn"><button class="pillbtn sm" data-jcheck="yes" data-row="' + j.row + '">Yes, a scholar here</button><button class="pillbtn light sm" data-jcheck="no" data-row="' + j.row + '">Not from our school</button></div>') + '</li>';
     }).join('') + '</ul>') + '</div>';
 }
@@ -3304,7 +3325,7 @@ function leadAttendCard(s) {
   var list = s.attend || [];
   if (!list.length) return '';
   return card('Event attendance', '<p class="muted sm">Mark who really came. It decides event XP for your members.</p><ul class="list lattend">' + list.map(function (e, i) {
-    return '<li><div class="grow"><b>' + esc(e.title) + '</b><div class="muted sm">' + esc(e.when) + ' Â· ' + (e.present.length ? e.present.length + ' marked present' : 'not taken yet') + '</div></div>' +
+    return '<li><div class="grow"><b>' + esc(e.title) + '</b><div class="muted sm">' + esc(e.when) + ' · ' + (e.present.length ? e.present.length + ' marked present' : 'not taken yet') + '</div></div>' +
       (S.viewAs ? '' : '<button class="pillbtn light sm" data-attend="' + i + '">' + (e.present.length ? 'Edit' : 'Take attendance') + '</button>') + '</li>'; }).join('') + '</ul>');
 }
 function leadNoteCard(s) {
@@ -3328,7 +3349,7 @@ function leadAct(act, arg) {
 function openAttendance(s, e) {
   var people = (s.rows || []).filter(function (r) { return r.email; });
   var box = document.createElement('div'); box.className = 'overlay';
-  box.innerHTML = '<div class="scholar-dialog" role="dialog" aria-modal="true" aria-labelledby="at-title"><h2 id="at-title">Who came?</h2><p class="muted">' + esc(e.title) + ' Â· ' + esc(e.when) + '</p>' +
+  box.innerHTML = '<div class="scholar-dialog" role="dialog" aria-modal="true" aria-labelledby="at-title"><h2 id="at-title">Who came?</h2><p class="muted">' + esc(e.title) + ' · ' + esc(e.when) + '</p>' +
     '<div class="atlist">' + people.map(function (r, i) {
       return '<label class="atrow"><input type="checkbox" value="' + esc(r.email) + '"' + (e.present.indexOf(r.email) !== -1 ? ' checked' : '') + '><span>' + esc(noEmoji(r.cells[0])) + '</span></label>'; }).join('') + '</div>' +
     '<div class="actions"><button type="button" class="pillbtn light" id="at-all">Select all</button><button type="button" class="pillbtn light" id="at-cancel">Cancel</button><button type="button" class="pillbtn" id="at-save">Save attendance</button></div></div>';
@@ -3409,11 +3430,11 @@ function scholarManagementCard(a) {
       var status = counts.hasOwnProperty(p.status) ? p.status : 'Other';
       return '<div class="rrsch" data-rrsch data-match="' + esc([p.name,p.email,p.school,p.program,p.awarded,p.yearLevel,p.scholarship].join(' ')) + '" data-status="' + esc(status) + '" data-school-name="' + esc(p.school) + '" data-checkin-status="' + esc(p.checkin || '') + '">' +
         schoolBadge(p.school,40) + '<div class="grow"><div class="topline"><div class="who"><div class="name"><b>' + esc(p.name) + '</b><span class="rrstatus ' + cls + '">' + esc(p.status || 'No status') + '</span></div>' +
-        '<div class="rrsub"><b>' + esc(p.school) + '</b>' + (p.program ? ' Â· ' + esc(p.program) : '') + '</div><div class="rrmail"><a href="mailto:' + esc(p.email) + '">' + esc(p.email) + '</a></div></div>' +
+        '<div class="rrsub"><b>' + esc(p.school) + '</b>' + (p.program ? ' · ' + esc(p.program) : '') + '</div><div class="rrmail"><a href="mailto:' + esc(p.email) + '">' + esc(p.email) + '</a></div></div>' +
         '<div class="rraction"><button class="pillbtn light sm" data-scholar-edit="' + p.row + '">' + ico('pen',15) + ' Edit</button>' +
         (target ? '<button class="pillbtn light sm" data-scholar-status="' + target + '" data-row="' + p.row + '" data-email="' + esc(p.email) + '">' + (target === 'Suspended' ? 'Suspend' : 'Reactivate') + '</button>' : '') + '</div></div>' +
         '<div class="rrfoot">' + (p.yearLevel ? '<span class="rrtag">' + esc(p.yearLevel) + '</span>' : '') + (p.awarded ? '<span class="rrtag">Awarded ' + esc(p.awarded) + '</span>' : '') +
-        (p.role === 'â­ START Campus Lead' ? '<span class="rrtag">Campus Lead</span>' : '') +
+        (p.role === '⭐ START Campus Lead' ? '<span class="rrtag">Campus Lead</span>' : '') +
         '<span class="rrtag ' + (p.verified ? 'submitted' : 'pending') + '">' + (p.verified ? 'Email verified' : 'Password setup pending') + '</span>' +
         (p.checkin ? '<span class="rrtag ' + (p.checkin === 'Submitted' ? 'submitted' : 'pending') + '">' + (p.checkin === 'Submitted' ? 'Checked in' : 'Check-in pending') + '</span>' : '') +
         (p.needsHelp ? '<span class="rrtag help">Asked for help</span>' : '') + '</div></div></div>';
@@ -3431,7 +3452,7 @@ function openScholarEditor(row) {
   var select = function(id, label, list, current, wide, optional) {
     list = (list || []).slice(); if (current && list.indexOf(current) === -1) list.unshift(current);
     return '<label class="' + (wide ? 'wide' : '') + '">' + label + '<select id="se-' + id + '">' + (optional ? '<option value="">Not set</option>' : '') +
-      list.map(function(v){return '<option value="' + esc(v) + '"' + (v === current ? ' selected' : '') + '>' + esc(v === 'â­ START Campus Lead' ? 'Campus Lead' : v) + '</option>';}).join('') + '</select></label>';
+      list.map(function(v){return '<option value="' + esc(v) + '"' + (v === current ? ' selected' : '') + '>' + esc(v === '⭐ START Campus Lead' ? 'Campus Lead' : v) + '</option>';}).join('') + '</select></label>';
   };
   box.innerHTML = '<div class="scholar-dialog" role="dialog" aria-modal="true" aria-labelledby="se-title"><h2 id="se-title">Edit scholar</h2><p class="muted">Update the Scholars record for ' + esc(p.name) + '.</p>' +
     '<form id="se-form"><div class="scholar-form">' + input('name','Name',p.name,'text',true) +
@@ -3440,7 +3461,7 @@ function openScholarEditor(row) {
     input('awarded','Year awarded',p.awarded,'number',false) + select('yearLevel','Year level',['1st Year','2nd Year','3rd Year','4th Year','5th Year'],p.yearLevel,false,true) +
     input('campus','Campus / branch',p.campus) + input('hometown','Hometown',p.hometown) +
     select('scholarship','DOST scholarship',choices.scholarships,p.scholarship,false,true) +
-    select('role','START role',['Member','â­ START Campus Lead'],p.role || 'Member') +
+    select('role','START role',['Member','⭐ START Campus Lead'],p.role || 'Member') +
     input('otherEmails','Other sign-in emails (comma separated)',p.otherEmails,'text',true) + '</div>' +
     '<div class="scholar-edit-note">Changing the contact email signs out the old address; the new address must set up a password. A school can have one Campus Lead. Changing status or role updates access immediately.</div>' +
     '<div class="scholar-edit-error" id="se-error" role="alert"></div><div class="actions"><button type="button" class="pillbtn light" id="se-cancel">Cancel</button><button type="submit" class="pillbtn" id="se-save">Save changes</button></div></form></div>';
@@ -3482,7 +3503,7 @@ function rrSchoolsOverviewView(d) {
     rows.map(function(s){return '<tr><td><span class="sline">' + schoolBadge(s.name,28) + '<b>' + esc(s.name) + '</b></span></td>' +
       '<td data-l="Campus Lead">' + esc(s.lead || 'Not assigned') + '</td>' +
       '<td data-l="Check-ins">' + esc(s.answered) + ' / ' + esc(s.members) + '</td>' +
-      '<td data-l="Help">' + (s.help ? pill(s.help + ' asked', 'red') : 'â€”') + '</td>' +
+      '<td data-l="Help">' + (s.help ? pill(s.help + ' asked', 'red') : '—') + '</td>' +
       '<td data-l="Streak">' + esc(s.streak || 0) + '</td></tr>';}).join('') + '</tbody></table></div>';
   return page('Schools', 'Campus Leads and participation across the region',
     viewAsCard() + card('This week by school', table));
@@ -3491,7 +3512,7 @@ function rrSchoolsView(d) {
   var a=d.admin, records=(a.schoolRecords||[]).slice().sort(function(x,y){return x.name.localeCompare(y.name);});
   var rows=records.map(function(s){var summary=(a.schools||[]).filter(function(x){return x.name===s.name;})[0]||{};
     return '<tr><td><span class="sline">'+schoolBadge(s.name,28)+'<b>'+esc(s.name)+'</b></span></td>'+
-      '<td data-l="Province">'+esc(s.province||'â€”')+'</td><td data-l="Campus Lead">'+esc(s.lead||'Not assigned')+'</td>'+
+      '<td data-l="Province">'+esc(s.province||'—')+'</td><td data-l="Campus Lead">'+esc(s.lead||'Not assigned')+'</td>'+
       '<td data-l="Check-ins">'+esc(summary.answered||0)+' / '+esc(summary.members||0)+'</td>'+
       '<td data-l="Status">'+(s.inactive?pill('Inactive last term','yellow'):pill('Active','green'))+'</td>'+
       '<td data-l="Manage"><button class="pillbtn light sm" data-school-edit="'+s.row+'">Edit</button></td></tr>';}).join('');
@@ -3538,7 +3559,7 @@ function rrEventManagementCard(a) {
 function rrDiagnosticsView(d) {
   var list = d.admin.diagnostics || [], bad = 0;
   var rows = list.map(function(r) {
-    var mark = String(r[0] || ''), tone = /âŒ/.test(mark) ? 'bad' : /âš /.test(mark) ? 'warn' : 'ok';
+    var mark = String(r[0] || ''), tone = /❌/.test(mark) ? 'bad' : /⚠/.test(mark) ? 'warn' : 'ok';
     if (tone !== 'ok') bad++;
     return '<li class="diag d-' + tone + '"><span class="dbub">' + ico(tone === 'ok' ? 'check' : tone === 'warn' ? 'info' : 'siren', 20) + '</span><div class="grow"><b>' + esc(r[1]) + '</b>' +
       (r[2] ? '<div class="muted sm">' + esc(r[2]) + '</div>' : '') + '</div>' + pill(tone === 'ok' ? 'All good' : tone === 'warn' ? 'Look at this' : 'Fix this', tone === 'ok' ? 'green' : tone === 'warn' ? 'yellow' : 'red') + '</li>'; }).join('');
@@ -3650,7 +3671,7 @@ function saveSetting(b) {
   if(S.viewAs||!S.data||!S.data.admin)return;
   var key=b.getAttribute('data-setting-save'),s=(S.data.admin.settings||[]).filter(function(x){return x.key===key;})[0],el=$('set-'+key),msg=$('msg-'+key);
   if(!s||!el||s.readonly)return;
-  var value=s.type==='check'?el.checked:el.value.trim();b.disabled=true;msg.textContent='Savingâ€¦';
+  var value=s.type==='check'?el.checked:el.value.trim();b.disabled=true;msg.textContent='Saving…';
   call('webAdminAction',S.token,'setting-save',{key:key,previous:s.value,value:value}).then(function(r){
     if(!r||!r.ok){b.disabled=false;msg.textContent=(r&&r.msg)||'Could not save setting.';return;}
     refreshAdminPage('settings',r.msg||'Saved.');
@@ -3659,27 +3680,27 @@ function saveSetting(b) {
 function leadBoardCard(a) {
   var list = a.leadBoard || [];
   if (!list.length) return '';
-  var yes = function (v) { return v ? '<span class="ltag ok">' + ico('check', 12) + '</span>' : '<span class="muted">â€”</span>'; };
+  var yes = function (v) { return v ? '<span class="ltag ok">' + ico('check', 12) + '</span>' : '<span class="muted">—</span>'; };
   var num = function (n) { return n ? '<b>' + n + '</b>' : '<span class="muted">0</span>'; };
   return card('Campus Leads this week', '<div class="tablebox"><table class="stack"><thead><tr><th>School</th><th>Check-in</th><th>Reminder sent</th><th>Contacted</th><th>Join checks</th><th>Attendance</th><th>Note</th></tr></thead><tbody>' +
     list.map(function (x) { return '<tr><td><span class="sline">' + schoolBadge(x.school, 24) + '<span><b>' + esc(x.school) + '</b><div class="muted sm">' + esc(x.lead) + '</div></span></span></td>' +
-      '<td data-l="Check-in">' + yes(x.checkedIn) + '</td><td data-l="Reminder sent">' + yes(x.reminderSent) + '</td><td data-l="Contacted">' + num(x.contacted) + (x.help ? ' <span class="muted sm">Â· ' + x.help + ' asked for help</span>' : '') + '</td>' +
+      '<td data-l="Check-in">' + yes(x.checkedIn) + '</td><td data-l="Reminder sent">' + yes(x.reminderSent) + '</td><td data-l="Contacted">' + num(x.contacted) + (x.help ? ' <span class="muted sm">· ' + x.help + ' asked for help</span>' : '') + '</td>' +
       '<td data-l="Join checks">' + num(x.joinChecks) + '</td><td data-l="Attendance">' + num(x.attendance) + '</td><td data-l="Note">' + yes(x.note) + '</td></tr>'; }).join('') + '</tbody></table></div>');
 }
 function rewardAdminCard(a) {
   var pending = a.rewardPending || [];
   var intro = '<p class="muted sm">Set reward names, XP costs, details and Active (Y/N) in the Rewards tab of your tracker.</p>';
-  var rows = pending.map(function (r) { return '<li class="listitem"><div class="grow"><b>' + esc(r.name) + '</b> Â· ' + r.cost + ' XP' +
-    '<div class="muted sm">' + esc(r.email) + ' Â· ' + esc(r.school) + ' Â· ' + esc(r.when) + '</div></div>' +
+  var rows = pending.map(function (r) { return '<li class="listitem"><div class="grow"><b>' + esc(r.name) + '</b> · ' + r.cost + ' XP' +
+    '<div class="muted sm">' + esc(r.email) + ' · ' + esc(r.school) + ' · ' + esc(r.when) + '</div></div>' +
     '<button class="pillbtn sm" data-reward-decide="Approved" data-reward-id="' + esc(r.id) + '">Approve</button> ' +
     '<button class="pillbtn light sm" data-reward-decide="Declined" data-reward-id="' + esc(r.id) + '">Decline</button></li>'; }).join('');
-  return card('Reward requests' + (pending.length ? ' Â· ' + pending.length + ' pending' : ''), intro +
+  return card('Reward requests' + (pending.length ? ' · ' + pending.length + ' pending' : ''), intro +
     (rows ? '<ul class="list reward-requests">' + rows + '</ul>' : '<p class="muted sm">No requests waiting.</p>'));
 }
 function adminView(d) {
   var a = d.admin, t = a.totals;
   var help = (a.help || []).length ? '<ul class="list">' + a.help.map(function(h){
-    return '<li><span class="bubble">' + ico('hand',22) + '</span><div class="grow"><b>' + esc(h.name) + '</b> <span class="muted">Â· ' + esc(h.school) + '</span><div class="muted sm">' + esc(h.when) + ' Â· ' + esc(emo(h.what)[1]) + '</div></div></li>';
+    return '<li><span class="bubble">' + ico('hand',22) + '</span><div class="grow"><b>' + esc(h.name) + '</b> <span class="muted">· ' + esc(h.school) + '</span><div class="muted sm">' + esc(h.when) + ' · ' + esc(emo(h.what)[1]) + '</div></div></li>';
   }).join('') + '</ul>' : '<p class="muted sm">No new help requests.</p>';
   var summary = tiles([
     ['Leads in', t.leadsDone + ' <small>of ' + t.leads + '</small>', 'navy', false, 'school'],
@@ -3688,7 +3709,7 @@ function adminView(d) {
   var tracker = a.tracker ? '<div class="links"><a class="pillbtn light sm" href="' + esc(a.tracker) + '" target="_blank" rel="noopener">Open Google Sheets ' + ico('external',16) + '</a></div>' : '';
   return page(d.me.first, 'Spot wins and support schools.',
     summary + attentionCard(a) +
-    card('Asked for help', help) + leadBoardCard(a) + rewardAdminCard(a) + weekChart(a.weekly, 'Weekly check-in rate Â· region') +
+    card('Asked for help', help) + leadBoardCard(a) + rewardAdminCard(a) + weekChart(a.weekly, 'Weekly check-in rate · region') +
     quickActions() + tracker, true);
 }
 
@@ -3720,8 +3741,8 @@ function answered(q) {
   if (q.type === 'consent') return v === true;
   return true;                                                     // the mini-game can always be skipped
 }
-// A saved "How was your week?" answer -> mood card position (0 need support â€¦ 3 great), -1 unknown
-function moodPos(v) { var t = String(v || '').split(' ')[0]; return { 'ðŸ†˜': 0, 'ðŸ˜µâ€ðŸ’«': 1, 'ðŸ™‚': 2, 'ðŸ”¥': 3 }[t] != null ? { 'ðŸ†˜': 0, 'ðŸ˜µâ€ðŸ’«': 1, 'ðŸ™‚': 2, 'ðŸ”¥': 3 }[t] : -1; }
+// A saved "How was your week?" answer -> mood card position (0 need support … 3 great), -1 unknown
+function moodPos(v) { var t = String(v || '').split(' ')[0]; return { '🆘': 0, '😵‍💫': 1, '🙂': 2, '🔥': 3 }[t] != null ? { '🆘': 0, '😵‍💫': 1, '🙂': 2, '🔥': 3 }[t] : -1; }
 // A small version of the mood card's face, for timelines and tables
 function miniFace(p, size) {
   var M = MOOD[p] || { bg: '#E7EBF1', look: [0, 0] }, mouth = ['<rect x="15" y="31" width="18" height="7" rx="3.5" fill="#12203A" stroke="#FF8FA3" stroke-width="2"/>',
@@ -3731,7 +3752,7 @@ function miniFace(p, size) {
   return '<svg viewBox="0 0 48 48" width="' + size + '" height="' + size + '" aria-hidden="true"><rect x="2" y="2" width="44" height="44" rx="16" fill="' + M.bg + '" stroke="#12203A" stroke-opacity=".12"/>' +
     eye(16) + eye(32) + mouth + '</svg>';
 }
-// The mood card (no emoji): a face that changes as you slide. pos 0 = need support Â· 1 = tough Â· 2 = good Â· 3 = great
+// The mood card (no emoji): a face that changes as you slide. pos 0 = need support · 1 = tough · 2 = good · 3 = great
 var MOOD = [
   { word: 'need support', bg: '#12203A', ink: '#FFDD00', look: [0, 5] },
   { word: 'tough',        bg: '#CFE3F7', ink: '#12203A', look: [-5, -3] },
@@ -3856,7 +3877,7 @@ function miniHtml() {
       var stars = ''; for (var s2 = 0; s2 < total; s2++) stars += '<i class="bigstar' + (s2 < g.right ? ' on' : '') + '" style="--d:' + (s2 * 160) + 'ms">' + ico('star', 30) + '</i>';
       var md = miniMedal(g.right, total);
       h += '<div class="mgdone"><div class="stars">' + stars + '</div>' + (md ? '<span class="medal m-' + md.toLowerCase() + '">' + md + '</span>' : '') +
-        '<b>' + g.right + ' of ' + total + ' right' + (g.best >= 2 ? ' Â· best combo x' + g.best : '') + '</b></div>';
+        '<b>' + g.right + ' of ' + total + ' right' + (g.best >= 2 ? ' · best combo x' + g.best : '') + '</b></div>';
     } else {
       var R = m.rounds[g.r], ok = !!g.lastCorrect;
       h += '<p class="bbq">' + esc(R.title) + '</p><div class="mgodds">' + R.choices.map(function (c, j) {
@@ -3948,7 +3969,7 @@ function step() {
   if (CK.g) miniClockStop(CK.g);                                     // the game clock runs only while its card is on screen
   var head = function (kicker, title) {
     var said = reaction(q) || kicker;
-    $('ckh').innerHTML = '<div class="kicker">' + (CK.daily ? 'Today\'s brain break Â· ' + esc(CK.dayLabel) : (CK.spec.late ? 'Late check-in Â· ' : '') + (CK.i + 1) + ' of ' + n + (CK.spec.due ? ' Â· Due ' + esc(CK.spec.due) : '')) + '</div><h2>' + esc(title) + '</h2>' +
+    $('ckh').innerHTML = '<div class="kicker">' + (CK.daily ? 'Today\'s brain break · ' + esc(CK.dayLabel) : (CK.spec.late ? 'Late check-in · ' : '') + (CK.i + 1) + ' of ' + n + (CK.spec.due ? ' · Due ' + esc(CK.spec.due) : '')) + '</div><h2>' + esc(title) + '</h2>' +
       (q.type === 'mini' ? '' : '<div class="coach">' + startLogo(54, CK.pop != null ? 'win' : 'idle') + '<div class="say' + (CK.pop != null ? ' pop' : '') + '">' + esc(said) + '</div></div>');
   };
   $('ckbar').style.width = Math.round(100 * CK.i / n) + '%';
@@ -3959,7 +3980,7 @@ function step() {
   var pop = function (j) { return CK.pop === j ? ' bounce' : ''; };
   if (q.k === 'vibe' && q.type === 'one') {                                   // the mood card: slide, and the face changes
     head('Quick vibe check', q.title);
-    var picked = q.choices.indexOf(CK.a.vibe), pos = picked < 0 ? -1 : q.choices.length - 1 - picked;   // left = need support â€¦ right = great
+    var picked = q.choices.indexOf(CK.a.vibe), pos = picked < 0 ? -1 : q.choices.length - 1 - picked;   // left = need support … right = great
     h = moodCard(q, pos) +
       (picked === q.choices.length - 1 ? '<div class="carenote">' + ico('hand', 20) + '<span><b>Thank you for telling us.</b> Your Campus Lead and Regional Representative will reach out. ' +
         'Need to talk to someone right now? <b>NCMH Crisis Hotline: 1553</b> (free, 24/7) or <b>0917-899-8727</b>.</span></div>' : '');
@@ -3967,7 +3988,7 @@ function step() {
     head('Event passport', q.title);
     h = '<div class="tickets">' + q.choices.map(function (c, j) {
       if (c === q.none) return '<button class="choice tnone' + pop(j) + '" data-j="' + j + '" aria-pressed="' + on(c) + '">' + esc(c) + '</button>';
-      var at = c.lastIndexOf(' Â· '), t = at < 0 ? c : c.slice(0, at), d = at < 0 ? '' : c.slice(at + 3), m = d.match(/^(\w{3}),\s*(\w{3})\s+(\d+)/);
+      var at = c.lastIndexOf(' · '), t = at < 0 ? c : c.slice(0, at), d = at < 0 ? '' : c.slice(at + 3), m = d.match(/^(\w{3}),\s*(\w{3})\s+(\d+)/);
       return '<button class="choice ticket' + pop(j) + '" data-j="' + j + '" aria-pressed="' + on(c) + '"><span class="tdate">' + (m ? '<small>' + esc(m[1]) + '</small><b>' + esc(m[3]) + '</b><small>' + esc(m[2]) + '</small>' : ico('events', 24)) + '</span>' +
         '<span class="tname">' + esc(t) + '</span><span class="stamp">Attended</span></button>';
     }).join('') + '</div>';
@@ -3989,7 +4010,7 @@ function step() {
       q.choices.map(function (c, j) {
         var on = q.type === 'one' ? CK.a[q.k] === c : (CK.a[q.k] || []).indexOf(c) !== -1, e = emo(c);
         return '<button class="choice' + (CK.pop === j ? ' bounce' : '') + '" data-j="' + j + '" aria-pressed="' + on + '">' + (e[0] ? '<span class="em">' + emoIco(e[0], 26) + '</span>' : '') + '<span>' + esc(e[1]) + '</span>' +
-          (q.type === 'many' ? '<span class="box2">âœ“</span>' : '') + '</button>';
+          (q.type === 'many' ? '<span class="box2">✓</span>' : '') + '</button>';
       }).join('') + '</div>';
   } else if (q.type === 'text') {                                             // a sticky note, with quick starters
     head('Optional', q.title.replace(/\s*\(optional\)\s*$/i, ''));
@@ -4028,11 +4049,11 @@ function step() {
   }
   if (q.type === 'mini') miniWire();
   var last = CK.i === n - 1;
-  $('ckgo').textContent = last ? 'Submit' : (q.type === 'text' && !CK.a[q.k] ? 'Skip' : q.type === 'mini' && !CK.g.done ? 'Skip game Â· 0 XP' : 'Continue');
+  $('ckgo').textContent = last ? 'Submit' : (q.type === 'text' && !CK.a[q.k] ? 'Skip' : q.type === 'mini' && !CK.g.done ? 'Skip game · 0 XP' : 'Continue');
   $('ckgo').className = 'pillbtn' + (q.type === 'mini' && !CK.g.done ? ' skipgame' : '');
   if (CK.daily) {                                                     // one game a day: skip = 0 XP; the result is saved by itself
     if (CK.g.done && !CK.sent && !CK.err) dailySend();
-    $('ckgo').textContent = !CK.g.done ? 'Skip today Â· 0 XP' : CK.err ? 'Try again' : CK.saved ? 'Continue' : 'Savingâ€¦';
+    $('ckgo').textContent = !CK.g.done ? 'Skip today · 0 XP' : CK.err ? 'Try again' : CK.saved ? 'Continue' : 'Saving…';
     $('ckgo').disabled = CK.g.done && !CK.saved && !CK.err;
     $('ckmsg').textContent = CK.err || CK.g.err || '';
     $('ckbar').style.width = CK.g.done ? '100%' : '0%';
@@ -4050,8 +4071,8 @@ function forward() {
   if (!answered(q)) return;
   if (q.type === 'mini' && !CK.g.done) { miniClockStop(CK.g); CK.g.done = true; CK.g.skipped = true; CK.g.won = 0; CK.a.mini = { id: CK.g.id, skip: true }; }
   if (CK.i < CK.steps.length - 1) { CK.i++; step(); return; }
-  if (S.viewAs) { $('ckmsg').textContent = 'Preview only: nothing was sent for ' + S.viewAs.label.split(' Â· ')[0] + '.'; return; }
-  $('ckgo').disabled = true; $('ckgo').textContent = 'Sendingâ€¦';
+  if (S.viewAs) { $('ckmsg').textContent = 'Preview only: nothing was sent for ' + S.viewAs.label.split(' · ')[0] + '.'; return; }
+  $('ckgo').disabled = true; $('ckgo').textContent = 'Sending…';
   call('webSubmitCheckin', S.token, CK.a).then(function (r) {
     if (!r || !r.ok) {
       if (r && r.signedOut) { closeCheckin(); signOut(); return; }
@@ -4101,8 +4122,8 @@ function banner(text, tone) {
 }
 window.addEventListener('online', function () { sendPending(); });
 // The star coach says something back when you pick, like a friend would
-var REACT = { 'ðŸ”¥': 'Love that! Keep soaring.', 'ðŸ™‚': 'Steady and strong. Nice.', 'ðŸ˜µâ€ðŸ’«': 'Hang in there. We\'ve got you.', 'ðŸ†˜': 'Thank you for telling us. Help is coming.',
-  'ðŸ“ˆ': 'Look at you go!', 'ðŸ¢': 'Every bit counts.', 'ðŸ˜´': 'Rest is part of it too.', 'ðŸ‘': 'Great to hear!', 'ðŸ™‹': 'Got it. We\'ll reach out.', 'ðŸš¨': 'We\'ll reach out right away.' };
+var REACT = { '🔥': 'Love that! Keep soaring.', '🙂': 'Steady and strong. Nice.', '😵‍💫': 'Hang in there. We\'ve got you.', '🆘': 'Thank you for telling us. Help is coming.',
+  '📈': 'Look at you go!', '🐢': 'Every bit counts.', '😴': 'Rest is part of it too.', '👍': 'Great to hear!', '🙋': 'Got it. We\'ll reach out.', '🚨': 'We\'ll reach out right away.' };
 function reaction(q) {
   var v = CK.a[q.k];
   if (q.type === 'one' && v) return REACT[emo(v)[0]] || 'Got it!';
@@ -4125,7 +4146,7 @@ function confetti() {
   document.body.appendChild(c); setTimeout(function () { c.remove(); }, 3400);
 }
 function won(m) {
-  var urgent = /^ðŸš¨/.test(CK.a.help || '') || /^ðŸ†˜/.test(CK.a.vibe || '');
+  var urgent = /^🚨/.test(CK.a.help || '') || /^🆘/.test(CK.a.vibe || '');
   $('ckbar').style.width = '100%';
   $('ckh').innerHTML = '';
   $('ckq').innerHTML = '<div class="win">' + (urgent ? '<div class="bignum">' + ico('lifebuoy', 96) + '</div><h2>We\'re on it</h2><p>Your Campus Lead and Regional Representative have been notified.</p>'

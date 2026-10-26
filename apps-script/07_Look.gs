@@ -615,6 +615,8 @@ function polishCheckins_(ss) {
     `={"${CK_EXTRA[3]}";ARRAYFORMULA(IF(${L}2:${L}="","",IFERROR(VLOOKUP(${L}2:${L},${S}!$A$2:$C$${M},3,FALSE),"")))}`,
   ]]);
 
+  if (DB_MODE) return; // The database needs the computed columns, not the table styling.
+
   // look
   tableLook_(sh, body, W, 28, THEME.tabs.checkins);
   band_(sh.getRange(2, 1, rows, W), '#F6F8FB', KIND.autoBg);          // grey bands = automatic
