@@ -859,6 +859,8 @@
   .viewas.flash { animation: vaflash 1.4s ease; } @keyframes vaflash { 0%, 60% { box-shadow: 0 0 0 4px #FFDD00, var(--shadow); } 100% { box-shadow: var(--shadow); } }
   #vabar button.ghost { background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,.5); }
   .viewas .va { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .viewas .vahelp { margin: 10px 2px 0; }
+  #vabar.testing { background: linear-gradient(90deg, #0077CC, #0099FF); } #vabar.testing b { color: #12203A; background: #FFDD00; padding: 2px 8px; border-radius: 99px; }
   .viewas select { height: 42px; border-radius: 12px; border: 1.5px solid #CBD3DE; padding: 0 12px; font: 500 14px Poppins, Arial, sans-serif; color: var(--navy); background: #fff; min-width: 200px; flex: 1; }
   .seg { display: inline-flex; flex-wrap: wrap; max-width: 100%; background: #EAF1FA; border-radius: 22px; padding: 4px; gap: 4px; }
   @media (max-width: 480px) { .viewas .seg { display: flex; width: 100%; } .viewas .seg button { flex: 1 1 auto; justify-content: center; padding: 8px 10px; } .viewas select, .viewas #vago { flex: 1 1 100%; min-width: 0; } }
@@ -2059,6 +2061,16 @@ function dueNow(d) { var m = d && d.member; return !!(m && m.checkin && m.checki
 // Keep the most useful destinations in the phone dock, with five tabs at most.
 function barPref(d) { return d.admin ? ['admin', 'scholars', 'schools', 'events', 'me'] : d.member ? ['home', 'journey', 'events', 'ranks', 'me'] : ['lead', 'events', 'ranks', 'me']; }
 function views(d) {
+  // Test mode: the member's pages, the Campus Lead page and your RR pages in one menu
+  if (d.admin && d.viewAs && d.viewAs.role === 'all') {
+    var t = [];
+    if (d.member) t.push({ id: 'home', label: 'Home', ic: 'home', dot: dueNow(d) });
+    if (d.member && d.member.game) t.push({ id: 'journey', label: 'Journey', ic: 'path' });
+    if (d.lead && d.lead.length) t.push({ id: 'lead', label: 'My school', ic: 'school' });
+    return t.concat([{ id: 'admin', label: 'Overview', ic: 'region' }, { id: 'scholars', label: 'Scholars', ic: 'user' }, { id: 'schools', label: 'Schools', ic: 'school' },
+      { id: 'outreach', label: 'Outreach', ic: 'mail' }, { id: 'settings', label: 'Settings', ic: 'gear' }, { id: 'diagnostics', label: 'Diagnostics', ic: 'check' },
+      { id: 'ranks', label: 'Ranks', ic: 'trophy' }, { id: 'events', label: 'Calendar', ic: 'events' }, { id: 'me', label: 'Me', ic: 'user' }]);
+  }
   // RR has five focused destinations rather than a single oversized Region tab.
   if (d.admin) return [
     { id: 'admin', label: 'Overview', ic: 'region', dot: !!((d.admin.help || []).length) },
@@ -2175,7 +2187,7 @@ function draw() {
   [].forEach.call(document.querySelectorAll('[data-act]'), function (b) { b.onclick = function () { runAction(b.getAttribute('data-act')); }; });
   viewAsWire();
   [].forEach.call(document.querySelectorAll('[data-scholar-status]'), function (b) { b.onclick = function () {
-    if (S.viewAs) return;
+    if (rrLocked()) return;
     var status = b.getAttribute('data-scholar-status'), email = b.getAttribute('data-email'), row = Number(b.getAttribute('data-row'));
     var finish = function () { b.disabled = true; call('webAdminAction', S.token, 'scholar-status', { row:row, email:email, status:status }).then(function (r) {
       if (r && r.ok) refreshAdminPage('scholars', r.msg); else { b.disabled = false; alert((r && r.msg) || 'Could not update the scholar.'); }
@@ -2220,7 +2232,7 @@ function draw() {
     }).catch(function() { b.disabled = false; b.textContent = 'Try again'; });
   }; });
   [].forEach.call(document.querySelectorAll('[data-auto]'), function (b) { b.onclick = function () {
-    if (S.viewAs) return;
+    if (rrLocked()) return;
     var on = b.getAttribute('data-auto') === 'on';
     var go = function () { b.disabled = true; call('webAdminAction', S.token, 'auto-approve', on ? 'on' : 'off').then(function (r) {
       $('joinmsg').textContent = (r && r.msg) || 'Could not change auto-approve. Try again.'; if (r && r.ok) { S.data.admin.autoApprove = on; refreshAdminPage('scholars'); } else b.disabled = false; }).catch(function () { b.disabled = false; $('joinmsg').textContent = 'Could not reach START. Try again.'; }); };
@@ -2232,7 +2244,7 @@ function draw() {
     var act = b.getAttribute('data-join'), row = b.getAttribute('data-row'), arg = { row: row };
     var pick = document.querySelector('[data-jschool="' + row + '"]'); if (pick && pick.value) arg.school = pick.value;
     if (act === 'join-clarify') arg.note = $('jask' + row).querySelector('input').value;
-    if (S.viewAs) { $('joinmsg').textContent = 'Preview only.'; return; }
+    if (rrLocked()) { $('joinmsg').textContent = 'Preview only.'; return; }
     b.disabled = true; $('joinmsg').textContent = 'Working…';
     call('webAdminAction', S.token, act, arg).then(function (r) {
       $('joinmsg').textContent = (r && r.msg) || 'Done'; if (r && r.ok) refreshAdminPage('scholars', r.msg); else b.disabled = false;
@@ -2247,7 +2259,7 @@ function draw() {
     var li = b.closest('li'); if (li) li.classList.add('tgone'); b.disabled = true;
     setTimeout(function () { leadAct('todo-done', { key: b.getAttribute('data-ldone') }); }, 260); }; });
   [].forEach.call(document.querySelectorAll('[data-adone]'), function (b) { b.onchange = function () {
-    if (S.viewAs) return;
+    if (rrLocked()) return;
     var key = b.getAttribute('data-adone'), li = b.closest('li'); b.disabled = true; if (li) li.classList.add('tgone');
     call('webAdminAction', S.token, 'attention-done', { key: key }).then(function (r) {
       if (!r || !r.ok) { if (li) li.classList.remove('tgone'); b.disabled = false; b.checked = false; banner((r && r.msg) || 'Not saved. Try again.', 'warn'); return; }
@@ -2273,7 +2285,7 @@ function draw() {
   if ($('lnoteclear')) $('lnoteclear').onclick = function () { leadAct('note', { text: '' }); };
   if ($('redeem')) $('redeem').onclick = showRewards;
   [].forEach.call(document.querySelectorAll('[data-reward-decide]'), function (b) { b.onclick = function () {
-    if (S.viewAs) return;
+    if (rrLocked()) return;
     var decision = b.getAttribute('data-reward-decide'), id = b.getAttribute('data-reward-id');
     askSure(decision + ' reward request?', decision === 'Approved' ? 'Confirm the reward and arrange delivery with the scholar. The reserved XP will be spent.' : 'The reserved XP will become available again.', function () {
       b.disabled = true;
@@ -2476,7 +2488,7 @@ function noteCard(d) {
 /* ---------- Journey: this term's weeks as a path, then the Davao postcards ---------- */
 function todayKeyOf(days) { var t = (days || []).filter(function (x) { return x.today; })[0]; return t ? t.key : ''; }
 function showRewards() {
-  if (S.viewAs) { banner('Preview only: rewards cannot be requested here.'); return; }
+  if (S.viewAs) { banner(testing() ? 'Test mode: reward requests are not sent, so no XP is reserved.' : 'Preview only: rewards cannot be requested here.'); return; }
   var box = document.createElement('div'); box.className = 'overlay';
   box.innerHTML = '<div class="sure" style="max-width:520px;max-height:85vh;overflow:auto;text-align:left"><h2>Redeem XP</h2><div id="reward-content" role="status">Loading rewards…</div><div class="actions"><button class="pillbtn light sm" id="rok">Close</button></div></div>';
   document.body.appendChild(box);
@@ -2513,9 +2525,10 @@ function showRewards() {
 /* ---------- the daily brain break: today only, opening it starts it, the tracker checks the answer ---------- */
 var GAME_NAMES = { scramble: 'Word scramble', odd: 'Odd one out', pattern: 'Number pattern' };
 function openDaily() {
-  if (S.viewAs) { banner('Preview only: brain breaks are not played for ' + S.viewAs.label.split(' · ')[0] + '.'); return; }
+  if (S.viewAs && !testing()) { banner('Preview only: brain breaks are not played for ' + S.viewAs.label.split(' · ')[0] + '.'); return; }
+  if (testing() && !S.viewAs.member) { banner('This school has no active members to test with yet.'); return; }
   var t = (S.data.member && S.data.member.game && S.data.member.game.days || []).filter(function (x) { return x.today; })[0];
-  call('webDailyStart', S.token).then(function (r) {
+  dcall('webDailyStart').then(function (r) {
     if (r && r.signedOut) { signOut(); return; }
     if (r && r.checkin) { startCheckin(); return; }
     if (!r || !r.ok) { banner((r && r.msg) || 'Could not open today\'s game. Try again.', 'warn'); return; }
@@ -2538,12 +2551,12 @@ function openDaily() {
 function dailyQuit() {
   if (!CK || !CK.daily || CK.g.done) return;
   miniClockStop(CK.g); CK.g.done = true; CK.g.skipped = true; CK.g.won = 0; CK.a.mini = { id: CK.g.id, skip: true };
-  call('webDailyFinish', S.token, { day: CK.day, id: CK.g.id, skip: true }).then(function () { load(true); }).catch(function () {});
+  dcall('webDailyFinish', { day: CK.day, id: CK.g.id, skip: true }).then(function () { if (!testing()) load(true); }).catch(function () {});
 }
 function dailySend() {
   if (!CK || !CK.daily || CK.sent) return;
   CK.sent = true; CK.err = '';
-  call('webDailyFinish', S.token, { day: CK.day, id: CK.g.id }).then(function (r) {
+  dcall('webDailyFinish', { day: CK.day, id: CK.g.id }).then(function (r) {
     if (!CK || !CK.daily) return;
     if (r && r.signedOut) { closeCheckin(); signOut(); return; }
     if (!r || !r.ok) { CK.sent = false; CK.err = (r && r.msg) || 'Not saved yet.'; step(); return; }
@@ -2974,7 +2987,7 @@ function schoolLine(name, size) { return '<span class="sline">' + schoolBadge(na
 /* ---------- RR: "View as" a Campus Lead or a member (read-only preview) ---------- */
 // What used to arrive by email: quiet schools (with a ready message), tracker problems, the monthly report
 function doneTick(attr, key, label) {
-  return '<label class="tdone"><input type="checkbox" ' + attr + '="' + esc(key) + '"' + (S.viewAs ? ' disabled' : '') + '><span class="tbox"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>' + esc(label || 'Mark as done') + '</label>';
+  return '<label class="tdone"><input type="checkbox" ' + attr + '="' + esc(key) + '"' + ((attr === 'data-adone' ? rrLocked() : (S.viewAs && !testing())) ? ' disabled' : '') + '><span class="tbox"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>' + esc(label || 'Mark as done') + '</label>';
 }
 function attentionCard(a) {
   var items = [], done = a.attnDone || [];
@@ -2994,34 +3007,66 @@ function attentionCard(a) {
     (a.check ? '<p class="muted sm">Tracker checked ' + esc(a.check.when) + '.</p>' : '') + '</div>';
 }
 function viewAsCard() {
-  return '<div class="card viewas"><h2>Preview a role</h2><p class="muted sm" style="margin-top:-4px">You are viewing as the <b>Regional Representative</b>. Preview START exactly as a Campus Lead or a member sees it. Read-only: nothing is sent or saved for them.</p>' +
-    '<div class="va"><div class="seg" role="group"><button class="rrseg" aria-pressed="false" disabled>' + ico('region', 16) + ' Regional Rep (you)</button><button data-varole="lead" aria-pressed="' + (VA.role === 'lead') + '">' + ico('school', 16) + ' Campus Lead</button><button data-varole="member" aria-pressed="' + (VA.role === 'member') + '">' + ico('user', 16) + ' Member</button></div>' +
-    '<select id="vaschool"><option value="">Choose a school</option></select><select id="vaperson" style="display:none"><option value="">Choose a member</option></select>' +
-    '<button class="pillbtn sm" id="vago" disabled>' + ico('eye', 16) + ' View</button></div><div class="qamsg" id="vamsg"></div></div>';
+  var R = [['all', 'test', 'All three · test', 'Your RR pages + a Campus Lead + a member, in one menu. You can play, check in and tick things: practice only, nothing is saved for them. Your RR tools stay real.'],
+           ['lead', 'school', 'Campus Lead', 'See a school exactly as its Campus Lead does. Read-only.'],
+           ['member', 'user', 'Member', 'See one scholar\'s pages exactly as they do. Read-only.']];
+  var cur = R.filter(function (x) { return x[0] === VA.role; })[0] || R[0];
+  return '<div class="card viewas"><h2>Preview or test a role</h2>' +
+    '<div class="va"><div class="seg" role="group" aria-label="Role">' + R.map(function (x) {
+      return '<button data-varole="' + x[0] + '" aria-pressed="' + (VA.role === x[0]) + '">' + ico(x[1] === 'test' ? 'check' : x[1], 16) + ' ' + esc(x[2]) + '</button>'; }).join('') + '</div>' +
+    '<select id="vaschool" aria-label="School"><option value="">Choose a school</option></select><select id="vaperson" aria-label="Member" style="display:none"><option value="">Choose a member</option></select>' +
+    '<button class="pillbtn sm" id="vago" disabled>' + ico(VA.role === 'all' ? 'check' : 'eye', 16) + ' ' + (VA.role === 'all' ? 'Start test' : 'View') + '</button></div>' +
+    '<p class="muted sm vahelp" id="vahelp">' + esc(cur[3]) + '</p><div class="qamsg" id="vamsg"></div></div>';
 }
-var VA = { role: 'lead', list: null };
+var VA = { role: 'all', list: null };
+try { var vaSaved = JSON.parse(localStorage.getItem('start_va') || 'null'); if (vaSaved && /^(lead|member|all)$/.test(vaSaved.role)) VA.role = vaSaved.role; VA.saved = vaSaved || {}; } catch (e) { VA.saved = {}; }
+// "All three" test mode: your RR tools stay real; the member's and Campus Lead's actions are practice (nothing saved)
+function testing() { return !!(S.viewAs && S.viewAs.role === 'all'); }
+function rrLocked() { return !!S.viewAs && !testing(); }
+// brain break calls: the real ones, or the practice copy while testing
+function dcall(name, payload) {
+  if (testing()) return call('webDailyTest', S.token, { webDailyStart: 'start', webDailyPick: 'pick', webDailyNext: 'next', webDailyFinish: 'finish' }[name], Object.assign({ as: S.viewAs.member }, payload || {}));
+  return payload === undefined ? call(name, S.token) : call(name, S.token, payload);
+}
 function viewAsWire() {
   if (!$('vaschool')) return;
+  var HELP = { all: 'Your RR pages + a Campus Lead + a member, in one menu. You can play, check in and tick things: practice only, nothing is saved for them. Your RR tools stay real.',
+               lead: 'See a school exactly as its Campus Lead does. Read-only.', member: 'See one scholar\'s pages exactly as they do. Read-only.' };
+  var ready = function () {                                   // what each role needs before it can open
+    var sc = $('vaschool').value, pe = $('vaperson').value;
+    $('vago').disabled = !sc || (VA.role === 'member' && !pe);
+  };
+  var people = function () {
+    var sc = $('vaschool').value, L = VA.list; if (!L) return;
+    var list = L.people.filter(function (p) { return p.school === sc; });
+    $('vaperson').disabled = !sc;
+    $('vaperson').innerHTML = '<option value="">' + (!sc ? 'Choose a school first' : VA.role === 'all' ? (list.length ? 'Any member (the Lead, or the first one)' : 'No active members yet') : 'Choose a member') + '</option>' +
+      list.map(function (p) { return '<option value="' + esc(p.email) + '">' + esc(p.name) + '</option>'; }).join('');
+    if (VA.saved.school === sc && VA.saved.person && list.some(function (p) { return p.email === VA.saved.person; })) $('vaperson').value = VA.saved.person;
+  };
   var fill = function () {
     var L = VA.list; if (!L) return;
     $('vaschool').innerHTML = '<option value="">Choose a school</option>' + L.schools.map(function (x) {
-      return '<option value="' + esc(x.name) + '">' + esc(x.name) + (VA.role === 'lead' ? ' · ' + esc(x.lead || 'no Lead yet') : '') + '</option>'; }).join('');
-    $('vaperson').style.display = VA.role === 'member' ? '' : 'none';
-    $('vago').disabled = true;
-  };
-  var people = function () {
-    var sc = $('vaschool').value, L = VA.list;
-    $('vaperson').innerHTML = '<option value="">Choose a member</option>' + L.people.filter(function (p) { return p.school === sc; })
-      .map(function (p) { return '<option value="' + esc(p.email) + '">' + esc(p.name) + '</option>'; }).join('');
+      return '<option value="' + esc(x.name) + '">' + esc(x.name) + (VA.role !== 'member' ? ' · ' + esc(x.lead || 'no Lead yet') : '') + '</option>'; }).join('');
+    if (VA.saved.school && L.schools.some(function (x) { return x.name === VA.saved.school; })) $('vaschool').value = VA.saved.school;
+    $('vaperson').style.display = VA.role === 'lead' ? 'none' : '';
+    people(); ready();
+    $('vahelp').textContent = HELP[VA.role];
+    $('vago').innerHTML = ico(VA.role === 'all' ? 'check' : 'eye', 16) + ' ' + (VA.role === 'all' ? 'Start test' : 'View');
   };
   [].forEach.call(document.querySelectorAll('[data-varole]'), function (b) { b.onclick = function () {
     VA.role = b.getAttribute('data-varole');
     [].forEach.call(document.querySelectorAll('[data-varole]'), function (x) { x.setAttribute('aria-pressed', String(x === b)); });
     fill();
   }; });
-  $('vaschool').onchange = function () { if (VA.role === 'member') people(); $('vago').disabled = !$('vaschool').value || VA.role === 'member'; };
-  $('vaperson').onchange = function () { $('vago').disabled = !$('vaperson').value; };
-  $('vago').onclick = function () { openViewAs(VA.role, VA.role === 'lead' ? $('vaschool').value : $('vaperson').value); };
+  $('vaschool').onchange = function () { people(); ready(); };
+  $('vaperson').onchange = ready;
+  $('vago').onclick = function () {
+    var sc = $('vaschool').value, pe = $('vaperson').value;
+    VA.saved = { role: VA.role, school: sc, person: pe };
+    try { localStorage.setItem('start_va', JSON.stringify(VA.saved)); } catch (e) {}
+    openViewAs(VA.role, VA.role === 'lead' ? sc : VA.role === 'member' ? pe : JSON.stringify({ school: sc, email: pe }));
+  };
   if (VA.list) return fill();
   call('webViewList', S.token).then(function (r) { if (r && r.ok) { VA.list = r; fill(); } }).catch(function () {});
 }
@@ -3046,7 +3091,10 @@ function viewBanner() {
   if (!S.viewAs) { if (b) b.remove(); document.body.classList.remove('viewing'); return; }
   if (!b) { b = document.createElement('div'); b.id = 'vabar'; document.body.appendChild(b); }
   document.body.classList.add('viewing');
-  b.innerHTML = ico('eye', 18) + '<span>Viewing as <b>' + esc(S.viewAs.label) + '</b> · read-only</span><button id="vaswitch" class="ghost">Switch</button><button id="vaback">Back to RR view</button>';
+  b.innerHTML = testing()
+    ? ico('check', 18) + '<span><b>Test mode</b> · ' + esc(S.viewAs.label.replace(/^All three · /, '')) + ' · member and Lead actions are practice only</span><button id="vaswitch" class="ghost">Switch</button><button id="vaback">End test</button>'
+    : ico('eye', 18) + '<span>Viewing as <b>' + esc(S.viewAs.label) + '</b> · read-only</span><button id="vaswitch" class="ghost">Switch</button><button id="vaback">Back to RR view</button>';
+  b.classList.toggle('testing', testing());
   $('vaback').onclick = exitViewAs; $('vaswitch').onclick = goSwitch;
 }
 function refresh() { if (S.viewAs) return openViewAs(S.viewAs.role, S.viewAs.key); return load(true); }
@@ -3336,6 +3384,12 @@ function leadNoteCard(s) {
     (S.viewAs ? '' : '<div class="qa"><button class="pillbtn sm" id="lnotesave">Post note</button>' + (n ? '<button class="pillbtn light sm" id="lnoteclear">Remove</button>' : '') + '</div>'));
 }
 function leadAct(act, arg) {
+  if (testing()) {                                               // practice: show the result, save nothing
+    var ls = S.data.lead[Math.min(S.school, S.data.lead.length - 1)];
+    if (act === 'todo-done' && ls && ls.todo) ls.todo = ls.todo.filter(function (t) { return t.key !== arg.key; });
+    draw(); banner('Test mode: done for the test only. Nothing was saved for ' + ls.school + '.', 'ok');
+    return Promise.resolve();
+  }
   if (S.viewAs) return Promise.resolve();
   var s = S.data.lead[Math.min(S.school, S.data.lead.length - 1)];
   arg.school = s.school;
@@ -3383,7 +3437,7 @@ function wireRoster() {
   });
   [].forEach.call(document.querySelectorAll('[data-scholar-status]'), function(b) {
     b.onclick = function() {
-      if (S.viewAs) return;
+      if (rrLocked()) return;
       var status = b.getAttribute('data-scholar-status'), email = b.getAttribute('data-email'), row = Number(b.getAttribute('data-row'));
       var finish = function() { b.disabled = true; call('webAdminAction', S.token, 'scholar-status', { row:row, email:email, status:status }).then(function(r) {
         if (r && r.ok) refreshAdminPage('scholars', r.msg);
@@ -3442,7 +3496,7 @@ function scholarManagementCard(a) {
     (pages > 1 ? '<div class="qa"><button class="pillbtn light sm" data-roster-page="-1"' + (ROSTER_UI.page ? '' : ' disabled') + '>Previous</button><span class="muted sm">Page ' + (ROSTER_UI.page + 1) + ' of ' + pages + '</span><button class="pillbtn light sm" data-roster-page="1"' + (ROSTER_UI.page < pages - 1 ? '' : ' disabled') + '>Next</button></div>' : '') + '</div>';
 }
 function openScholarEditor(row) {
-  if (S.viewAs || !S.data || !S.data.admin) return;
+  if (rrLocked() || !S.data || !S.data.admin) return;
   var a = S.data.admin, p = (a.scholars || []).filter(function(x){return x.row === row;})[0];
   if (!p) return;
   var choices = a.scholarChoices || {}, box = document.createElement('div'); box.className = 'overlay';
@@ -3588,7 +3642,7 @@ function wireOutreach() {
   };
 }
 function openEventEditor(row) {
-  if (S.viewAs || !S.data || !S.data.admin) return;
+  if (rrLocked() || !S.data || !S.data.admin) return;
   var a = S.data.admin, old = (a.eventRecords || []).filter(function(e) { return e.row === row; })[0] ||
     { row:0, date:'', start:'', end:'', title:'', type:'Meeting', who:'All members', rep:'Never', until:'', place:'', details:'', invite:false };
   var box = document.createElement('div'); box.className = 'overlay';
@@ -3626,7 +3680,7 @@ function openEventEditor(row) {
   $('ev-title').focus();
 }
 function openSchoolEditor(row) {
-  if(S.viewAs||!S.data||!S.data.admin)return;
+  if(rrLocked()||!S.data||!S.data.admin)return;
   var a=S.data.admin,p=(a.schoolRecords||[]).filter(function(x){return x.row===row;})[0]||
     {row:0,name:'',province:'',lead:'',inactive:false,info:(a.schoolInfoHeaders||[]).map(function(){return '';})};
   var box=document.createElement('div');box.className='overlay';
@@ -3668,7 +3722,7 @@ function rrSettingsView(d) {
     group('Website and access',['portalNote','portalMembers','portalScholars','autoApprove']));
 }
 function saveSetting(b) {
-  if(S.viewAs||!S.data||!S.data.admin)return;
+  if(rrLocked()||!S.data||!S.data.admin)return;
   var key=b.getAttribute('data-setting-save'),s=(S.data.admin.settings||[]).filter(function(x){return x.key===key;})[0],el=$('set-'+key),msg=$('msg-'+key);
   if(!s||!el||s.readonly)return;
   var value=s.type==='check'?el.checked:el.value.trim();b.disabled=true;msg.textContent='Saving…';
@@ -3896,7 +3950,7 @@ function miniSubmit(pick) {
   var session = CK, g = session && session.g;
   if (!session || !session.daily || !g || g.done || g.pending || (g.kind !== 'scramble' && g.pick !== -1)) return;
   miniClockStop(g); g.pending = true; g.err = ''; g.lastSent = pick;
-  call('webDailyPick', S.token, { day: session.day, id: g.id, round: g.r || 0, pick: pick }).then(function (r) {
+  dcall('webDailyPick', { day: session.day, id: g.id, round: g.r || 0, pick: pick }).then(function (r) {
     if (CK !== session) return;
     g.pending = false;
     if (r && r.signedOut) { closeCheckin(); signOut(); return; }
@@ -3940,7 +3994,7 @@ function miniWire() {
       if (g.pending) return;
       if (g.r < m.rounds.length - 1) {
         var session = CK, round = g.r; g.pending = true;
-        call('webDailyNext', S.token, { day: session.day, id: g.id, round: round }).then(function (r) {
+        dcall('webDailyNext', { day: session.day, id: g.id, round: round }).then(function (r) {
           if (CK !== session) return;
           g.pending = false;
           if (!r || !r.ok) { g.err = (r && r.msg) || 'Could not open the next round.'; step(); return; }
@@ -4071,6 +4125,7 @@ function forward() {
   if (!answered(q)) return;
   if (q.type === 'mini' && !CK.g.done) { miniClockStop(CK.g); CK.g.done = true; CK.g.skipped = true; CK.g.won = 0; CK.a.mini = { id: CK.g.id, skip: true }; }
   if (CK.i < CK.steps.length - 1) { CK.i++; step(); return; }
+  if (testing()) { closeCheckin(); banner('Test check-in finished: every step worked. Nothing was saved for ' + (S.viewAs.memberName || 'the member') + '.', 'ok'); return; }
   if (S.viewAs) { $('ckmsg').textContent = 'Preview only: nothing was sent for ' + S.viewAs.label.split(' · ')[0] + '.'; return; }
   $('ckgo').disabled = true; $('ckgo').textContent = 'Sending…';
   call('webSubmitCheckin', S.token, CK.a).then(function (r) {
