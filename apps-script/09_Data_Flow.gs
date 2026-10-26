@@ -10,7 +10,7 @@ function ensureHeaderBlock_(sh, first, labels) {
   if (sh.getMaxColumns() < last) sh.insertColumnsAfter(sh.getMaxColumns(), last - sh.getMaxColumns());
   const cells = sh.getRange(1, first, 1, labels.length).getValues()[0];
   cells.forEach((v, i) => { if (!String(v || '').trim()) sh.getRange(1, first + i).setValue(labels[i]);
-    else if (String(v).trim() !== labels[i]) throw new Error(sh.getName() + ' column ' + (first + i) + ' already contains ' + v); });
+    else if (plainHeading_(v) !== labels[i]) throw new Error(sh.getName() + ' column ' + (first + i) + ' already contains ' + v); });
 }
 function ensureDataFlowSchema_(ss) {
   const sc = ss.getSheetByName(TAB.scholars);
@@ -18,24 +18,40 @@ function ensureDataFlowSchema_(ss) {
     ensureHeaderBlock_(sc, 14, SCHOLAR_META_COLS_);
     if (sc.getLastRow() > 1) {
       const n = sc.getLastRow() - 1, rows = sc.getRange(2, 1, n, 18).getValues();
-      const now = new Date();
+      const now = new Date(), meta = rows.map(r => r.slice(13, 18));
+      let changed = false, accounts = null;
+      if (rows.some(r => String(r[0] || '').trim() && emailOf_(r[4]) && !r[17])) {
+        try { accounts = docProps_().getProperties(); } catch (e) { /* fall back to individual lookup */ }
+      }
       rows.forEach((r, i) => {
-        if (!String(r[0] || '').trim() || !emailOf_(r[4])) return;
-        if (!r[13]) sc.getRange(i + 2, 14).setValue(Utilities.getUuid());
+        const email = emailOf_(r[4]);
+        if (!String(r[0] || '').trim() || !email) return;
+        const m = meta[i];
+        if (!m[0]) { m[0] = Utilities.getUuid(); changed = true; }
         // Existing status dates cannot be reconstructed. Keep them blank until the next change.
-        if (!r[15]) sc.getRange(i + 2, 16).setValue(now);
-        if (!r[16]) sc.getRange(i + 2, 17).setValue('schema migration');
-        if (!r[17]) { const account = webAccount_(emailOf_(r[4]));
-          if (account && account.h) sc.getRange(i + 2, 18).setValue(account.at ? new Date(account.at) : now); }
+        if (!m[2]) { m[2] = now; changed = true; }
+        if (!m[3]) { m[3] = 'schema migration'; changed = true; }
+        if (!m[4]) {
+          let account = null;
+          if (accounts) { try { account = JSON.parse(accounts[webAcctKey_(email)] || 'null'); } catch (e) { /* invalid old account */ } }
+          else account = webAccount_(email);
+          if (account && account.h) { m[4] = account.at ? new Date(account.at) : now; changed = true; }
+        }
       });
+      if (changed) sc.getRange(2, 14, n, 5).setValues(meta);
     }
   }
   const join = ss.getSheetByName(JOIN_TAB);
   if (join) {
     ensureHeaderBlock_(join, 19, JOIN_META_COLS_);
     if (join.getLastRow() > 1) {
-      const rows = join.getRange(2, 1, join.getLastRow() - 1, 19).getValues();
-      rows.forEach((r, i) => { if (String(r[3] || '').trim() && !r[18]) join.getRange(i + 2, 19).setValue(Utilities.getUuid()); });
+      const n = join.getLastRow() - 1, rows = join.getRange(2, 1, n, 19).getValues();
+      let changed = false;
+      const ids = rows.map(r => {
+        if (String(r[3] || '').trim() && !r[18]) { changed = true; return [Utilities.getUuid()]; }
+        return [r[18]];
+      });
+      if (changed) join.getRange(2, 19, n, 1).setValues(ids);
     }
   }
   const ck = ss.getSheetByName(TAB.mcheckins);
@@ -44,7 +60,7 @@ function ensureDataFlowSchema_(ss) {
   weeklyRosterTab_(ss);
 }
 function ensureCheckinMetadata_(ck) {
-  const h = ck.getRange(1, 1, 1, Math.max(ck.getLastColumn(), 1)).getValues()[0].map(x => String(x || '').trim());
+  const h = ck.getRange(1, 1, 1, Math.max(ck.getLastColumn(), 1)).getValues()[0].map(plainHeading_);
   CHECKIN_META_COLS_.forEach(label => {
     if (h.indexOf(label) !== -1) return;
     const at = h.length + 1;
@@ -94,7 +110,7 @@ function weeklyRosterTab_(ss) {
   if (!sh) sh = ss.insertSheet(WEEKLY_ROSTER_TAB_);
   ensureHeaderBlock_(sh, 1, ['Week due', 'Scholar ID', 'Email', 'School', 'Captured at']);
   sh.setFrozenRows(1);
-  sh.getRange('A:A').setNumberFormat('@');
+  if (sh.getRange('A1').getNumberFormat() !== '@') sh.getRange('A:A').setNumberFormat('@');
   return sh;
 }
 // Capture the denominator once per week. Historical weeks before this migration remain estimates.

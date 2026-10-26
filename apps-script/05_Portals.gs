@@ -3789,7 +3789,7 @@ function alignScholarsTab_(ss) {
   try { if (sh.getMaxColumns() >= SCHOLAR_KIND_COL) dv(SCHOLAR_KIND_COL, JOIN.kinds, 'DOST scholarship (same as the sign-up form).'); } catch (e) { /* fine */ }
   try {                                                                   // formats
     sh.getRange(2, 4, rows, 1).setNumberFormat('0');                      // year awarded: 2024, never 2,024
-    sh.getRange(2, 1, rows, 13).setVerticalAlignment('middle');
+    if (!DB_MODE) sh.getRange(2, 1, rows, 13).setVerticalAlignment('middle');
   } catch (e) { /* fine */ }
 }
 

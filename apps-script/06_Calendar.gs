@@ -70,6 +70,25 @@ function calApi_() {
 }
 function calServiceOn_() { try { return !!calApi_(); } catch (e) { return false; } }
 function calLink_(id) { return 'https://calendar.google.com/calendar/u/0/r?cid=' + encodeURIComponent(id); }
+var CALENDAR_SCOPE_ = 'https://www.googleapis.com/auth/calendar';
+
+// Calendar setup creates calendars, events and sharing rules. Check its full scope before
+// making any changes, since the advanced service is looked up dynamically in calApi_().
+function calendarAuthorized_() {
+  const auth = ScriptApp.getAuthorizationInfo(ScriptApp.AuthMode.FULL, [CALENDAR_SCOPE_]);
+  if (auth.getAuthorizationStatus() !== ScriptApp.AuthorizationStatus.REQUIRED) {
+    // This direct service reference also lets Apps Script discover the Calendar scope.
+    CalendarApp.getDefaultCalendar();
+    return true;
+  }
+  const url = auth.getAuthorizationUrl();
+  if (!url) throw new Error('Calendar authorization is required, but Google did not provide a permission page. Open Extensions › Apps Script and check the latest execution.');
+  dlg_('📅 Allow calendar access', '<p class="lead">Allow START to manage its calendars</p>' +
+    '<p>Google Calendar access is needed to create shared calendars, add events and manage who can see them.</p>' +
+    '<p><a class="btn" href="' + esc_(url) + '" target="_blank" rel="noopener">Open Google permission page ↗</a></p>' +
+    '<p class="muted">After you choose Allow, return to the Sheet and click Set up / update calendars again.</p>', 460, 300);
+  return false;
+}
 
 /* ---------- menu ---------- */
 
@@ -77,14 +96,15 @@ function calLink_(id) { return 'https://calendar.google.com/calendar/u/0/r?cid='
 function setupCalendars() {
   requireSetup_();
   if (!calServiceOn_()) return showCalendarServiceHelp_();
+  if (!calendarAuthorized_()) return;
   if (!ensureOwner_('run the shared calendars')) return;
   const ss = SpreadsheetApp.getActive();
   if (!ss.getSheetByName(TAB.events)) buildEvents_(ss);
+  const r = runCalendarSync_(ss);
   docProps_().setProperty('CAL_ON', '1');
   if (!ScriptApp.getProjectTriggers().some(t => t.getHandlerFunction() === 'refreshCalendarsAuto')) {
     ScriptApp.newTrigger('refreshCalendarsAuto').timeBased().everyDays(1).atHour(6).inTimezone(CONFIG.timezone).create();
   }
-  const r = runCalendarSync_(ss);
   try { writeAutoLinks_(ss); } catch (e) { Logger.log('Links: ' + e.message); }   // calendar links in the Links tab
   const c = calStore_();
   notify_('📅 Calendars updated\n\n' +
@@ -114,7 +134,7 @@ function showCalendarServiceHelp_() {
       <li><b>Extensions › Apps Script</b> (from this sheet)</li>
       <li><b>Services</b> › <b>+</b> › <b>Google Calendar API</b> › <b>Add</b></li>
       <li>Save, reload this sheet</li>
-      <li><b>${MENU_CAL}</b> › <b>Allow</b></li>
+      <li>Click <b>${MENU_CAL}</b>, then use the Google permission link if shown</li>
     </ol>`, 420, 300);
 }
 
@@ -326,13 +346,19 @@ function buildEvents_(ss) {
   sh.setFrozenRows(1);
   const body = c => sh.getRange(2, c, EV_ROWS, 1);
   sh.getRange(1, 1, 1, N).setValues([EV_HEAD]);
-  bodyRows_(sh.getRange(2, 1, EV_ROWS, N));
+  if (!DB_MODE) bodyRows_(sh.getRange(2, 1, EV_ROWS, N));
   const dateRule = SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(true).setHelpText('Pick a date (double-click for a calendar).').build();
   [EV.date + 1, EV.until + 1].forEach(c => body(c).setNumberFormat('ddd, mmm d, yyyy').setDataValidation(dateRule));
   [EV.start + 1, EV.end + 1].forEach(c => body(c).setNumberFormat('h:mm am/pm'));
   body(EV.type + 1).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(EV_TYPES, true).setAllowInvalid(true).build());
   body(EV.rep + 1).setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(EV_REPEATS, true).setAllowInvalid(true).build());
   body(EV.invite + 1).insertCheckboxes();
+  if (DB_MODE) {
+    sh.hideColumns(N);
+    refreshWhoList_(ss, sh);
+    sh.getRange(2, EV.status + 1, EV_ROWS, 3).protect().setDescription(PROTECT_TAG).setWarningOnly(true);
+    return sh;
+  }
   tableLook_(sh, EV_ROWS, N - 1, 26, THEME.tabs.events);
   band_(sh.getRange(2, 1, EV_ROWS, N - 1));
   body(EV.title + 1).setFontWeight('bold');

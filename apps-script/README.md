@@ -6,6 +6,8 @@ These files are local copies of the pasted Apps Script project. The `.gs` and `.
 
 Editing these files does not update the live Google Apps Script project. Changes must be copied into its editor or synced through a configured deployment workflow.
 
+**Set up / fix the tracker** builds missing data tabs on a new tracker. In database mode it writes plain headers, formulas, and validations without repainting or resizing spreadsheet tabs. Later clicks check school formulas, data schema, roles, triggers, and database protections; they skip visual refreshes and daily jobs. **Setup tools → Full rebuild** reruns the data setup when needed.
+
 ## Rewards (2026-10-25)
 
 Run **Set up / fix the tracker** after updating the script. It creates **Rewards** and **Reward requests** tabs. In Rewards, fill **Reward**, a positive whole-number **XP cost**, optional **Details**, and **Y** under **Active (Y/N)**. Scholars request a reward from Journey. Pending requests reserve XP, and the RR approves or declines them on the website Overview. Approval spends the reserved XP; decline releases it. The RR arranges delivery with the scholar. Reward requests follow the same two-year privacy cleanup as check-in answers after a scholar leaves START.
@@ -26,7 +28,7 @@ Sync all changed `.gs` files and `Web_App.html` to the bound Apps Script project
 
 1. Make a backup of the live spreadsheet. In its bound Apps Script project, replace `02_Menu_Setup.gs`, `04_Emails.gs`, `05_Portals.gs`, `06_Calendar.gs`, `08_Tools.gs`, and `Web_App.html` with these versions. Add `09_Data_Flow.gs`. Keep the live project's complete `07_Look.gs` when updating it.
 2. Save the project and run `setup()` as the automation owner. Accept authorization prompts. If setup says it needs another click, run it again. Version `v61` adds stable Scholar and Join request IDs, status/update metadata, a data change log, check-in week/submission timestamps, and a weekly roster snapshot. It repairs school count formulas and the Scholars filter. Existing records remain in their original columns.
-3. In the spreadsheet, use **Events & calendar → Set up / update calendars** as the owner and authorize the Advanced Calendar service. The current Events rows show `calendar.events.insert` permission errors, so the owner must grant access before they can sync. Failed events and sharing now retry daily.
+3. In the spreadsheet, use **START Tracker → Setup tools → Set up / update calendars** as the owner. Add **Google Calendar API** under Apps Script **Services** if prompted. The menu now checks Calendar authorization first and provides a Google permission link when needed. Allow access, return to the Sheet, and run the calendar item again. Calendar updates turn on only after the first sync succeeds. Failed events and sharing retry daily.
 4. Open the Regional Representative's **Scholars → Data quality** card. Fill missing scholar details and review any unmatched school or duplicate email. Existing historical weekly rates without snapshots are marked as estimates; snapshots preserve denominators from this release onward.
 5. Redeploy the web app as a new version so the portal uses the updated server and HTML. Publish the app host separately for icon changes.
 

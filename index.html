@@ -173,18 +173,24 @@
   .oerr { min-height: 20px; margin-top: 10px; color: #A1261B; font-weight: 700; font-size: 13.5px; text-align: center; }
   @media (prefers-reduced-motion: reduce) { .bob, .star .blink { animation: none; } .face, .opt, .pill { transition: none; } }
 
-  /* Playful START Region 11 loader on the existing gradient */
-  #splash { background:
-    radial-gradient(ellipse at 50% 49%, rgba(255,255,255,.98) 0%, rgba(255,255,255,.82) 19%, rgba(255,255,255,0) 48%),
-    linear-gradient(145deg, #008CF5 0%, #46BFFF 22%, #E2F5FF 38%, #FFFFFF 48%, #FFFFFF 57%, #FFF6CF 68%, #FFDF57 84%, #FFCC00 100%); }
-  .scard { max-width: 300px; padding: 20px; background: transparent; border-radius: 0; box-shadow: none; }
-  .splash-icon { position: relative; display: grid; place-items: center; width: 112px; height: 112px; margin: 0 auto 12px; border-radius: 50%; background: radial-gradient(circle, rgba(255,221,0,.36), rgba(255,221,0,0) 70%); }
-  .splash-icon::before, .splash-icon::after { content: '✦'; position: absolute; color: var(--blue); font-size: 19px; animation: sparkle 1.8s ease-in-out infinite; }
-  .splash-icon::before { top: 6px; left: 1px; }
-  .splash-icon::after { right: 0; bottom: 18px; color: #E9A800; animation-delay: .9s; }
-  .scard .star { margin: 0; filter: drop-shadow(0 5px 5px rgba(18,32,58,.14)); }
-  .scard .brand { font-size: 32px; }
-  .scard .brand small { font-size: 14px; letter-spacing: 2px; }
+  /* ---------- the opening: yellow screen with a face → it shrinks into the START star → welcome ---------- */
+  #splash { background: linear-gradient(145deg, #008CF5 0%, #46BFFF 22%, #E2F5FF 38%, #FFFFFF 48%, #FFFFFF 57%, #FFF6CF 68%, #FFDF57 84%, #FFCC00 100%); overflow: hidden; }
+  .softbg { position: absolute; inset: 0; opacity: 0; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 46%, rgba(255,255,255,.97) 0%, rgba(255,255,255,.86) 24%, rgba(255,255,255,.35) 52%, rgba(255,255,255,0) 72%),
+                linear-gradient(145deg, rgba(234,243,252,.55), rgba(255,255,255,.25) 50%, rgba(255,246,207,.5)); }
+  /* the yellow screen IS the star (navy border included), drawn huge so its yellow fills the screen, then shrinking to mascot size */
+  .sun-screen { position: fixed; z-index: 2; left: 50%; top: 50%; width: 168px; height: 168px; margin: -84px 0 0 -84px; overflow: visible;
+                pointer-events: none; transform-origin: 50% 55%; transform: scale(40); }
+  .scard { position: relative; z-index: 3; max-width: 320px; padding: 20px; background: transparent; border-radius: 0; box-shadow: none; }
+  .mwrap { position: relative; width: 112px; height: 112px; margin: 0 auto 10px; transform-origin: 50% 50%; will-change: transform; }
+  .mwrap > div, .mwrap > svg { position: absolute; inset: 0; }
+  #splashstar { opacity: 0; } #splashstar .star { width: 100%; height: 100%; margin: 0; filter: drop-shadow(0 6px 8px rgba(18,32,58,.16)); }
+  .face { width: 100%; height: 100%; transform-origin: 50% 50%; z-index: 4; overflow: visible; }
+  .face .blink { transform-origin: 50px 55px; animation: blink 3.4s infinite; }
+  .welcome { opacity: 0; }
+  .welcome .hello { display: block; font-size: 14px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: var(--ink2); }
+  .welcome .brand { font-size: 34px; margin-top: 4px; }
+  .welcome .rpill { display: inline-block; margin-top: 10px; background: var(--navy); color: var(--sun); font-size: 11px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; padding: 6px 14px; border-radius: 999px; }
   #state { margin-top: 22px; min-height: 22px; gap: 0; }
   .quest-gems { display: flex; align-items: center; justify-content: center; gap: 11px; height: 22px; }
   .quest-gems i { display: block; width: 13px; height: 13px; border: 2px solid #86B9DC; border-radius: 3px; background: #D6EDFC; transform: rotate(45deg) scale(.8); animation: gem-light 1.8s ease-in-out infinite; }
@@ -199,19 +205,25 @@
   .splash-install .pill { width:100%; margin-top:10px; padding:10px 14px; }
   @keyframes gem-light { 0%,22%,100% { background: #D6EDFC; transform: rotate(45deg) scale(.8); } 40%,60% { background: var(--sun); border-color: #E9A800; transform: rotate(45deg) scale(1.15); } }
   @keyframes sparkle { 0%,100% { opacity: .3; transform: scale(.7) rotate(-15deg); } 50% { opacity: 1; transform: scale(1.2) rotate(15deg); } }
-  @media (prefers-reduced-motion: reduce) { .splash-icon::before, .splash-icon::after, .quest-gems i { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .quest-gems i, .face .blink { animation: none; } }
 </style>
 </head>
 <body>
 <iframe id="portal" title="START Scholar Portal" allow="clipboard-write"></iframe>
 
 <div id="splash">
+  <div class="softbg" id="softbg"></div>
+  <svg class="sun-screen" id="sunscreen" viewBox="0 0 100 100" aria-hidden="true"></svg>
   <div class="scard">
-    <div class="splash-icon"><div id="splashstar"></div></div>
-    <div class="brand">START<small>Region 11</small></div>
-    <div id="state" role="status" aria-label="Opening START Region 11"><div class="quest-gems" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div>
-    <div class="splash-install" id="splashinstall"><b>Keep START on your phone</b><span id="splashinstalltext"></span>
-      <button class="pill sun" id="splashinstallbutton" type="button" style="display:none">Install START</button></div>
+    <div class="mwrap" id="mwrap"><div id="splashstar"></div><svg class="face" id="face" viewBox="0 0 100 100" aria-hidden="true"></svg></div>
+    <div class="welcome" id="welcome">
+      <span class="hello">Welcome to</span>
+      <div class="brand">DOST-START</div>
+      <span class="rpill">Region 11</span>
+      <div id="state" role="status" aria-label="Opening START Region 11"><div class="quest-gems" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="splash-install" id="splashinstall"><b>Keep START on your phone</b><span id="splashinstalltext"></span>
+        <button class="pill sun" id="splashinstallbutton" type="button" style="display:none">Install START</button></div>
+    </div>
   </div>
 </div>
 
@@ -284,13 +296,68 @@
   function ico(n, s) { return '<svg viewBox="0 0 24 24" width="' + (s || 24) + '" height="' + (s || 24) + '" aria-hidden="true">' + (ICON[n] || '') + '</svg>'; }
 
   function show(html) { state.innerHTML = html; splash.classList.remove('off'); }
+  function showNow(html) { finishIntro(); show(html); }
   function loadingBar() { show('<div class="quest-gems" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>'); }
-  $('splashstar').innerHTML = star(84, 'bob');
+  $('splashstar').innerHTML = star(112);
+  // ---------- the opening ----------
+  // 1 · full-screen yellow with a simple face   2 · the yellow shrinks into the START star (same face)   3 · the star gets smaller
+  // and moves up, the background softens and "Welcome to DOST-START" appears. START opens as soon as both the intro and the website are ready.
+  var INTRO = { M: 168, F: 112 };              // size of the star while it forms, and its final size
+  var introDone = false, introWait = [];
+  function afterIntro(fn) { if (introDone) fn(); else introWait.push(fn); }
+  function finishIntro() {
+    if (introDone) return; introDone = true;
+    $('sunscreen').style.display = 'none'; $('face').style.display = 'none';
+    $('splashstar').style.opacity = 1; $('splashstar').firstChild.classList.add('bob');
+    $('softbg').style.opacity = 1; $('welcome').style.opacity = 1; $('mwrap').style.transform = 'none';
+    introWait.splice(0).forEach(function (f) { f(); });
+  }
+  (function intro() {
+    // the face alone: the star's own eyes, cheeks and smile (so it lines up exactly when the star appears)
+    $('face').innerHTML = '<g class="blink"><ellipse cx="40.5" cy="55" rx="4.8" ry="6.2" fill="#12203A"/><ellipse cx="59.5" cy="55" rx="4.8" ry="6.2" fill="#12203A"/>' +
+      '<circle cx="42.3" cy="52.4" r="2" fill="#fff"/><circle cx="61.3" cy="52.4" r="2" fill="#fff"/></g>' +
+      '<ellipse cx="31.5" cy="63" rx="4.6" ry="2.8" fill="#FF8FA3" opacity=".7"/><ellipse cx="68.5" cy="63" rx="4.6" ry="2.8" fill="#FF8FA3" opacity=".7"/>' +
+      '<path d="M45.6 62.4 q2.2 3 4.4 0 q2.2 3 4.4 0" fill="none" stroke="#12203A" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>';
+    var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var sun = $('sunscreen'), mw = $('mwrap'), face = $('face');
+    if (calm || !sun.animate) { finishIntro(); return; }
+    // where the star sits while it forms: the middle of the screen
+    var box = mw.getBoundingClientRect(), W = innerWidth, H = innerHeight;
+    var dy = H / 2 - (box.top + box.height / 2), grow = INTRO.M / INTRO.F;
+    var formed = 'translateY(' + dy.toFixed(1) + 'px) scale(' + grow.toFixed(3) + ')';
+    mw.style.transform = formed;
+    // the yellow screen: the mascot's own star (navy border, darker edge, yellow body), without the shine
+    var pts = [];
+    for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 26 : 41; pts.push((50 + rr * Math.cos(a)).toFixed(1) + ' ' + (55 + rr * Math.sin(a)).toFixed(1)); }
+    var d = 'M' + pts.join(' L') + 'Z', soft = function (fill, w, extra) { return '<path d="' + d + '" fill="' + fill + '" stroke="' + fill + '" stroke-width="' + w + '" stroke-linejoin="round"' + (extra || '') + '/>'; };
+    sun.innerHTML = soft('#12203A', 16, ' transform="translate(0 3.5)"') + soft('#12203A', 16) + soft('#E9A800', 10, ' transform="translate(0 3)"') + soft('#FFD21F', 10);
+    // big enough that even the star's inner corners (yellow ≈ 31 units from the middle) are past the screen corners
+    var big = Math.hypot(W, H) / 2 / (31 * INTRO.M / 100) * 1.15;
+    sun.style.transform = 'scale(' + big.toFixed(2) + ')';
+    face.style.transform = 'scale(2.6)';
+    var ease = 'cubic-bezier(.65,0,.25,1)';
+    setTimeout(function () {                                          // 2 · shrink into the star
+      sun.animate([{ transform: 'scale(' + big.toFixed(2) + ')' }, { transform: 'scale(1)' }], { duration: 900, easing: ease, fill: 'forwards' });
+      face.animate([{ transform: 'scale(2.6)' }, { transform: 'scale(1)' }], { duration: 900, easing: ease, fill: 'forwards' });
+      setTimeout(function () {                                        // the real mascot takes over (outline, shine, shading)
+        $('splashstar').animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, fill: 'forwards' });
+        setTimeout(function () { sun.style.display = 'none'; }, 240);              // the mascot covers it exactly: no double edge
+        face.animate([{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1)' }], { duration: 260, fill: 'forwards' });
+        $('splashstar').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.08)' }, { transform: 'scale(1)' }], { duration: 420, easing: 'ease-out' });
+      }, 880);
+      setTimeout(function () {                                        // 3 · up and smaller; soft background; welcome
+        mw.animate([{ transform: formed }, { transform: 'none' }], { duration: 750, easing: ease, fill: 'forwards' });
+        $('softbg').animate([{ opacity: 0 }, { opacity: 1 }], { duration: 750, easing: 'ease-out', fill: 'forwards' });
+        $('welcome').animate([{ opacity: 0, transform: 'translateY(18px)' }, { opacity: 1, transform: 'none' }], { duration: 600, delay: 450, easing: 'ease-out', fill: 'forwards' });
+        setTimeout(finishIntro, 1100);
+      }, 1400);
+    }, 750);
+  })();
   $('hintstar').innerHTML = star(44);
 
   function pick() {
     if (!REGIONS.length || /PASTE_YOUR_WEBSITE_ID/.test(REGIONS[0].url)) {
-      show('<p class="note">This app is not set up yet. Put your region\'s website address in <b>config.js</b>.</p>');
+      showNow('<p class="note">This app is not set up yet. Put your region\'s website address in <b>config.js</b>.</p>');
       return;
     }
     if (REGIONS.length === 1) return open(REGIONS[0]);
@@ -308,7 +375,7 @@
     current = r;
     if (!navigator.onLine) {
       if (offline(r)) return;
-      show('<p class="note"><b>You are offline.</b><br>Connect to the internet to open START.</p><button class="pill sun" id="retry">Try again</button>');
+      showNow('<p class="note"><b>You are offline.</b><br>Connect to the internet to open START.</p><button class="pill sun" id="retry">Try again</button>');
       $('retry').onclick = function () { open(r); };
       return;
     }
@@ -442,7 +509,7 @@
     }
     draw();
   }
-  function reveal() { frame.classList.add('on'); splash.classList.add('off'); setTimeout(showInstallHint, 500); }
+  function reveal() { afterIntro(function () { frame.classList.add('on'); splash.classList.add('off'); setTimeout(showInstallHint, 500); }); }
   // START did not say "ready": Google may be showing its own error page (often: signed into several Google accounts).
   // Show START anyway, with a small card to try again or open it in the browser.
   function slow() { reveal(); rescue(true); }

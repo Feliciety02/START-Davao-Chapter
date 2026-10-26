@@ -209,13 +209,17 @@ function buildSettings_(ss) {
   const N = SETTINGS.length;
   const cur = sh.getRange(2, 2, N, 1).getValues();
   const props = docProps_();
-  sh.getRange(2, 1, N, 1).setValues(SETTINGS.map(x => [x[1]])).setFontWeight('bold');
-  sh.getRange(2, 3, N, 1).setValues(SETTINGS.map(x => [x[3]])).setFontColor(THEME.muted).setWrap(true);
+  sh.getRange(2, 1, N, 1).setValues(SETTINGS.map(x => [x[1]]));
+  sh.getRange(2, 3, N, 1).setValues(SETTINGS.map(x => [x[3]]));
+  if (!DB_MODE) {
+    sh.getRange(2, 1, N, 1).setFontWeight('bold');
+    sh.getRange(2, 3, N, 1).setFontColor(THEME.muted).setWrap(true);
+  }
   // the 🚀 switch starts ticked if weekly emails were already turned on with an older version
   const wasOn = ScriptApp.getProjectTriggers().some(t => ['weeklySummary', 'autoReminder'].indexOf(t.getHandlerFunction()) !== -1);
-  sh.getRange(2, 2, N, 1).setValues(SETTINGS.map((x, i) => [cur[i][0] === '' ?
-    (x[0] === 'autoWeekly' ? wasOn : x[0] === 'autoApprove' ? props.getProperty('AUTO_APPROVE') === '1' : x[2]) : cur[i][0]]))
-    .setBackground(THEME.yellow);
+  const values = sh.getRange(2, 2, N, 1).setValues(SETTINGS.map((x, i) => [cur[i][0] === '' ?
+    (x[0] === 'autoWeekly' ? wasOn : x[0] === 'autoApprove' ? props.getProperty('AUTO_APPROVE') === '1' : x[2]) : cur[i][0]]));
+  if (!DB_MODE) values.setBackground(THEME.yellow);
   // One time: move the Campus Lead emails from the old Mon / Wed / Thu to Fri (reminder) / Sun (deadline) / Sat (follow-up)
   if (!props.getProperty('DAYS_V2')) {
     const cell = k => sh.getRange(settingCell_(k).split('!')[1]);
@@ -225,7 +229,10 @@ function buildSettings_(ss) {
     }
     props.setProperty('DAYS_V2', '1');
   }
-  CHECKBOX_SETTINGS.forEach(k => sh.getRange(settingCell_(k).split('!')[1]).insertCheckboxes().setHorizontalAlignment('center'));
+  CHECKBOX_SETTINGS.forEach(k => {
+    const cell = sh.getRange(settingCell_(k).split('!')[1]).insertCheckboxes();
+    if (!DB_MODE) cell.setHorizontalAlignment('center');
+  });
   const dv = (key, rule) => sh.getRange(settingCell_(key).split('!')[1]).setDataValidation(rule);
   const list = items => SpreadsheetApp.newDataValidation().requireValueInList(items, true).setAllowInvalid(false).build();
   dv('replyTo', SpreadsheetApp.newDataValidation().requireFormulaSatisfied(
@@ -233,16 +240,20 @@ function buildSettings_(ss) {
      .setAllowInvalid(false).setHelpText('One email address, or leave blank.').build());
   ['day', 'dueDay', 'mOpenDay'].concat(remindTwoDays_() ? [] : ['remDay']).forEach(k => dv(k, list(DAYS)));
   // one deadline: the second row only mirrors the first (grey, not typed in)
-  sh.getRange(settingCell_('mDueDay').split('!')[1]).clearDataValidations()
-    .setFormula('=' + settingCell_('dueDay').split('!')[1]).setBackground('#EEF2F7').setFontColor(THEME.muted);
+  const memberDue = sh.getRange(settingCell_('mDueDay').split('!')[1]).clearDataValidations()
+    .setFormula('=' + settingCell_('dueDay').split('!')[1]);
+  if (!DB_MODE) memberDue.setBackground('#EEF2F7').setFontColor(THEME.muted);
   if (remindTwoDays_()) {                        // set by the deadline: shown grey, with the rule in a note
-    sh.getRange(settingCell_('remDay').split('!')[1]).clearDataValidations()
+    const reminderDay = sh.getRange(settingCell_('remDay').split('!')[1]).clearDataValidations()
       .setFormula('=INDEX({"Friday","Saturday","Sunday","Monday","Tuesday","Wednesday","Thursday"},MATCH(' + settingCell_('dueDay').split('!')[1] +
         ',{"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"},0))')
-      .setBackground('#EEF2F7').setFontColor(THEME.muted)
       .setNote('Set by the deadline: ONE reminder, 2 days before it, only to scholars and Campus Leads who have not answered yet.');
-    sh.getRange(settingCell_('fuDay').split('!')[1]).clearDataValidations().setValue('No follow-up')
-      .setBackground('#EEF2F7').setFontColor(THEME.muted).setNote('Off: the website check-in sends one reminder only (2 days before the deadline).');
+    const followupDay = sh.getRange(settingCell_('fuDay').split('!')[1]).clearDataValidations().setValue('No follow-up')
+      .setNote('Off: the website check-in sends one reminder only (2 days before the deadline).');
+    if (!DB_MODE) {
+      reminderDay.setBackground('#EEF2F7').setFontColor(THEME.muted);
+      followupDay.setBackground('#EEF2F7').setFontColor(THEME.muted);
+    }
   }
   ['hour', 'remHour'].forEach(k => dv(k, list(HOURS)));
   if (!remindTwoDays_()) dv('fuDay', list(DAYS.concat(['No follow-up'])));
@@ -253,17 +264,20 @@ function buildSettings_(ss) {
   });
   ['quietDays', 'tFocal', 'tReeng', 'tRate'].forEach(k => dv(k, SpreadsheetApp.newDataValidation()
     .requireNumberBetween(1, 365).setAllowInvalid(false).setHelpText('Enter a whole number.').build()));
-  const all = sh.getRange(1, 1, N + 1, 3);
-  all.setFontFamily(THEME.font).setVerticalAlignment('middle');
   sh.setFrozenRows(1);
-  sh.getRange(2, 2, N, 1).setFontWeight('bold').setHorizontalAlignment('left')
-    .setBorder(true, true, true, true, false, true, THEME.amber, SpreadsheetApp.BorderStyle.SOLID);
-  markColumns_(sh, [[1, 'auto', 'Setting', 'Fixed labels.'], [2, 'edit', 'Your value (yellow cells)', 'Change these anytime.'],
-                    [3, 'auto', 'What it means', 'Fixed explanations.', true]], N, false);
-  sh.setHiddenGridlines(true);
-  sh.setTabColor(THEME.tabs.settings);
-  placeTutorial_(sh);
-  placeTabBanner_(sh, 3);
+  if (DB_MODE) {
+    sh.getRange(1, 1, 1, 3).setValues([['Setting', 'Your value', 'What it means']]);
+  } else {
+    sh.getRange(1, 1, N + 1, 3).setFontFamily(THEME.font).setVerticalAlignment('middle');
+    sh.getRange(2, 2, N, 1).setFontWeight('bold').setHorizontalAlignment('left')
+      .setBorder(true, true, true, true, false, true, THEME.amber, SpreadsheetApp.BorderStyle.SOLID);
+    markColumns_(sh, [[1, 'auto', 'Setting', 'Fixed labels.'], [2, 'edit', 'Your value (yellow cells)', 'Change these anytime.'],
+                      [3, 'auto', 'What it means', 'Fixed explanations.', true]], N, false);
+    sh.setHiddenGridlines(true);
+    sh.setTabColor(THEME.tabs.settings);
+    placeTutorial_(sh);
+    placeTabBanner_(sh, 3);
+  }
 }
 
 function getSettings_() {
