@@ -749,24 +749,31 @@ function findScholar_(scholars, typed) {
 var WEB = { codeMins: 15, sessionDays: 30, shortHours: 12, maxTries: 5, perHour: 5,
             codesPerDay: 40,      // sign-up / reset codes per day, all scholars together
             mailReserve: 25,      // codes stop when fewer emails than this are left today (reminders come first)
-            lateDays: 2,          // a missed check-in can still be answered this many days after its due day (marked late)
-            cacheSecs: 60 };      // a page is re-read from the sheet at most once a minute (faster on busy nights)
+            lateDays: 0,          // a missed check-in is closed for good after 11:59 PM of its due day (was 2 days, marked late)
+            cacheSecs: 300 };     // a page is kept ready for 5 minutes; your own changes clear it at once (faster on busy nights)
 
 // The page itself
 function doGet(e) {
   if (e && e.parameter && e.parameter.ping) {                       // 🩺 Check my tracker: which code version is live?
     return ContentService.createTextOutput(JSON.stringify({ v: CODE_VERSION })).setMimeType(ContentService.MimeType.JSON);
   }
-  let st = {};
-  try { webSheet_(); st = getSettings_(); } catch (err) { Logger.log('Website: ' + err.message); }
-  // Google's own answer to "what is my address?" can be an old, broken one: only a fallback until the RR saves the real one (🌐)
-  try { const u = ScriptApp.getService().getUrl(); if (u && !docProps_().getProperty('WEB_URL_SET')) docProps_().setProperty('WEB_URL', u); } catch (err) { /* not deployed */ }
-  const boot = {
-    region: String(st.region || ''), regionName: String(st.regionName || ''), pics: webPics_(),
-    mark: typeof START_MARK === 'undefined' ? '' : START_MARK,
-    place: (() => { try { return placeOfWeek_(); } catch (err) { return null; } })(),
-    appOrigin: ''
-  };
+  // The page's start-up facts (region, pictures) are kept for 10 minutes, so opening START does not wait for the sheet each time
+  let boot = null, bc = null;
+  try { bc = CacheService.getScriptCache(); const hit = bc.get('WEB_BOOT_V1'); if (hit) boot = JSON.parse(hit); } catch (err) { boot = null; }
+  if (!boot) {
+    let st = {};
+    try { webSheet_(); st = getSettings_(); } catch (err) { Logger.log('Website: ' + err.message); }
+    // Google's own answer to "what is my address?" can be an old, broken one: only a fallback until the RR saves the real one (🌐)
+    try { const u = ScriptApp.getService().getUrl(), p = docProps_(); if (u && !p.getProperty('WEB_URL_SET') && p.getProperty('WEB_URL') !== u) p.setProperty('WEB_URL', u); } catch (err) { /* not deployed */ }
+    boot = {
+      region: String(st.region || ''), regionName: String(st.regionName || ''), pics: webPics_(),
+      mark: typeof START_MARK === 'undefined' ? '' : START_MARK,
+      place: (() => { try { return placeOfWeek_(); } catch (err) { return null; } })(),
+      appOrigin: ''
+    };
+    try { const j = JSON.stringify(boot); if (bc && j.length < 95000) bc.put('WEB_BOOT_V1', j, 600); } catch (err) { /* no cache */ }
+  }
+  const st = { region: boot.region };
   // Opened inside the START app (GitHub Pages)? Only the app address saved by the RR may show this page in a frame.
   const app = webOrigin_(e && e.parameter && e.parameter.app);
   const inApp = !!app && webAppOrigins_().indexOf(app) !== -1;
@@ -1164,6 +1171,18 @@ function webBumpData_() {
   const props = docProps_();
   props.setProperty('WEB_DATA_V', String(Number(props.getProperty('WEB_DATA_V') || 0) + 1));
 }
+// Cached pages are zipped, so even the RR's big page fits (Google allows 100 KB per cached item)
+function webCachePack_(json) {
+  if (json.length < 60000) return 'j:' + json;
+  const z = 'z:' + Utilities.base64Encode(Utilities.gzip(Utilities.newBlob(json, 'application/json')).getBytes());
+  return z.length < 95000 ? z : '';
+}
+function webCacheRead_(v) {
+  if (!v) return null;
+  if (v.slice(0, 2) === 'j:') return JSON.parse(v.slice(2));
+  if (v.slice(0, 2) === 'z:') return JSON.parse(Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(v.slice(2)), 'application/x-gzip')).getDataAsString());
+  return JSON.parse(v);                                                // an older plain entry
+}
 function webForget_(email) { try { CacheService.getScriptCache().remove(webCacheKey_(email)); } catch (e) { /* no cache */ } }
 
 // Every morning: accounts of people no longer on the list (graduated, dropped, changed email) are removed
@@ -1297,10 +1316,10 @@ function webLoad(token, fresh) {
       return { ok: false, signedOut: true, msg: 'This email is no longer on your region\'s START list. Please contact your Regional Representative.' };
     }
     const cache = (() => { try { return CacheService.getScriptCache(); } catch (e) { return null; } })(), ck = webCacheKey_(who.email);
-    if (!fresh && cache) { try { const hit = cache.get(ck); if (hit) return JSON.parse(hit); } catch (e) { /* read it fresh */ } }
+    if (!fresh && cache) { try { const hit = webCacheRead_(cache.get(ck)); if (hit) return hit; } catch (e) { /* read it fresh */ } }
     const out = webBuild_(ss, who);
     const json = JSON.stringify(out);
-    if (cache && json.length < 90000) { try { cache.put(ck, json, WEB.cacheSecs); } catch (e) { /* too big: no cache */ } }
+    if (cache) { try { const v = webCachePack_(json); if (v) cache.put(ck, v, WEB.cacheSecs); } catch (e) { /* too big: no cache */ } }
     return JSON.parse(json);
   });
 }
@@ -1347,38 +1366,34 @@ function webViewAs(token, role, key) {
     const ss = webSheet_();
     if (!webRoles_(ss, s.e).admin) return { ok: false, msg: 'Only the Regional Representative can do this.' };
     let who = null, label = '';
+    // The RR uses every role as herself: her own Gmail and name, no other account and nobody else's record.
+    // Member: her own Scholars record if she has one, else a member record in her name. Campus Lead: of her own school,
+    // else the first school with a Campus Lead. Practice only: nothing she does as Lead or member is saved.
+    const rr = webRoles_(ss, s.e), rrName = rr.name || 'Regional Representative';
+    const rows = schoolRows_(ss), mine = scholarByEmail_(ss)[emailOf_(s.e)];
+    const sc = (mine && rows.find(x => x.name === mine.school)) || rows.find(x => x.focal) || rows[0];
+    if (!sc) return { ok: false, msg: 'Add a school in the Schools tab first.' };
+    const member = mine && mine.status === 'Active' ? mine : { name: rrName, school: sc.name, status: 'Active', primary: emailOf_(s.e), program: '' };
+    const asYou = { role, school: sc.name, member: '__test__', memberName: displayName_(rrName) };
+    let out = null;
     if (role === 'lead') {
-      const sc = schoolRows_(ss).find(x => x.name === key);
-      if (!sc) return { ok: false, msg: 'That school is not in the Schools tab.' };
-      const p = sc.email ? scholarByEmail_(ss)[sc.email] : null;
-      who = { email: sc.email || '', name: sc.focal || ('Campus Lead of ' + sc.name), member: p && p.status === 'Active' ? p : null, leads: [sc.name], admin: false };
-      label = (sc.focal ? displayName_(sc.focal) : 'No Campus Lead yet') + ' · Campus Lead, ' + sc.name;
+      who = { email: s.e, name: rrName, member: null, leads: [sc.name], admin: false };
+      label = 'Campus Lead · ' + sc.name;
+      out = webBuild_(ss, who);
+      out.viewAs = Object.assign(asYou, { key: '', label, member: '' });
     } else if (role === 'member') {
-      who = webRoles_(ss, key);
-      if (!who.member) return { ok: false, msg: 'That scholar is not Active in Scholars.' };
-      who.admin = false;
-      label = displayName_(who.name) + ' · ' + (who.leads.length ? 'Campus Lead and member' : 'Member') + ', ' + who.member.school;
+      who = { email: s.e, name: rrName, member, leads: [], admin: false };
+      label = 'Member · ' + sc.name;
+      out = webBuild_(ss, who);
+      out.viewAs = Object.assign(asYou, { key: '', label });
     } else if (role === 'all') {
-      // Test all three at once: your real RR pages, plus this school's Campus Lead page and one member's pages (practice only)
-      const k = typeof key === 'object' && key ? key : (() => { try { return JSON.parse(String(key || '{}')); } catch (e) { return {}; } })();
-      const sc = schoolRows_(ss).find(x => x.name === String(k.school || ''));
-      if (!sc) return { ok: false, msg: 'Choose a school to test with.' };
-      let email = emailOf_(k.email);
-      const byEmail = scholarByEmail_(ss), activeHere = e => { const p = byEmail[e]; return p && p.status === 'Active' && p.school === sc.name; };
-      if (!email || !activeHere(email)) {                 // no member chosen: the school's Lead (if a member there), else its first active scholar
-        email = sc.email && activeHere(sc.email) ? sc.email : (Object.keys(byEmail).filter(activeHere).sort()[0] || '');
-      }
-      const m = email ? byEmail[email] : null;
-      who = { email: email || s.e, name: m ? m.name : (webRoles_(ss, s.e).name || 'Test user'), member: m && m.status === 'Active' ? m : null, leads: [sc.name], admin: true };
-      label = 'All three · RR + Campus Lead of ' + sc.name + (m ? ' + member ' + displayName_(m.name) : ' (no active members yet)');
-      key = JSON.stringify({ school: sc.name, email: email || '' });
-      const out = webBuild_(ss, who);
-      out.viewAs = { role, key, label, school: sc.name, member: m ? email : '', memberName: m ? displayName_(m.name) : '' };
-      return JSON.parse(JSON.stringify(out));
-    } else return { ok: false, msg: 'Choose a role.' };
-    const out = webBuild_(ss, who);
-    out.viewAs = { role, key, label, member: role === 'member' ? emailOf_(key) : '' };
-    return JSON.parse(JSON.stringify(out));
+      who = { email: s.e, name: rrName, member, leads: [sc.name], admin: true };
+      label = 'All three · ' + sc.name;
+      out = webBuild_(ss, who);
+      out.viewAs = Object.assign(asYou, { key: '', label });
+    }
+    if (out) return JSON.parse(JSON.stringify(out));
+    return { ok: false, msg: 'Choose a role.' };
   });
 }
 
@@ -1524,7 +1539,7 @@ function webAnswerRow_(ss, email, weekKey, sh, c) {
  * with Davao Region rounds mixed in. Days cannot be replayed: a game counts only on its own day, opening it starts it,
  * and leaving before the end scores 0. The page shows the game; THIS file checks every answer and decides the XP.
  * Saved in the "Daily games" tab. XP from games and check-ins also funds reward requests. */
-var MINI = { xpScramble: 10, xpRound: 3, perfect: 1, rounds: 3, hearts: 1, programRounds: 2, secsScramble: 45, secsRound: 20 };
+var MINI = { xpScramble: 10, xpRound: 3, perfect: 1, rounds: 3, hearts: 1, programRounds: 2, secsScramble: 50, secsRound: 25, slackMs: 4000 };   // +5 s each (generous)   // slackMs: time for a tap to travel to START on slow data
 // Number patterns (logic, for every program): [question, four choices, index of the answer, why]
 var MINI_PATTERNS = [
   ['What comes next? 2, 4, 8, 16, …', ['24', '32', '30', '64'], 1, 'Each number doubles.'],
@@ -1613,6 +1628,21 @@ var MINI_PROGRAMS = {
   'Mechatronics Engineering': ['mech', 'hw'],
 };
 
+// MEMORY PAIRS (icons only): two cards with the same picture make a pair. A board = 6 pairs: 2 icons from each of the
+// scholar's two topics and 2 from Davao (6 Davao icons when the program is not known). The pictures are drawn in Web_App.
+var MEMORY = { pairs: 6, perTopic: 2, previewSecs: 5, secs: 80, slackMs: 4000, xpPair: 1, tidyBonus: 4, okBonus: 2 };
+var MEMI_ = { code: ['braces', 'window', 'hash'], net: ['wifi', 'globe', 'cloud'], sys: ['db', 'lock', 'shield'], biz: ['bars', 'briefcase', 'target'],
+  teach: ['book', 'bulb', 'cap'], hw: ['cpu', 'battery', 'monitor'], ece: ['tower', 'plug', 'magnet'], mech: ['gear', 'robot', 'nut'],
+  math: ['calc', 'infinity', 'cube'], stat: ['bell', 'dice', 'scale'], davao: ['durian', 'mountain', 'eagle', 'orchid', 'island', 'sunny'] };
+// Stars: 3 = every pair in at most pairs+2 moves, 2 = every pair, 1 = half or more. XP follows the stars (DAILY_XP).
+function memScore_(found, moves) {
+  const P = MEMORY.pairs, all = found >= P;
+  const bonus = all ? (moves <= P + 2 ? MEMORY.tidyBonus : moves <= P + 5 ? MEMORY.okBonus : 0) : 0;
+  const stars = all ? (moves <= P + 2 ? 3 : 2) : found >= P / 2 ? 1 : 0; void bonus;
+  return ['Memory pairs · ' + found + ' of ' + P + ' pairs · ' + moves + ' moves', dailyXp_(stars), stars];
+}
+function memPairOf_(game, cid) { const c = game.cards[cid]; return c ? c.pair : -1; }
+
 // A private tracker secret keeps the answer sequence unpredictable even if the source is shared.
 // The calls that first create a game and later check it run under the document lock.
 function miniSeed_(email, week) {
@@ -1647,7 +1677,18 @@ function webMiniFor_(email, week, program) {
     for (let i = a.length - 1; i > 0; i--) { const j = b[(at + i) % b.length] % (i + 1); const t = a[i]; a[i] = a[j]; a[j] = t; }
     return a;
   };
-  const kind = ['scramble', 'odd', 'pattern'][b[0] % 3];
+  const kind = b[0] % 4 === 3 ? 'memory' : ['scramble', 'odd', 'pattern'][b[0] % 3];
+  if (kind === 'memory') {
+    const sets = MINI_PROGRAMS[String(program || '').trim()];
+    let icons = [];
+    if (sets) sets.forEach((k, n) => { icons = icons.concat(shuffle(MEMI_[k], 5 + n * 4).slice(0, MEMORY.perTopic).filter(x => icons.indexOf(x) === -1)); });
+    icons = icons.concat(shuffle(MEMI_.davao, 9).filter(x => icons.indexOf(x) === -1).slice(0, MEMORY.pairs - icons.length));
+    const cards = [];
+    icons.forEach((ic, i) => { cards.push({ kind: 'icon', icon: ic, pair: i }); cards.push({ kind: 'icon', icon: ic, pair: i }); });
+    const order = shuffle(cards.map((c, i) => i), 13);                // card ids say nothing about the pairs
+    return { id, kind, cards: order.map(i => cards[i]), pairs: MEMORY.pairs, xp: MEMORY.pairs * MEMORY.xpPair + MEMORY.tidyBonus,
+             secs: MEMORY.secs, preview: MEMORY.previewSecs, topic: sets ? String(program) : 'Davao Region' };
+  }
   if (kind === 'scramble') {
     const w = bank.words[b[3] % bank.words.length], word = w[0];
     let letters = shuffle(word.split(''), 4);
@@ -1695,22 +1736,39 @@ function dailyTab_(ss) {
     sh.getRange(1, 1, 1, DAILY_HEAD.length).setValues([DAILY_HEAD]).setFontWeight('bold');
   return sh;
 }
-function miniCount_(game) { return game.kind === 'scramble' ? 1 : game.rounds.length; }
+function miniCount_(game) { return game.kind === 'scramble' ? 1 : game.kind === 'memory' ? game.pairs : game.rounds.length; }
+// The phone checks a tap at once, so it gets each answer in a coded form (not readable at a glance).
+// The server still checks every answer and its time again, and only the server's result gives XP.
+function miniSeal_(key, text) {
+  key = String(key); text = String(text);
+  let out = '';
+  for (let i = 0; i < text.length; i++) {
+    const k = (key.charCodeAt(i % key.length) * 31 + i * 17 + 7) & 0xffff;
+    out += ('000' + ((text.charCodeAt(i) ^ k) & 0xffff).toString(16)).slice(-4);
+  }
+  return out;
+}
 function miniPrompt_(game, round) {
-  if (game.kind === 'scramble') return { letters: game.letters.slice(), clue: game.clue, length: game.answer.length };
+  if (game.kind === 'scramble') return { letters: game.letters.slice(), clue: game.clue, length: game.answer.length, s: miniSeal_(game.id, game.answer) };
   const r = game.rounds[round];
-  return { title: r.title, choices: r.choices.slice(), topic: r.topic };
+  return { title: r.title, choices: r.choices.slice(), topic: r.topic, s: miniSeal_(game.id + ':' + round, JSON.stringify({ o: r.odd, w: r.why || '' })) };
 }
 function miniPublic_(game, at, promptAt) {
+  if (game.kind === 'memory') return { id: game.id, kind: 'memory', xp: game.xp, secs: game.secs, preview: game.preview, pairs: game.pairs, topic: game.topic,
+    cards: game.cards.map((c, i) => ({ cid: i, kind: 'icon', icon: c.icon })), remainingMs: (game.preview + game.secs) * 1000,
+    deadline: promptAt.getTime() + (game.preview + game.secs) * 1000 };
   const out = { id: game.id, kind: game.kind, xp: game.xp, secs: game.secs,
     each: game.each, perfect: game.perfect, hearts: game.hearts,
     deadline: promptAt.getTime() + game.secs * 1000, remainingMs: game.secs * 1000 };
   if (game.kind === 'scramble') Object.assign(out, miniPrompt_(game, 0));
-  else { out.rounds = Array(miniCount_(game)).fill(null); out.rounds[at] = miniPrompt_(game, at); }
+  else out.rounds = game.rounds.map((r, i) => miniPrompt_(game, i));     // every round now, so "Next round" opens at once
   return out;
 }
+// what the phone shows for a catch-up: up to 4 XP (rounds: 1 each, +1 for all three)
+function catchupPublic_(pub) { return Object.assign(pub, { catchup: true, xp: catchupXp_(pub.xp), each: pub.kind === 'scramble' || pub.kind === 'memory' ? pub.each : 1, perfect: pub.kind === 'scramble' || pub.kind === 'memory' ? 0 : 1 }); }
 function miniScore_(game, right) {
-  const name = { scramble: 'Word scramble', odd: 'Odd one out', pattern: 'Number pattern' }[game.kind] || 'Brain break';
+  const name = { scramble: 'Word scramble', odd: 'Odd one out', pattern: 'Number pattern', memory: 'Memory pairs' }[game.kind] || 'Brain break';
+  if (game.kind === 'memory') return [name, 0, 0];
   if (game.kind === 'scramble') return [name + ' · ' + (right ? 'solved' : 'not solved'), right ? MINI.xpScramble : 0, right ? 3 : 0];
   return [name + ' · ' + right + ' of ' + miniCount_(game), right * MINI.xpRound + (right === miniCount_(game) ? MINI.perfect : 0), right];
 }
@@ -1723,18 +1781,36 @@ function miniFeedback_(game, round, correct, right, late) {
 }
 // One scholar's daily games: { byDay: { 'yyyy-MM-dd': { row, kind, result, xp, stars, started, finished, id } }, total, wins }
 function webMyDaily_(ss, email) {
-  const out = { byDay: {}, total: 0, wins: 0 };
+  const out = { byDay: {}, total: 0, wins: 0, email: emailOf_(email) };
   const sh = ss.getSheetByName(DAILY_TAB);
   if (!sh || sh.getLastRow() < 2) return out;
   sh.getRange(2, 1, sh.getLastRow() - 1, DAILY_HEAD.length).getDisplayValues().forEach((r, i) => {
     if (emailOf_(r[1]) !== emailOf_(email) || !r[0]) return;
     const xp = Math.max(0, Math.min(MINI.xpScramble, Number(r[6]) || 0)), stars = Number(r[7]) || 0;
-    out.byDay[r[0]] = { row: i + 2, kind: r[4], result: r[5], xp, stars, started: r[8], finished: r[9], id: r[10] };
+    out.byDay[r[0]] = { row: i + 2, kind: r[4], result: r[5], xp, stars, started: r[8], finished: r[9], id: r[10], catchup: isCatchupRow_(r) };
     if (r[9]) { out.total += xp; if (stars >= 2) out.wins++; }
   });
   return out;
 }
 function dayKey_(d) { return ymd_(d || new Date()); }
+// Catch-up: a brain-break day that was never opened can still be played later (on the Journey map), for up to 4 XP (DAILY_XP.catchup).
+// It never mends the day streak. Check-in days can never be caught up: a missed or overdue check-in stays missed.
+var CATCHUP = { share: 0.3, label: 'catch-up' };
+function catchupXp_(xp) { xp = Number(xp) || 0; let st = 0; DAILY_XP.today.forEach((v, i) => { if (xp >= v && v > 0) st = i; }); return DAILY_XP.catchup[st]; }
+function isCatchupRow_(r) { return new RegExp(CATCHUP.label).test(String(r[5] || '')); }
+// a past game day that may be caught up: shown on the map, not a check-in day, not before the term, never opened
+function catchupDayOk_(ss, email, key, st) {
+  if (!/^\d{4}-\d\d-\d\d$/.test(String(key || ''))) return 'Pick a day on your Journey map.';
+  const today = startOfDay_(new Date()), d = new Date(key + 'T12:00:00'), oldest = new Date(today); oldest.setDate(oldest.getDate() - GAME.mapBack);
+  if (!(key < dayKey_(today))) return 'That day is not over yet.';
+  if (startOfDay_(d) < oldest) return 'That day is too far back to catch up.';
+  if (isCheckinDay_(d, st)) return 'Check-in days cannot be caught up.';
+  let ts = null; try { ts = termStart_(ss); } catch (e) { ts = null; }
+  if (ts instanceof Date && startOfDay_(d) < startOfDay_(ts)) return 'That day is before this term.';
+  return '';
+}
+// a game row can still be answered: today's, or a catch-up opened today
+function dailyPlayable_(key, r) { return key === dayKey_() || (isCatchupRow_(r) && r[8] instanceof Date && dayKey_(r[8]) === dayKey_()); }
 // The check-in deadline is 11:59 PM of the due day: "Sunday, Oct 25, 11:59 PM", or "today, 11:59 PM" on the day itself
 function isDueDay_(d) { return d instanceof Date && ymd_(d) === ymd_(new Date()); }
 function dueLabel_(d) { return d instanceof Date ? (isDueDay_(d) ? 'today' : webFmt_(d, 'EEEE, MMM d')) + ', 11:59 PM' : ''; }
@@ -1761,6 +1837,7 @@ function dailyStarsBySchool_(ss) {
 function isCheckinDay_(d, st) { return DAYS[(d.getDay() + 6) % 7] === (st || getSettings_()).mOpenDay; }
 // The Journey map: the last days, today and the next few. One tile a day: the check-in day, or a brain break.
 function webDayMap_(ss, byWeek, daily, spec) {
+  let program = '';
   const st = getSettings_(), today = startOfDay_(new Date()), todayKey = dayKey_(today), out = [];
   let ts = null; try { ts = termStart_(ss); } catch (e) { ts = null; }
   const weekDue = d => { const x = new Date(d); for (let i = 0; i < 7 && DAYS[(x.getDay() + 6) % 7] !== st.mDueDay; i++) x.setDate(x.getDate() + 1); return dayKey_(x); };
@@ -1775,8 +1852,12 @@ function webDayMap_(ss, byWeek, daily, spec) {
                  stars: r ? (r.late ? 2 : 3) : 0, xp: r ? GAME.xpCheckin + (r.late ? 0 : GAME.xpOnTime) + GAME.xpEvent * r.ev : 0, max: GAME.xpCheckin + GAME.xpOnTime, today: key === todayKey });
     } else {
       const g = daily.byDay[key], done = !!(g && g.finished);
-      out.push({ key, label, date, kind: 'game', state: done ? 'done' : key === todayKey ? (g ? 'missed' : 'today') : key > todayKey ? 'locked' : 'missed',
-                 stars: done ? g.stars : 0, xp: done ? g.xp : 0, max: MINI.xpScramble, today: key === todayKey });
+      let game = g && /^(scramble|odd|pattern|memory)$/.test(g.kind) ? g.kind : '';
+      if (!game && daily.email) { try { if (!program) program = miniProgram_(ss, daily.email); const m = webMiniFor_(daily.email, key, program); game = m ? m.kind : ''; } catch (e) { game = ''; } }
+      const past = key < todayKey, canCatch = past && !g;              // never opened: it can be caught up (a game opened and left stays missed)
+      out.push({ key, label, date, kind: 'game', state: done ? 'done' : key === todayKey ? (g ? 'missed' : 'today') : key > todayKey ? 'locked' : canCatch ? 'catchup' : 'missed',
+                 stars: done ? g.stars : 0, xp: done ? g.xp : 0, max: canCatch ? catchupXp_(MINI.xpScramble) : MINI.xpScramble, today: key === todayKey,
+                 caught: !!(done && g.catchup), game });
     }
   }
   return out;
@@ -1785,7 +1866,7 @@ function webDayMap_(ss, byWeek, daily, spec) {
 function webDayStreak_(byWeek, daily) {
   const st = getSettings_(), today = startOfDay_(new Date()), todayKey = dayKey_(today);
   const weekDue = d => { const x = new Date(d); for (let i = 0; i < 7 && DAYS[(x.getDay() + 6) % 7] !== st.mDueDay; i++) x.setDate(x.getDate() + 1); return dayKey_(x); };
-  const doneOn = d => isCheckinDay_(d, st) ? !!byWeek[weekDue(d)] : !!(daily.byDay[dayKey_(d)] && daily.byDay[dayKey_(d)].finished);
+  const doneOn = d => isCheckinDay_(d, st) ? !!byWeek[weekDue(d)] : !!(daily.byDay[dayKey_(d)] && daily.byDay[dayKey_(d)].finished && !daily.byDay[dayKey_(d)].catchup);   // catch-ups never mend the streak
   let streak = 0; const d = new Date(today);
   if (!doneOn(d)) d.setDate(d.getDate() - 1);                     // today not played yet: the streak is still alive
   for (let i = 0; i < 366 && doneOn(d); i++) { streak++; d.setDate(d.getDate() - 1); }
@@ -1804,28 +1885,31 @@ function dailyRowFor_(sh, email, key) {
   return -1;
 }
 // Open today's brain break. Opening it starts it: a game opened before and not finished is lost (no replays).
-function webDailyStart(token) {
+function webDailyStart(token, sent) {
   return webSafe_(() => {
     const s = webSession_(token);
     if (!s) return { ok: false, signedOut: true };
     const ss = webSheet_(), who = webRoles_(ss, s.e);
     if (!who.member) return { ok: false, msg: 'Daily brain breaks are for active START scholars.' };
-    const now = new Date(), key = dayKey_(now);
-    if (isCheckinDay_(startOfDay_(now))) return { ok: false, checkin: true, msg: 'Today is check-in day: your check-in is today\'s challenge.' };
+    const now = new Date(), today = dayKey_(now), want = sent && sent.day ? String(sent.day) : today, catchup = want !== today;
+    if (catchup) { const why = catchupDayOk_(ss, who.email, want); if (why) return { ok: false, msg: why }; }
+    else if (isCheckinDay_(startOfDay_(now))) return { ok: false, checkin: true, msg: 'Today is check-in day: your check-in is today\'s challenge.' };
+    const key = want;
     const sh = dailyTab_(ss), lock = docLock_();
     if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try again.' };
     try {
       const row = dailyRowFor_(sh, who.email, key);
       if (row > 0) {
         const r = sh.getRange(row, 1, 1, DAILY_HEAD.length).getDisplayValues()[0];
-        if (!r[9]) { sh.getRange(row, 6, 1, 5).setValues([[r[4] + ' · left before the end', 0, 0, r[8], new Date()]]); }
-        return { ok: true, over: true, msg: 'Today\'s brain break is already used. A new one opens tomorrow.' };
+        if (!r[9]) { sh.getRange(row, 6, 1, 5).setValues([[r[4] + ' · left before the end' + (isCatchupRow_(r) ? ' · ' + CATCHUP.label : ''), 0, 0, r[8], new Date()]]); }
+        return { ok: true, over: true, msg: catchup ? 'That day was already played.' : 'Today\'s brain break is already used. A new one opens tomorrow.' };
       }
       const game = webMiniFor_(who.email, key, miniProgram_(ss, who.email)), started = new Date();
-      sh.appendRow([key, who.email, who.member.name || who.name || '', who.member.school || '', game.kind, 'Started', 0, 0,
-                    started, '', game.id, 0, 0, started, 'prompt', '', '', '']);
+      const mem = game.kind === 'memory';                              // memory: moves, pairs found, when play starts (after the preview), matched cards
+      sh.appendRow([key, who.email, who.member.name || who.name || '', who.member.school || '', game.kind, 'Started' + (catchup ? ' · ' + CATCHUP.label : ''), 0, 0,
+                    started, '', game.id, 0, 0, mem ? new Date(started.getTime() + game.preview * 1000) : started, mem ? 'memory' : 'prompt', '', '', '']);
       sh.getRange(sh.getLastRow(), 1).setNumberFormat('@').setValue(key);
-      return { ok: true, day: key, game: miniPublic_(game, 0, started) };
+      return { ok: true, day: key, game: catchup ? catchupPublic_(miniPublic_(game, 0, started)) : miniPublic_(game, 0, started) };
     } finally { lock.releaseLock(); }
   });
 }
@@ -1840,19 +1924,20 @@ function webDailyPick(token, sent) {
     const key = String(sent.day || ''), sh = dailyTab_(ss), lock = docLock_();
     if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try again.' };
     try {
-      if (key !== dayKey_()) return { ok: false, msg: 'This brain break has closed.' };
       const row = dailyRowFor_(sh, who.email, key);
       if (row < 0) return { ok: false, msg: 'Open today\'s brain break first.' };
       const r = sh.getRange(row, 1, 1, DAILY_HEAD.length).getValues()[0];
+      if (!dailyPlayable_(key, r)) return { ok: false, msg: 'This brain break has closed.' };
+      const cu = x => isCatchupRow_(r) && x && x.ok ? Object.assign(x, { score: catchupXp_(x.score), catchup: true }) : x;
       const game = webMiniFor_(who.email, key, miniProgram_(ss, who.email));
       const round = Number(r[11]), at = r[13], now = new Date();
       if (r[9] || sent.id !== r[10] || r[10] !== game.id ||
           Number(sent.round) !== round || round < 0 || round >= miniCount_(game))
         return { ok: false, msg: 'This round has already been answered.' };
       if (r[14] === 'answered' && String(r[15]) === String(sent.pick))
-        return miniFeedback_(game, round, r[16] === true, Number(r[12] || 0), r[17] === true);
+        return cu(miniFeedback_(game, round, r[16] === true, Number(r[12] || 0), r[17] === true));
       if (r[14] !== 'prompt') return { ok: false, msg: 'This round has already been answered.' };
-      const late = !(at instanceof Date) || now.getTime() - at.getTime() > game.secs * 1000 ||
+      const late = !(at instanceof Date) || now.getTime() - at.getTime() > game.secs * 1000 + MINI.slackMs ||
         !(r[8] instanceof Date) || now.getTime() - r[8].getTime() > DAILY_GRACE_MIN * 60000;
       let correct = false;
       if (game.kind === 'scramble') {
@@ -1863,7 +1948,7 @@ function webDailyPick(token, sent) {
       }
       const right = Number(r[12] || 0) + (correct ? 1 : 0);
       sh.getRange(row, 12, 1, 7).setValues([[round, right, at, 'answered', String(sent.pick), correct, late]]);
-      return miniFeedback_(game, round, correct, right, late);
+      return cu(miniFeedback_(game, round, correct, right, late));
     } finally { lock.releaseLock(); }
   });
 }
@@ -1877,10 +1962,11 @@ function webDailyNext(token, sent) {
     const key = String(sent.day || ''), sh = dailyTab_(ss), lock = docLock_();
     if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try again.' };
     try {
-      if (key !== dayKey_()) return { ok: false, msg: 'This brain break has closed.' };
       const row = dailyRowFor_(sh, who.email, key);
       if (row < 0) return { ok: false, msg: 'Open today\'s brain break first.' };
       const r = sh.getRange(row, 1, 1, DAILY_HEAD.length).getValues()[0];
+      if (!dailyPlayable_(key, r)) return { ok: false, msg: 'This brain break has closed.' };
+      const cu = x => isCatchupRow_(r) && x && x.ok ? Object.assign(x, { score: catchupXp_(x.score), catchup: true }) : x;
       const game = webMiniFor_(who.email, key, miniProgram_(ss, who.email));
       const round = Number(r[11]);
       if (r[9] || sent.id !== r[10] || r[10] !== game.id || round >= miniCount_(game))
@@ -1898,6 +1984,47 @@ function webDailyNext(token, sent) {
     } finally { lock.releaseLock(); }
   });
 }
+// MEMORY PAIRS: one attempt (two cards). The server knows the pairs, counts the moves and keeps the time limit.
+// sent = { day, id, a, b } (card ids). Reply: { match, moves, found, done, timeUp, score }
+function memTry_(game, st, a, b, now) {
+  // st: { moves, found, playAt (ms), matched: [card ids] } -> updated in place
+  if (!(a >= 0 && b >= 0 && a < game.cards.length && b < game.cards.length) || a === b) return { ok: false, msg: 'Pick two different cards.' };
+  if (st.matched.indexOf(a) !== -1 || st.matched.indexOf(b) !== -1) return { ok: false, msg: 'That card is already matched.' };
+  if (now > st.playAt + game.secs * 1000 + MEMORY.slackMs) { st.over = true; return { ok: true, timeUp: true, done: true, match: false, moves: st.moves, found: st.found, score: memScore_(st.found, st.moves)[1] }; }
+  st.moves++;
+  const ca = game.cards[a], cb = game.cards[b], match = ca.pair === cb.pair;
+  if (match) { st.found++; st.matched.push(a, b); }
+  const done = st.found >= game.pairs;
+  return { ok: true, match, moves: st.moves, found: st.found, done, timeUp: false, score: done ? memScore_(st.found, st.moves)[1] : 0 };
+}
+function webDailyMatch(token, sent) {
+  return webSafe_(() => {
+    const s = webSession_(token);
+    if (!s) return { ok: false, signedOut: true };
+    const ss = webSheet_(), who = webRoles_(ss, s.e);
+    if (!who.member) return { ok: false, msg: 'Daily brain breaks are for active START scholars.' };
+    sent = sent || {};
+    const key = String(sent.day || ''), sh = dailyTab_(ss), lock = docLock_();
+    if (!lock.tryLock(20000)) return { ok: false, msg: 'START is busy. Please try again.' };
+    try {
+      const row = dailyRowFor_(sh, who.email, key);
+      if (row < 0) return { ok: false, msg: 'Open today\'s brain break first.' };
+      const r = sh.getRange(row, 1, 1, DAILY_HEAD.length).getValues()[0];
+      if (!dailyPlayable_(key, r)) return { ok: false, msg: 'This brain break has closed.' };
+      const game = webMiniFor_(who.email, key, miniProgram_(ss, who.email));
+      if (r[9] || game.kind !== 'memory' || sent.id !== r[10] || r[10] !== game.id || r[14] !== 'memory') return { ok: false, msg: 'This game is over.' };
+      const st = { moves: Number(r[11] || 0), found: Number(r[12] || 0), playAt: r[13] instanceof Date ? r[13].getTime() : 0,
+                   matched: String(r[15] || '').split(',').filter(x => x !== '').map(Number) };
+      if (!(r[8] instanceof Date) || Date.now() - r[8].getTime() > DAILY_GRACE_MIN * 60000) return { ok: true, timeUp: true, done: true, match: false, moves: st.moves, found: st.found };
+      const out = memTry_(game, st, Math.floor(Number(sent.a)), Math.floor(Number(sent.b)), Date.now());
+      if (!out.ok) return out;
+      sh.getRange(row, 12, 1, 7).setValues([[st.moves, st.found, r[13], st.over ? 'over' : 'memory', st.matched.join(','), out.match, !!out.timeUp]]);
+      if (isCatchupRow_(r) && out.score) { out.score = catchupXp_(out.score); out.catchup = true; }
+      return out;
+    } finally { lock.releaseLock(); }
+  });
+}
+
 // RR test mode ("All three"): today's brain break for the test member, played for practice. Same game, same checks and
 // timer, but the progress lives in a 30-minute cache only: no row in Daily games, no XP, no streak. op: start · pick · next · finish
 function webDailyTest(token, op, sent) {
@@ -1907,30 +2034,41 @@ function webDailyTest(token, op, sent) {
     const ss = webSheet_();
     if (!webRoles_(ss, s.e).admin) return { ok: false, msg: 'Only the Regional Representative can test.' };
     sent = sent || {};
-    const as = emailOf_(sent.as), p = as ? scholarByEmail_(ss)[as] : null;
-    if (!p || p.status !== 'Active') return { ok: false, msg: 'Choose an active member to test with.' };
-    const key = dayKey_(), game = webMiniFor_(as, key, miniProgram_(ss, as)), now = Date.now();
+    const as = sent.as === '__test__' ? emailOf_(s.e) : emailOf_(sent.as), p = as ? scholarByEmail_(ss)[as] : null;
+    if (sent.as !== '__test__' && (!p || p.status !== 'Active')) return { ok: false, msg: 'Choose an active member to test with.' };
+    const now = Date.now(), today = dayKey_();
     const cache = CacheService.getUserCache ? CacheService.getUserCache() : CacheService.getScriptCache();
-    const ck = 'DTEST_' + webHash_(s.e + '|' + as + '|' + key);
+    const ck = 'DTEST_' + webHash_(s.e + '|' + as);
     const load = () => { try { return JSON.parse(cache.get(ck) || 'null'); } catch (e) { return null; } };
     const save = st => cache.put(ck, JSON.stringify(st), 1800);
     if (op === 'start') {
-      save({ id: game.id, round: 0, right: 0, at: now, started: now, state: 'prompt' });
-      return { ok: true, day: key, test: true, game: miniPublic_(game, 0, new Date(now)) };
+      const day = sent.day && /^\d{4}-\d\d-\d\d$/.test(String(sent.day)) && String(sent.day) < today ? String(sent.day) : today;   // a catch-up day, or today
+      const g0 = webMiniFor_(as, day, miniProgram_(ss, as)), pub = miniPublic_(g0, 0, new Date(now));
+      save({ id: g0.id, day, catchup: day !== today, round: 0, right: 0, at: now, started: now, state: g0.kind === 'memory' ? 'memory' : 'prompt',
+             moves: 0, found: 0, playAt: now + (g0.preview || 0) * 1000, matched: [] });
+      return { ok: true, day, test: true, game: day !== today ? catchupPublic_(pub) : pub };
     }
     const st = load();
+    const key = st && st.day ? st.day : today, game = webMiniFor_(as, key, miniProgram_(ss, as));
+    const cu = x => st && st.catchup && x && x.ok ? Object.assign(x, { score: catchupXp_(x.score), catchup: true }) : x;
     if (!st || st.id !== game.id || sent.id !== game.id) return { ok: false, msg: 'Practice game expired. Open it again.' };
     if (op === 'pick') {
       const round = st.round;
       if (Number(sent.round) !== round) return { ok: false, msg: 'This round has already been answered.' };
-      if (st.state === 'answered' && String(st.pick) === String(sent.pick)) return miniFeedback_(game, round, st.correct, st.right, st.late);
+      if (st.state === 'answered' && String(st.pick) === String(sent.pick)) return cu(miniFeedback_(game, round, st.correct, st.right, st.late));
       if (st.state !== 'prompt') return { ok: false, msg: 'This round has already been answered.' };
-      const late = now - st.at > game.secs * 1000 || now - st.started > DAILY_GRACE_MIN * 60000;
+      const late = now - st.at > game.secs * 1000 + MINI.slackMs || now - st.started > DAILY_GRACE_MIN * 60000;
       const correct = !late && (game.kind === 'scramble'
         ? String(sent.pick || '').toUpperCase().replace(/[^A-Z]/g, '') === game.answer
         : String(sent.pick).trim() !== '' && Number(sent.pick) === game.rounds[round].odd);
       Object.assign(st, { state: 'answered', pick: String(sent.pick), correct, late, right: st.right + (correct ? 1 : 0) }); save(st);
-      return miniFeedback_(game, round, correct, st.right, late);
+      return cu(miniFeedback_(game, round, correct, st.right, late));
+    }
+    if (op === 'match') {
+      if (game.kind !== 'memory' || st.state !== 'memory') return { ok: false, msg: 'This game is over.' };
+      const out = memTry_(game, st, Math.floor(Number(sent.a)), Math.floor(Number(sent.b)), now);
+      if (out.ok) { if (st.over) st.state = 'over'; save(st); }
+      return cu(out);
     }
     if (op === 'next') {
       if (st.state !== 'answered' || Number(sent.round) !== st.round || st.round >= miniCount_(game) - 1) return { ok: false, msg: 'The next round is not ready.' };
@@ -1939,9 +2077,9 @@ function webDailyTest(token, op, sent) {
     }
     if (op === 'finish') {
       const done = !sent.skip && st.state === 'answered' && st.round === miniCount_(game) - 1;
-      const res = done ? miniScore_(game, st.right) : [miniScore_(game, 0)[0] + ' · left', 0, 0];
+      const res = game.kind === 'memory' ? (sent.skip ? ['', 0, 0] : memScore_(st.found, st.moves)) : done ? miniScore_(game, st.right) : [miniScore_(game, 0)[0] + ' · left', 0, 0];
       cache.remove(ck);
-      return { ok: true, test: true, xp: res[1], stars: res[2] };
+      return { ok: true, test: true, xp: st.catchup ? catchupXp_(res[1]) : res[1], stars: res[2] };
     }
     return { ok: false, msg: 'Unknown step.' };
   });
@@ -1964,13 +2102,18 @@ function webDailyFinish(token, sent) {
       const r = sh.getRange(row, 1, 1, DAILY_HEAD.length).getValues()[0];
       if (r[9]) return { ok: true, already: true, member: JSON.parse(JSON.stringify(webMember_(ss, who))) };
       const game = webMiniFor_(who.email, key, miniProgram_(ss, who.email));
-      const complete = key === dayKey_() && !sent.skip && sent.id === r[10] && r[10] === game.id &&
+      const complete = dailyPlayable_(key, r) && !sent.skip && sent.id === r[10] && r[10] === game.id &&
         r[14] === 'answered' && Number(r[11]) === miniCount_(game) - 1 &&
         r[8] instanceof Date && r[13] instanceof Date && r[13].getTime() - r[8].getTime() <= DAILY_GRACE_MIN * 60000;
       res = complete ? miniScore_(game, Number(r[12] || 0)) : [miniScore_(game, 0)[0] + ' · left before the end', 0, 0];
+      if (game.kind === 'memory') {                                    // pairs found and moves, as counted on the server
+        const inTime = r[8] instanceof Date && Date.now() - r[8].getTime() <= DAILY_GRACE_MIN * 60000;
+        res = !sent.skip && sent.id === r[10] && r[10] === game.id && inTime ? memScore_(Number(r[12] || 0), Number(r[11] || 0)) : ['Memory pairs · left before the end', 0, 0];
+      }
+      if (isCatchupRow_(r)) res = [res[0] + ' · ' + CATCHUP.label, catchupXp_(res[1]), res[2]];
       sh.getRange(row, 6, 1, 5).setValues([[res[0], res[1], res[2], r[8], new Date()]]);
     } finally { lock.releaseLock(); }
-    webBumpData_();
+    // only this scholar's page changes (the school ranks catch up within 5 minutes): everyone else keeps their fast page
     try { webForget_(who.email); } catch (e) { /* cache */ }
     return { ok: true, xp: res[1], stars: res[2], member: JSON.parse(JSON.stringify(webMember_(ss, who))) };
   });
@@ -2540,7 +2683,15 @@ function showWebsite() {
  *  🎮 GAME (website): XP, levels, badges, streak saver, the weekly journey, postcards, the weekly goal,
  *  the school leaderboard. Everything is worked out from the Check-in answers tab: nothing new is stored.
  * ================================================================ */
-var GAME = { rankMin: 3, xpCheckin: 20, xpOnTime: 10, xpEvent: 5, journeyWeeks: 12, mapBack: 10, mapAhead: 2 };   // check-in up to 30 XP + events; a daily game up to 10
+var GAME = { rankMin: 3, xpCheckin: 40, xpOnTime: 10, xpEvent: 10, journeyWeeks: 12, mapBack: 10, mapAhead: 2 };   // check-in 50 XP (+10 per START event); a brain break up to 10
+/* ---------- the XP standard (one table for every game) ----------
+ *   Weekly check-in ........ 50 XP, +10 for each START event joined (the biggest reward: it is what START needs most)
+ *   Today's brain break ..... by stars: 3★ 10 · 2★ 6 · 1★ 3 · 0★ 0   (same for every game)
+ *   Catch-up (an overdue day) by stars: 3★ 4  · 2★ 2 · 1★ 1 · 0★ 0   (no day-streak credit)
+ * Stars: word scramble solved 3; odd one out / number pattern 1 per right round; memory pairs 3 all found in few moves,
+ * 2 all found, 1 half or more. */
+var DAILY_XP = { today: [0, 3, 6, 10], catchup: [0, 1, 2, 4] };
+function dailyXp_(stars, catchup) { const t = catchup ? DAILY_XP.catchup : DAILY_XP.today; return t[Math.max(0, Math.min(3, Math.floor(Number(stars) || 0)))]; }
 var LEVELS_DAVAO = ['Bagong Agila', 'Batang Apo', 'Lakad Samal', 'Agila sa Eden', 'Bantay Dabaw', 'Agila ng Apo'];
 var LEVELS_ANY = ['Rookie', 'Explorer', 'Achiever', 'Trailblazer', 'Leader', 'Legend'];
 var LEVEL_XP = [0, 100, 250, 450, 700, 1000];
@@ -3332,7 +3483,7 @@ function webJoinRequest(email, name, school, note, d) {
     note = clip(note, 200);
     const schoolTyped = clip(d.schoolTyped, 120), program = clip(d.program, 140), programTyped = clip(d.programTyped, 140);
     // the Scholars details: "Last Name, First Name M." like the ONSSE masterlist, year awarded, campus, hometown
-    const last = clip(d.last, 60), first = clip(d.first, 60), mi = clip(d.mi, 3).replace(/[^A-Za-zÑñ]/g, '').slice(0, 2).toUpperCase();
+    const last = clip(d.last, 60), first = clip(d.first, 60), mi = clip(d.mi, 3).replace(/[^A-Za-zÑñ]/g, '').slice(0, 1).toUpperCase();   // one letter only
     const awarded = /^\d{4}$/.test(String(d.awarded || '')) && Number(d.awarded) >= 2010 && Number(d.awarded) <= new Date().getFullYear() + 1 ? String(d.awarded) : '';
     const campus = d.campus !== undefined ? clip(d.campus, 60) : campusOf_(school), city = clip(d.city, 60), province = clip(d.province, 60);
     const hometown = city && province ? city + ', ' + province : '';

@@ -1,5 +1,5 @@
 /* =====================================================================
- *  START SCHOLAR TRACKER  ·  00_Config   (version 2026-10-26b)
+ *  START SCHOLAR TRACKER  ·  00_Config   (version 2026-10-27f)
  *  ---------------------------------------------------------------------
  *  Inside: Settings, colours, tab names, form questions, shared helpers.
  *  To customise: The Settings tab rows, colours (THEME) and the form question titles (Q).
@@ -10,7 +10,7 @@
  *  Then in the Google Sheet: START Tracker › ① Set up / fix the tracker.
  *  You never need to run anything from here: use the START Tracker menu in the Sheet.
  * ===================================================================== */
-var START_MODULES = '2026-10-26b';
+var START_MODULES = '2026-10-27f';
 
 // The ▶ Run button runs the FIRST function of the open file: this one, so it is always safe.
 function about_00_Config() {
@@ -65,7 +65,7 @@ var START_PROGRAMS = {
   ]
 };
 // Code version: the website reports it, so 🩺 Check my tracker can tell when "New version" was not deployed
-var CODE_VERSION = '2026-10-26b';
+var CODE_VERSION = '2026-10-27f';
 // Menu paths named in messages (the short database menu groups them differently)
 var MENU_CAL = DB_MODE ? '🛠 Setup tools › 📅 Set up / update calendars' : '📅 Events & calendar › Set up / update calendars';
 var MENU_REPORT = DB_MODE ? '🛠 Setup tools › 📄 End-of-term report' : '📄 Reports & backups › Make an end-of-term report';
