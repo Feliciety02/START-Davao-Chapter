@@ -5,12 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>START Scholar Portal</title>
 <meta name="description" content="Weekly check-ins, your school and START events for DOST-SEI START scholars.">
-<meta name="theme-color" content="#0099FF">
+<meta name="theme-color" content="#FFFFFF">
+<style>html,body{background:#FFFFFF}</style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="START">
-<link rel="manifest" href="manifest.webmanifest?v=12">
+<link rel="manifest" href="manifest.webmanifest?v=13">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=12">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=12">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,7 +21,7 @@
   :root { --navy: #12203A; --navy2: #23365C; --blue: #0099FF; --sky: #7CCBFF; --sun: #FFDD00; --ice: #EAF3FC; --ink2: #66748C;
           --shadow: 0 6px 22px rgba(18,32,58,.08); --wash: linear-gradient(135deg, #0078E8 0%, #39B5FF 21%, #DFF4FF 37%, #FFFFFF 48%, #FFFFFF 56%, #FFF8DA 66%, #FFE675 82%, #FFCC00 100%); }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; font-family: Poppins, 'Segoe UI', Arial, sans-serif; color: var(--navy); overflow: hidden; background: #EAF3FC; }
+  html, body { margin: 0; height: 100%; font-family: Poppins, 'Segoe UI', Arial, sans-serif; color: var(--navy); overflow: hidden; background: #FFFFFF; }
   body::before { content: ""; position: fixed; inset: 0; background: var(--wash); z-index: 0; }
   button { font-family: inherit; }
   #portal { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: #F2F5FA; opacity: 0; transition: opacity .35s; z-index: 1; }
@@ -175,6 +176,7 @@
 
   /* ---------- the opening: yellow screen with a face → it shrinks into the START star → welcome ---------- */
   #splash { background: linear-gradient(145deg, #008CF5 0%, #46BFFF 22%, #E2F5FF 38%, #FFFFFF 48%, #FFFFFF 57%, #FFF6CF 68%, #FFDF57 84%, #FFCC00 100%); overflow: hidden; }
+  .introcover { position: absolute; inset: 0; background: #FFFFFF; z-index: 1; pointer-events: none; }
   .softbg { position: absolute; inset: 0; opacity: 0; pointer-events: none;
     background: radial-gradient(ellipse at 50% 46%, rgba(255,255,255,.97) 0%, rgba(255,255,255,.86) 24%, rgba(255,255,255,.35) 52%, rgba(255,255,255,0) 72%),
                 linear-gradient(145deg, rgba(234,243,252,.55), rgba(255,255,255,.25) 50%, rgba(255,246,207,.5)); }
@@ -221,6 +223,7 @@
 <iframe id="portal" title="START Scholar Portal" allow="clipboard-write"></iframe>
 
 <div id="splash">
+  <div class="introcover" id="introcover"></div>
   <div class="softbg" id="softbg"></div>
   <div class="scard">
     <div class="mwrap" id="mwrap"><div id="splashstar"></div></div>
@@ -319,7 +322,7 @@
     var sb = st.querySelector('.blink'); if (sb) sb.style.animation = '';
     try { document.getAnimations().forEach(function (a) { var t = a.effect && a.effect.target; if (t && $('splash').contains(t) && a.playState === 'finished') a.cancel(); }); } catch (e) {}
     st.firstChild.classList.add('drift');
-    $('softbg').style.opacity = 1; $('welcome').style.opacity = 1; $('mwrap').style.transform = 'none';
+    $('softbg').style.opacity = 1; $('welcome').style.opacity = 1; if ($('introcover')) $('introcover').style.display = 'none'; $('mwrap').style.transform = 'none';
     introWait.splice(0).forEach(function (f) { f(); });
   }
   // the website starts loading once the star has formed, so the morph has the phone to itself
@@ -340,12 +343,13 @@
     var glide = 'cubic-bezier(.45,0,.15,1)', soft = 'cubic-bezier(.22,1,.36,1)';
     var at = function (el, frames, o) { o.fill = o.fill || 'both'; return el.animate(frames, o); };
     // 1 · the star appears in the middle (a soft fade and a slight settle) and blinks once
-    at(star0, [{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 520, delay: T.in, easing: soft });
+    at(star0, [{ opacity: 1, transform: 'scale(.97)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 520, delay: T.in, easing: soft });   // there from the first frame, no fade
     if (sb) at(sb, [{ transform: 'scaleY(1)' }, { transform: 'scaleY(.1)', offset: .45 }, { transform: 'scaleY(1)' }], { duration: 220, delay: T.blink, fill: 'none' });
     setTimeout(morphFinished, 520);                                              // the website starts loading once the star is on screen
     // 2 · the same star zooms out and moves up; the background softens; the words rise in
     at(mw, [{ transform: mid }, { transform: 'none' }], { duration: T.upFor, delay: T.up, easing: glide });
     at($('softbg'), [{ opacity: 0 }, { opacity: 1 }], { duration: T.upFor + 300, delay: T.up, easing: 'ease-in-out' });
+    at($('introcover'), [{ opacity: 1 }, { opacity: 0 }], { duration: T.upFor + 300, delay: T.up, easing: 'ease-in-out' });
     var w = $('welcome'); w.style.opacity = 1;
     [].forEach.call(w.children, function (el, i) {
       at(el, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 650, delay: T.words + i * 120, easing: soft });
@@ -355,8 +359,7 @@
   // Start once the page font is ready (max 300 ms) and the rest of this script has run, so nothing below the star changes size mid-intro.
   (function () {
     var started = false, go = function () { if (started) return; started = true; try { intro(); } catch (e) { morphFinished(); finishIntro(); } };
-    try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { setTimeout(go, 0); }); } catch (e) {}
-    setTimeout(go, 300);
+    go();                                                     // at once: the first thing on screen is the big star
   })();
   // rotated or resized mid-intro: skip to the welcome rather than draw the star in the wrong place
   var introSize = innerWidth + 'x' + innerHeight;
