@@ -404,7 +404,8 @@
   body::before { content: ""; position: fixed; inset: 0; z-index: -1; background: linear-gradient(135deg, #0099FF 0%, #EAF3FC 48%, #FFDD00 100%); }
   .card, .tablebox, .acctbtn, .pick button, .wd i, .choice, textarea.ta, .auth, .say { box-shadow: 0 8px 28px rgba(18,32,58,.12); }
   .heroc, .heroc.done, .heroc.late { background: #12203A linear-gradient(135deg, #12203A 0%, #163A6B 60%, #005CAA 100%); color: #fff; }
-  .heroc::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: linear-gradient(90deg, #0099FF 0%, #0099FF 55%, #FFDD00 100%); }
+  .heroc::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(90deg, #0099FF 0%, #0099FF 55%, #FFDD00 100%);
+    -webkit-mask: linear-gradient(to top, #000 6px, transparent 6px); mask: linear-gradient(to top, #000 6px, transparent 6px); }   /* the bottom edge follows the card's rounded corners */
   .heroc h3 { color: #fff; text-transform: uppercase; }
   .heroc p { color: #B9C6DC; }
   .heroc .badge { position: relative; display: inline-block; background: var(--sun); color: var(--navy); font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; padding: 6px 14px; border-radius: 999px; margin-bottom: 14px; }
@@ -1228,7 +1229,6 @@ main#app.ptrback { transition:transform .32s cubic-bezier(.2,1,.4,1); }
       transform: translateY(-42%) rotate(6deg);
       box-shadow: 0 16px 30px rgba(18,32,58,.24);
     }
-    .heroc::after { border-radius: 0 0 28px 28px; }
   }
   @media (max-width: 860px) {
     .heroc.done { padding: 20px; }
@@ -3263,7 +3263,7 @@ function refresh() { if (S.viewAs) return openViewAs(S.viewAs.role, S.viewAs.key
   var startY = null, startX = null, pulling = false, running = false, distance = 0, armed = false;
   var LINE = 70, MAX = 130;
   var ind = document.getElementById('ptr'), star = ind.querySelector('.pstar');
-  try { star.innerHTML = startLogo(30); } catch (e) { /* the ring is enough */ }
+  var drawStar = function () { if (star.querySelector('svg, img')) return; try { star.innerHTML = startLogo(30); } catch (e) { /* the ring is enough */ } };   // drawn when first needed, so it is never blank
   function page() { return document.getElementById('app'); }
   function canPull(target) {
     if (!S.token || !S.data || running) return false;
@@ -3301,7 +3301,7 @@ function refresh() { if (S.viewAs) return openViewAs(S.viewAs.role, S.viewAs.key
     if (startY == null || running) return;
     var dy = e.touches[0].clientY - startY, dx = Math.abs(e.touches[0].clientX - startX);
     if (dy <= 0 || dx > dy) { if (!pulling) startY = null; else { distance = 0; paint(); } return; }
-    if (!pulling && dy > 10) { pulling = true; ind.classList.remove('anim'); var pg = page(); if (pg) pg.classList.add('ptrpull'); }
+    if (!pulling && dy > 10) { pulling = true; drawStar(); ind.classList.remove('anim'); var pg = page(); if (pg) pg.classList.add('ptrpull'); }
     if (!pulling) return;
     distance = MAX * (1 - Math.exp(-dy / 190));           // rubber band: easy at first, firmer further down
     paint();
@@ -3316,10 +3316,10 @@ function refresh() { if (S.viewAs) return openViewAs(S.viewAs.role, S.viewAs.key
     var pg = page(); if (pg) { pg.classList.add('ptrback'); pg.style.transform = 'translateY(' + (LINE * 0.6).toFixed(0) + 'px)'; }
     var t0 = Date.now();
     Promise.resolve().then(refresh).catch(function () {}).then(function () {
-      setTimeout(function () {                            // stays at least 0.7 s so it never just flickers
+      setTimeout(function () {                            // stays at least 0.45 s so it never just flickers
         ind.classList.remove('refreshing'); ind.classList.add('done');
-        setTimeout(function () { running = false; distance = 0; armed = false; settle(); hide(); }, 380);
-      }, Math.max(0, 700 - (Date.now() - t0)));
+        setTimeout(function () { running = false; distance = 0; armed = false; settle(); hide(); }, 300);
+      }, Math.max(0, 450 - (Date.now() - t0)));
     });
   }, { passive: true });
   document.addEventListener('touchcancel', function () { if (!running) reset(); }, { passive: true });
