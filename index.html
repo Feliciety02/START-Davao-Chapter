@@ -339,22 +339,22 @@
     var mid = 'translateY(' + (H / 2 - (box.top + box.height / 2)).toFixed(1) + 'px) scale(' + (M / F).toFixed(3) + ')';
     mw.style.transform = mid;
     var sb = star0.querySelector('.blink'); if (sb) sb.style.animation = 'none';  // its own blink waits; one blink is timed below
-    var T = { in: 0, blink: 900, up: 1500, upFor: 1100, words: 1850 };
+    var T = { in: 0, blink: 500, up: 800, upFor: 900, words: 1050 };   // about 1 second shorter than before, same moves
     var glide = 'cubic-bezier(.45,0,.15,1)', soft = 'cubic-bezier(.22,1,.36,1)';
     var at = function (el, frames, o) { o.fill = o.fill || 'both'; return el.animate(frames, o); };
     // 1 · the star appears in the middle (a soft fade and a slight settle) and blinks once
     at(star0, [{ opacity: 1, transform: 'scale(.97)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 520, delay: T.in, easing: soft });   // there from the first frame, no fade
     if (sb) at(sb, [{ transform: 'scaleY(1)' }, { transform: 'scaleY(.1)', offset: .45 }, { transform: 'scaleY(1)' }], { duration: 220, delay: T.blink, fill: 'none' });
-    setTimeout(morphFinished, 520);                                              // the website starts loading once the star is on screen
+    setTimeout(morphFinished, 150);                                              // the website starts loading once the star is on screen
     // 2 · the same star zooms out and moves up; the background softens; the words rise in
     at(mw, [{ transform: mid }, { transform: 'none' }], { duration: T.upFor, delay: T.up, easing: glide });
     at($('softbg'), [{ opacity: 0 }, { opacity: 1 }], { duration: T.upFor + 300, delay: T.up, easing: 'ease-in-out' });
     at($('introcover'), [{ opacity: 1 }, { opacity: 0 }], { duration: T.upFor + 300, delay: T.up, easing: 'ease-in-out' });
     var w = $('welcome'); w.style.opacity = 1;
     [].forEach.call(w.children, function (el, i) {
-      at(el, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 650, delay: T.words + i * 120, easing: soft });
+      at(el, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 520, delay: T.words + i * 100, easing: soft });
     });
-    setTimeout(function () { if (!INTRO.skip) finishIntro(); }, T.words + w.children.length * 120 + 680);
+    setTimeout(function () { if (!INTRO.skip) finishIntro(); }, T.words + w.children.length * 100 + 540);
   }
   // Start once the page font is ready (max 300 ms) and the rest of this script has run, so nothing below the star changes size mid-intro.
   (function () {
