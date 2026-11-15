@@ -1737,21 +1737,11 @@ function dailyTab_(ss) {
   return sh;
 }
 function miniCount_(game) { return game.kind === 'scramble' ? 1 : game.kind === 'memory' ? game.pairs : game.rounds.length; }
-// The phone checks a tap at once, so it gets each answer in a coded form (not readable at a glance).
-// The server still checks every answer and its time again, and only the server's result gives XP.
-function miniSeal_(key, text) {
-  key = String(key); text = String(text);
-  let out = '';
-  for (let i = 0; i < text.length; i++) {
-    const k = (key.charCodeAt(i % key.length) * 31 + i * 17 + 7) & 0xffff;
-    out += ('000' + ((text.charCodeAt(i) ^ k) & 0xffff).toString(16)).slice(-4);
-  }
-  return out;
-}
+// Send only the current prompt. The server checks each answer before revealing feedback or the next round.
 function miniPrompt_(game, round) {
-  if (game.kind === 'scramble') return { letters: game.letters.slice(), clue: game.clue, length: game.answer.length, s: miniSeal_(game.id, game.answer) };
+  if (game.kind === 'scramble') return { letters: game.letters.slice(), clue: game.clue, length: game.answer.length };
   const r = game.rounds[round];
-  return { title: r.title, choices: r.choices.slice(), topic: r.topic, s: miniSeal_(game.id + ':' + round, JSON.stringify({ o: r.odd, w: r.why || '' })) };
+  return { title: r.title, choices: r.choices.slice(), topic: r.topic };
 }
 function miniPublic_(game, at, promptAt) {
   if (game.kind === 'memory') return { id: game.id, kind: 'memory', xp: game.xp, secs: game.secs, preview: game.preview, pairs: game.pairs, topic: game.topic,
@@ -1761,7 +1751,7 @@ function miniPublic_(game, at, promptAt) {
     each: game.each, perfect: game.perfect, hearts: game.hearts,
     deadline: promptAt.getTime() + game.secs * 1000, remainingMs: game.secs * 1000 };
   if (game.kind === 'scramble') Object.assign(out, miniPrompt_(game, 0));
-  else out.rounds = game.rounds.map((r, i) => miniPrompt_(game, i));     // every round now, so "Next round" opens at once
+  else out.rounds = game.rounds.map((r, i) => i === at ? miniPrompt_(game, i) : null);
   return out;
 }
 // what the phone shows for a catch-up: up to 4 XP (rounds: 1 each, +1 for all three)

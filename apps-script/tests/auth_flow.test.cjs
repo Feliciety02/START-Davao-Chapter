@@ -26,6 +26,7 @@ const context = vm.createContext({
   AUTH: { joinStage: 0 }, S: { email: 'scholar@example.com' },
   $: id => elements[id],
   document: {
+    addEventListener() {},
     querySelectorAll: () => sections,
     querySelector: () => fields.js
   },

@@ -32,6 +32,10 @@ const publicGame = c.miniPublic_(game, 0, new Date());
 assert.equal(publicGame.rounds[0].title, 'First');
 assert.equal(publicGame.rounds[1], null);
 assert.doesNotMatch(JSON.stringify(publicGame), /"odd"\s*:|First answer|Second answer|Third answer/);
+assert.equal(publicGame.rounds[0].s, undefined, 'the answer cannot be decoded from a client-side seal');
+assert.equal(c.miniPrompt_(game, 1).s, undefined);
+assert.equal(c.miniPrompt_({ id: 'word', kind: 'scramble', letters: ['A'], clue: 'letter', answer: 'A' }, 0).s, undefined);
+assert.doesNotMatch(fs.readFileSync(path.join(root, 'Web_App.html'), 'utf8'), /function miniUnseal\(/);
 
 const day = '2026-10-25';
 let row = [day, 'ana@example.com', 'Ana', 'USeP', 'odd', 'Started', 0, 0,
@@ -55,7 +59,7 @@ c.dayKey_ = () => day;
 c.webForget_ = () => {};
 c.webMember_ = () => ({ name: 'Ana' });
 
-row[13] = new Date(Date.now() - 21000);
+row[13] = new Date(Date.now() - game.secs * 1000 - c.MINI.slackMs - 1000);
 const expired = c.webDailyPick('token', { day, id: game.id, round: 0, pick: 2 });
 assert.equal(expired.ok, true);
 assert.equal(expired.timeUp, true);

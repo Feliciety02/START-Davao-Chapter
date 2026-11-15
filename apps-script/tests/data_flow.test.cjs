@@ -44,7 +44,7 @@ assert.equal(context.autoJoinEligible_({}, request, [['Another Name', old[1], ''
 request[7] = 'Not a listed program';
 assert.equal(context.autoJoinEligible_({}, request, []), false);
 request[7] = 'Computer Science'; request[10] = 'Needs review (school not on the list)';
-assert.equal(context.autoJoinEligible_({}, request, []), false);
+assert.equal(context.autoJoinEligible_({}, request, []), true, 'legacy review labels do not block an otherwise valid listed school');
 request[10] = 'Eligible'; request[2] = 'Unlisted school';
 assert.equal(context.autoJoinEligible_({}, request, []), false);
 request[2] = old[1];

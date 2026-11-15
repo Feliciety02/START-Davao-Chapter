@@ -33,11 +33,13 @@ const settle = () => new Promise(resolve => setImmediate(resolve));
     S: { token: 'token' },
     call: (...args) => { accountCalls.push(args); return accountResponses.shift()(); },
     keep: (...args) => accountCalls.push(args),
+    snapDrop: () => {},
+    dropPending: () => {},
     $: () => null,
     showSignIn: message => { account.message = message; },
     banner: message => accountAlerts.push(message)
   });
-  vm.runInContext(html.slice(html.indexOf('function signOutAll()'), html.indexOf('function signOut()', html.indexOf('function signOutAll()'))), account);
+  vm.runInContext(html.slice(html.indexOf('function signOutAll()'), html.indexOf('function signOut(', html.indexOf('function signOutAll()'))), account);
   accountResponses.push(() => Promise.reject(new Error('offline')));
   account.signOutAll(); await settle();
   assert.equal(account.S.token, 'token', 'a failed remote sign-out does not claim all devices were signed out');

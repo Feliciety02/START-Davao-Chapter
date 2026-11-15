@@ -22,6 +22,7 @@
   body { min-height: 100vh; color: var(--navy); font-family: Poppins, 'Segoe UI', Arial, sans-serif; font-size: 15px; line-height: 1.5; background: var(--bg); }
   a { color: var(--blue-d); font-weight: 600; text-decoration: none; }
   button { font-family: inherit; color: inherit; }
+  :is(button, a, select, input, textarea, [role="button"]):focus-visible { outline: 3px solid var(--blue-d); outline-offset: 3px; }
   .muted { color: var(--ink2); font-size: 13.5px; }
   svg.ico { display: inline-block; vertical-align: middle; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   svg.ico .f { fill: var(--sun); stroke: none; } svg.ico .b { fill: var(--sky2); stroke: none; }
@@ -2145,13 +2146,15 @@ function signOutAll() {
   if (!t) return showSignIn('Please sign in again to sign out of all devices.');
   call('webSignOutAll', t).then(function (r) {
     if (!r || !r.ok) { banner((r && r.msg) || 'Could not sign out of all devices. Try again.', 'warn'); return; }
-    S.token = null; keep('start_token', null); snapDrop();
+    S.token = null; S.email = ''; keep('start_token', null); keep('start_email', null); dropPending(); snapDrop();
     var l = $('lesson'); if (l) l.remove();
     showSignIn('Signed out on all your devices.');
   }).catch(function () { banner('Could not reach START. Try again to sign out of all devices.', 'warn'); });
 }
-function signOut() {
-  var t = S.token; S.token = null; keep('start_token', null); snapDrop();
+function signOut(wipe) {
+  var t = S.token; S.token = null; keep('start_token', null);
+  if (wipe === true) { S.email = ''; keep('start_email', null); dropPending(); }
+  snapDrop();
   if (t) call('webSignOut', t).catch(function () {});
   var l = $('lesson'); if (l) l.remove();
   showSignIn('');
@@ -2174,7 +2177,10 @@ function snapRead() {
     return x.d;
   } catch (e) { return null; }
 }
-function snapDrop() { try { localStorage.removeItem(SNAP_KEY); } catch (e) {} }
+function snapDrop() {
+  try { localStorage.removeItem(SNAP_KEY); } catch (e) {}
+  if (APP) { try { window.top.postMessage({ start: 'clear-snapshot' }, APP); } catch (e) {} }
+}
 function load(fresh) {
   var snap = !S.data && fresh !== true ? snapRead() : null;
   if (snap) {                                                 // show the last page right away, marked as updating
@@ -2957,7 +2963,7 @@ function meView(d) {
   ];
   var acct = S.viewAs ? [] : [row('key', 'Change password', 'Use a new password on every device', 'onclick="changePassword()"'),
     row('devices', 'Sign out of all devices', 'If you used START on a shared computer', 'onclick="signOutAll()"'),
-    row('logout', 'Sign out', 'Only on this device', 'onclick="signOut()"', 'out')];
+    row('logout', 'Sign out', 'Only on this device', 'onclick="signOut(true)"', 'out')];
   var about = '<p class="mabout">START ' + esc(d.region || '') + (d.version ? ' · version ' + esc(d.version) : '') + (d.updated ? ' · updated ' + esc(d.updated) : '') + '</p>';
   return page('Me', '', '<div class="mewrap"><div class="mecol">' + profile + mstats + (short.length ? '<div class="phoneonly">' + section('More pages', short) + '</div>' : '') + section('Help', help) + '</div>' +
     '<div class="mecol">' + (badgeBox ? '<section class="msec"><h3>Progress</h3><div class="mlist">' + badgeBox + '</div></section>' : '') + section('Tools', tools) + section('Account', acct) + about + '</div></div>');
@@ -4152,8 +4158,7 @@ function miniHtml() {
   }
   return h + '</div>';
 }
-/* ---------- instant games: the phone checks each tap at once; the server records it in the background ----------
- * Saves go one by one, in order (an answer, the next round, the result), and retry by themselves on a weak signal. */
+/* ---------- game saves and retries ---------- */
 var DQ = { list: [], busy: false, failed: false, waits: [] };
 function dqReset() { DQ = { list: [], busy: false, failed: false, waits: [] }; }
 function dqPush(name, payload, done) { DQ.list.push({ name: name, payload: payload, done: done }); dqRun(); }
@@ -4179,23 +4184,10 @@ function dqRun() {
   };
   attempt(0);
 }
-function miniUnseal(key, hex) {
-  key = String(key); hex = String(hex || ''); var out = '';
-  for (var i = 0; i * 4 < hex.length; i++) {
-    var k = (key.charCodeAt(i % key.length) * 31 + i * 17 + 7) & 0xffff;
-    out += String.fromCharCode((parseInt(hex.substr(i * 4, 4), 16) ^ k) & 0xffff);
-  }
-  return out;
-}
-function miniKey(g, round) {                      // { o: right choice, w: why } for a round, or the word for a scramble
-  try { return g.kind === 'scramble' ? miniUnseal(g.id, g.m.s) : JSON.parse(miniUnseal(g.id + ':' + round, g.m.rounds[round].s)); } catch (e) { return null; }
-}
-function miniLocal(g) { return g.kind === 'scramble' ? !!g.m.s : g.kind !== 'memory' && !!(g.m.rounds && g.m.rounds[g.r] && g.m.rounds[g.r].s); }
 function miniBuzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
 function miniSubmit(pick) {
   var session = CK, g = session && session.g;
   if (!session || !session.daily || !g || g.done || g.pending || (g.kind !== 'scramble' && g.pick !== -1)) return;
-  if (miniLocal(g)) return miniSubmitNow(pick);
   miniClockStop(g); g.frozen = Math.max(0, Number(g.m.deadline || 0) - Date.now());
   g.pending = true; g.err = ''; g.lastSent = pick; step();           // the answer locks in now; the timer no longer matters
   dcall('webDailyPick', { day: session.day, id: g.id, round: g.r || 0, pick: pick }).then(function (r) {
@@ -4215,44 +4207,6 @@ function miniSubmit(pick) {
     miniBuzz(r.correct ? [15, 30, 15] : [40, 30, 40]);
     step(); if (r.correct) miniPop('+' + (g.kind === 'scramble' ? g.m.xp : g.m.each) + ' XP');
   }).catch(function () { if (CK !== session) return; g.pending = false; g.frozen = null; g.err = 'Could not reach START. Try that answer again.'; step(); });
-}
-function miniSubmitNow(pick) {
-  var session = CK, g = session.g, m = g.m, round = g.r || 0, key = miniKey(g, round);
-  if (key == null) { g.m.s = ''; if (m.rounds && m.rounds[round]) m.rounds[round].s = ''; return miniSubmit(pick); }   // could not read it: ask the server
-  miniClockStop(g);
-  var late = pick === '' || Date.now() > Number(m.deadline || 0) + 1500;
-  if (g.kind === 'scramble') {
-    var ok = !late && String(pick).toUpperCase() === String(key).toUpperCase();
-    g.done = true; g.late = late; g.lastCorrect = ok; g.reveal = String(key).toUpperCase(); g.right = ok ? 1 : 0;
-    g.won = ok ? m.xp : 0; g.fx = ok ? 'win' : 'shake';
-  } else {
-    var ok2 = !late && pick !== '' && Number(pick) === Number(key.o), total = m.rounds.length;
-    g.late = late; g.lastCorrect = ok2; g.correctIndex = Number(key.o); g.why = key.w || '';
-    g.pick = pick === '' ? -2 : Number(pick); g.picks.push(ok2); g.right += ok2 ? 1 : 0;
-    if (ok2) { g.combo++; g.best = Math.max(g.best, g.combo); } else g.combo = 0;
-    if (round === total - 1) g.won = g.right * (m.each || 0) + (g.right === total ? (m.perfect || 0) : 0);
-  }
-  miniBuzz(g.lastCorrect ? [15, 30, 15] : [40, 30, 40]);
-  dqPush('webDailyPick', { day: session.day, id: g.id, round: round, pick: pick }, function (r) {    // the server's check is the one that counts
-    if (!r || !r.ok || !CK || CK.g !== g) return;
-    var changed = false;
-    if (g.kind === 'scramble') { if (!!r.correct !== g.lastCorrect) { g.lastCorrect = !!r.correct; g.won = r.score || 0; g.late = !!r.timeUp; changed = true; } }
-    else {
-      if (g.picks[round] !== !!r.correct) { g.picks[round] = !!r.correct; changed = true; }
-      if (g.right !== r.correctTotal) { g.right = r.correctTotal; changed = true; }
-      if (r.last && g.won !== r.score) { g.won = r.score || 0; changed = true; }
-      if (round === g.r && g.lastCorrect !== !!r.correct) { g.lastCorrect = !!r.correct; g.late = !!r.timeUp; changed = true; }
-    }
-    if (changed) step();
-  });
-  step(); if (g.lastCorrect) miniPop('+' + (g.kind === 'scramble' ? m.xp : m.each) + ' XP');   // after the answer is in line, so the result is saved after it
-}
-function miniNextNow(g) {                         // the next round opens at once; the server is told in the background
-  var session = CK, m = g.m, round = g.r;
-  g.r = round + 1; m.deadline = Date.now() + g.limit;
-  g.pick = -1; g.lastCorrect = false; g.correctIndex = -1; g.why = ''; g.late = false; g.err = '';
-  step();
-  dqPush('webDailyNext', { day: session.day, id: g.id, round: round }, function () {});
 }
 function miniWire() {
   var g = CK.g, m = g.m; g.fx = '';
@@ -4279,7 +4233,6 @@ function miniWire() {
     }; });
     if ($('mgnext')) $('mgnext').onclick = function () {
       if (g.pending) return;
-      if (g.r < m.rounds.length - 1 && m.rounds[g.r + 1] && m.rounds[g.r + 1].s) { miniNextNow(g); return; }
       if (g.r < m.rounds.length - 1) {
         var session = CK, round = g.r; g.pending = true; this.textContent = 'Loading…';
         dcall('webDailyNext', { day: session.day, id: g.id, round: round }).then(function (r) {
