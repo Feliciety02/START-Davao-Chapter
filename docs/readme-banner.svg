@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 340" role="img" aria-labelledby="title desc">
+  <title id="title">START Scholar Portal, Region XI</title>
+  <desc id="desc">A yellow START star beside a phone showing a weekly check-in, Journey progress, and school updates.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#063c76"/>
+      <stop offset="0.48" stop-color="#12203a"/>
+      <stop offset="1" stop-color="#1b3157"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7ccbff"/>
+      <stop offset="1" stop-color="#ffdd00"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#050c1a" flood-opacity=".26"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="340" rx="28" fill="url(#bg)"/>
+  <circle cx="1100" cy="-60" r="220" fill="#0099ff" opacity=".17"/>
+  <circle cx="1120" cy="370" r="230" fill="#ffdd00" opacity=".14"/>
+  <path d="M0 290 C170 245 350 345 520 285 S880 230 1200 305" fill="none" stroke="url(#glow)" stroke-width="3" opacity=".45"/>
+  <g fill="#7ccbff" opacity=".7">
+    <circle cx="60" cy="245" r="3"/><circle cx="530" cy="54" r="3"/><circle cx="608" cy="273" r="4"/>
+    <circle cx="1120" cy="52" r="3"/><circle cx="1170" cy="230" r="3"/>
+  </g>
+
+  <g font-family="Arial, Helvetica, sans-serif">
+    <rect x="62" y="45" width="198" height="31" rx="15.5" fill="#ffdd00"/>
+    <text x="161" y="65" text-anchor="middle" font-size="14" font-weight="700" letter-spacing="1.4" fill="#12203a">REGION XI · DAVAO</text>
+    <text x="62" y="142" font-size="48" font-weight="800" fill="#ffffff">START Scholar Portal</text>
+    <text x="64" y="185" font-size="22" fill="#d6edfc">Check in. Grow your journey. Stay connected.</text>
+    <text x="64" y="235" font-size="16" fill="#ffffff">For DOST-SEI START scholars, Campus Leads, and</text>
+    <text x="64" y="260" font-size="16" fill="#ffffff">Regional Representatives in Davao Region.</text>
+  </g>
+
+  <g transform="translate(686 187) rotate(-8)" filter="url(#shadow)">
+    <path d="M0-66 20-27 63-20 33 12 40 57 0 37-40 57-33 12-63-20-20-27Z" fill="#ffdd00" stroke="#12203a" stroke-width="8" stroke-linejoin="round"/>
+    <ellipse cx="-17" cy="3" rx="5" ry="7" fill="#12203a"/>
+    <ellipse cx="17" cy="3" rx="5" ry="7" fill="#12203a"/>
+    <path d="M-13 20 Q0 31 13 20" fill="none" stroke="#12203a" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <g filter="url(#shadow)" font-family="Arial, Helvetica, sans-serif">
+    <rect x="796" y="24" width="216" height="294" rx="31" fill="#ffffff"/>
+    <rect x="806" y="34" width="196" height="274" rx="23" fill="#f2f5fa"/>
+    <rect x="865" y="40" width="78" height="7" rx="3.5" fill="#12203a" opacity=".2"/>
+    <text x="824" y="76" font-size="14" font-weight="800" fill="#12203a">START</text>
+    <rect x="944" y="59" width="42" height="19" rx="9.5" fill="#ffdd00"/>
+    <text x="965" y="72" text-anchor="middle" font-size="9" font-weight="800" fill="#12203a">XI</text>
+    <text x="824" y="105" font-size="18" font-weight="800" fill="#12203a">Hi, scholar!</text>
+    <rect x="820" y="119" width="168" height="87" rx="17" fill="#12203a"/>
+    <text x="834" y="143" font-size="10" font-weight="700" letter-spacing="1" fill="#7ccbff">THIS WEEK</text>
+    <text x="834" y="164" font-size="16" font-weight="800" fill="#ffffff">Check in</text>
+    <rect x="834" y="176" width="104" height="20" rx="10" fill="#ffdd00"/>
+    <text x="886" y="190" text-anchor="middle" font-size="10" font-weight="800" fill="#12203a">START NOW</text>
+    <rect x="820" y="217" width="80" height="56" rx="13" fill="#ffffff"/>
+    <rect x="908" y="217" width="80" height="56" rx="13" fill="#ffffff"/>
+    <text x="832" y="242" font-size="13" font-weight="800" fill="#12203a">Journey</text>
+    <text x="832" y="259" font-size="10" fill="#66748c">XP &amp; rewards</text>
+    <text x="920" y="242" font-size="13" font-weight="800" fill="#12203a">School</text>
+    <text x="920" y="259" font-size="10" fill="#66748c">Updates</text>
+    <circle cx="904" cy="294" r="4" fill="#ffdd00"/>
+  </g>
+  <g font-family="Arial, Helvetica, sans-serif" filter="url(#shadow)">
+    <rect x="1030" y="105" width="126" height="52" rx="16" fill="#ffdd00"/>
+    <text x="1093" y="129" text-anchor="middle" font-size="12" font-weight="800" fill="#12203a">WEEKLY</text>
+    <text x="1093" y="145" text-anchor="middle" font-size="11" fill="#12203a">CHECK-INS</text>
+    <rect x="1024" y="173" width="132" height="52" rx="16" fill="#7ccbff"/>
+    <text x="1090" y="197" text-anchor="middle" font-size="12" font-weight="800" fill="#12203a">ONE START</text>
+    <text x="1090" y="213" text-anchor="middle" font-size="11" fill="#12203a">COMMUNITY</text>
+  </g>
+</svg>

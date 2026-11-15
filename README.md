@@ -1,88 +1,111 @@
-# START Scholar Portal app
+<p align="center">
+  <img src="docs/readme-banner.svg" width="1200" alt="START Scholar Portal banner showing the star mascot, a weekly check-in, Journey progress, and school updates">
+</p>
 
-The START app for DOST-SEI START scholars, START Campus Leads and Regional Representatives (RRs).
-It is a free installable web app, hosted on GitHub Pages, with no app store. It opens your region's
-START website, which runs on the START Tracker Google Sheet and Apps Script.
+<h1 align="center">START Scholar Portal</h1>
 
-- No data is stored here. Everything stays in each region's tracker spreadsheet.
-- The app keeps only your sign-in on your own phone, so you don't type a code every time.
-- It has its own icon, name and full-screen look, and a navy and yellow loading screen.
+<p align="center">One place for DOST-SEI START scholars, Campus Leads, and Regional Representatives in Davao Region. Check in each week, follow your Journey, and stay connected to your school.</p>
 
-The app icon uses the original [START-DOST logo](https://www.start-dost.org/) with a yellow **REGION XI** pill. The source image is saved as `icons/start-dost-logo.png`; `icons/build-icons.ps1` rebuilds the app, Apple touch, and favicon sizes without redrawing the logo. Run it with `powershell -NoProfile -ExecutionPolicy Bypass -File ./icons/build-icons.ps1` after changing the source. Publish the root app files for the new icon to reach installed devices. Some devices may keep the old home screen icon until the app is reinstalled.
+<p align="center"><code>Region XI · Davao</code> &nbsp; <code>Web / PWA</code> &nbsp; <code>GitHub Pages</code> &nbsp; <code>Google Sheets + Apps Script</code></p>
 
-**Live app (Region XI · Davao Region):** https://feliciety02.github.io/START-Davao-Chapter/
+<p align="center">
+  <a href="https://feliciety02.github.io/START-Davao-Chapter/"><strong>Open the app</strong></a> &nbsp;·&nbsp;
+  <a href="#app-tour"><strong>App tour</strong></a> &nbsp;·&nbsp;
+  <a href="#how-it-works"><strong>How it works</strong></a> &nbsp;·&nbsp;
+  <a href="#install-start"><strong>Install START</strong></a> &nbsp;·&nbsp;
+  <a href="#set-up-a-region"><strong>Set up a region</strong></a>
+</p>
 
-## Screenshots
+The installable app is hosted on GitHub Pages. It opens the START website from the region's Google Apps Script deployment, which uses the START Tracker spreadsheet. The app shell works on phones and computers without an app store. It caches the shell for weak connections and can keep a scholar's recent page and an unsent weekly check-in on their device.
 
-| Loading screen | Choosing a region | Install hint (iPhone) |
-|---|---|---|
-| ![Loading screen](docs/screenshots/01-loading.png) | ![Region picker](docs/screenshots/02-region-picker.png) | ![Install hint on iPhone](docs/screenshots/03-install-iphone.png) |
-| Shown while your region's website loads. | Only appears when `config.js` lists more than one region. | iPhones get these steps; Android and computers get an **Install** button. |
+## At a glance
 
-| Offline | Not set up yet |
-|---|---|
-| ![Offline screen](docs/screenshots/04-offline.png) | ![Not set up screen](docs/screenshots/05-not-set-up.png) |
-| No internet: the app waits and offers **Try again**. | `config.js` still has the placeholder address. |
+<table>
+  <tr>
+    <td align="center" width="25%"><strong>01 · Weekly check-ins</strong><br><sub>One question at a time, with an offline answer option</sub></td>
+    <td align="center" width="25%"><strong>02 · Journey</strong><br><sub>Brain breaks, XP, progress, and reward requests</sub></td>
+    <td align="center" width="25%"><strong>03 · Campus Leads</strong><br><sub>School updates, events, and scholar follow-up</sub></td>
+    <td align="center" width="25%"><strong>04 · Regional Representatives</strong><br><sub>Registration, schools, outreach, events, and settings</sub></td>
+  </tr>
+</table>
 
-On a computer:
+Scholars can sign in with their START account. New eligible scholars can register from the portal; requests that need review go to the Regional Representative. Campus Lead and Regional Representative pages use their assigned access in the tracker.
 
-![Loading screen on a computer](docs/screenshots/06-desktop.png)
+## App tour
 
-The screenshots show the app's own screens. Once the website loads, it fills the whole screen.
+These screenshots show **the app shell's own screens**, including loading, installation, and offline states. The signed-in START website fills the screen after loading. The captures are illustrative and may differ from the latest local UI; select an image to open it at full size.
 
-## Set up (once, about 10 minutes)
+<table>
+  <tr>
+    <td align="center"><a href="docs/screenshots/01-loading.png"><img src="docs/screenshots/01-loading.png" width="190" alt="START loading screen on a phone"></a><br><strong>1 · Opening</strong><br><sub>Loads the selected region</sub></td>
+    <td align="center"><a href="docs/screenshots/02-region-picker.png"><img src="docs/screenshots/02-region-picker.png" width="190" alt="Region selection screen"></a><br><strong>2 · Region picker</strong><br><sub>Appears when multiple regions are configured</sub></td>
+    <td align="center"><a href="docs/screenshots/03-install-iphone.png"><img src="docs/screenshots/03-install-iphone.png" width="190" alt="Instructions for adding START to an iPhone home screen"></a><br><strong>3 · Install hint</strong><br><sub>Phone-specific home screen steps</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="docs/screenshots/04-offline.png"><img src="docs/screenshots/04-offline.png" width="190" alt="START offline screen"></a><br><strong>4 · Offline</strong><br><sub>Recent scholar page and retry action</sub></td>
+    <td align="center"><a href="docs/screenshots/05-not-set-up.png"><img src="docs/screenshots/05-not-set-up.png" width="190" alt="Message shown when no region website is configured"></a><br><strong>5 · Setup needed</strong><br><sub>Shown when the region URL is missing</sub></td>
+    <td align="center"><a href="docs/screenshots/06-desktop.png"><img src="docs/screenshots/06-desktop.png" width="240" alt="START loading screen on a desktop browser"></a><br><strong>6 · Desktop</strong><br><sub>The same app shell on a larger screen</sub></td>
+  </tr>
+</table>
 
-### 1. Put the files on GitHub
-1. On github.com, click **New repository**. Name it `start-app`, set it to **Public**, then click **Create repository**.
-2. Click **uploading an existing file**. Drag in **everything inside this folder**, including the `icons` folder and the
-   hidden `.nojekyll` file, then click **Commit changes**.
-3. Go to **Settings › Pages**. Set Source to **Deploy from a branch**, Branch to **main**, folder **/ (root)**, then click **Save**.
-4. After about a minute, the page shows your app address, for example `https://yourname.github.io/start-app/`.
+## How it works
 
-### 2. Point the app at your region's website
-1. In GitHub, open `config.js` and click ✏️ (edit).
-2. Replace `https://script.google.com/macros/s/PASTE_YOUR_WEBSITE_ID/exec` with your website address.
-   To find it, open the tracker and go to **START Tracker › 🌐 Website for members, Leads & you**.
-3. Click **Commit changes**. For more regions, add one line per region; the app then asks members once which region they're in.
+```mermaid
+flowchart TD
+    A["Phone or desktop browser"] --> B["START app shell on GitHub Pages"]
+    B --> C["Region's Apps Script website"]
+    C --> D["START Tracker Google Sheet"]
+    B --> E["Device storage: sign-in, recent scholar page, pending check-in"]
+    E -->|Reconnect and open START| C
+    D --> C
+    classDef device fill:#eaf3fc,stroke:#0099ff,color:#12203a
+    classDef shared fill:#fff3b0,stroke:#d4b200,color:#12203a
+    class A,B,E device
+    class C,D shared
+```
 
-### 3. Allow the app in each tracker
-1. In each tracker, open **START Tracker › 🌐 Website for members, Leads & you**.
-2. Paste the app address in **📱 START app address** and click **Save**.
+The tracker spreadsheet is the source of truth. GitHub Pages hosts static app files; account, school, event, and check-in data are handled by each region's Apps Script and tracker. The device may retain a sign-in, a recent scholar page, and an unsent check-in. **Sign out** removes the saved page and pending check-in from that device. An offline check-in is sent when the scholar is signed in and opens START with a connection.
 
-Without this step, Google won't let the website show inside the app.
+The app shell can open without a connection after it has been cached. Live pages, brain breaks, and new data still need internet access.
 
-The website must be deployed with **Who has access: Anyone**. A website that needs a Google sign-in can't be shown inside the app.
+## Install START
 
-## Installing on a phone
-When START is opened in a phone browser, the loading screen shows phone-specific install steps and keeps a reminder visible after opening. These are hidden when START runs from its installed home-screen app. Browsers require each person to approve adding the app to their phone.
+Open the [Region XI app](https://feliciety02.github.io/START-Davao-Chapter/) in a browser. The app shows an install reminder when the browser supports one; installation always needs the person's approval.
 
-- **Android (Chrome):** open the app address. Tap **Install** on the white bar, or use ⋮ › **Install app**.
-- **iPhone (Safari):** open the app address. Tap **Share** ⬆, then **Add to Home Screen**.
-- **Computer (Chrome / Edge):** click the install icon in the address bar.
+| Device | Steps |
+| --- | --- |
+| Android · Chrome | Tap **Install** in START, or use **⋮ → Install app**. |
+| iPhone · Safari | Tap **Share → Add to Home Screen**. |
+| Computer · Chrome or Edge | Use the install icon in the address bar. |
 
-## Files
-| File | What it is |
-|---|---|
-| `index.html` | The app: loading screen, the website inside it, the install bar |
-| `config.js` | **The only file to edit**: each region's website address |
-| `manifest.webmanifest` | App name, colours and icons |
-| `sw.js` | Keeps the app shell so it opens on weak connections |
-| `icons/` | App icons (navy, START mark, yellow bar) |
-| `docs/screenshots/` | The screenshots in this README |
+START is a web app. This repository does not contain an Android APK or an iOS App Store build.
 
-## Updating
-- **The website or tracker changes:** nothing to do here. The app always shows the live website.
-- **The app itself changes:** upload the new files. Phones pick them up the next time the app is opened online.
+## Explore the repository
 
-## Change log
+| Area | Start here | What you will find |
+| --- | --- | --- |
+| Installable app | [index.html](index.html) · [config.js](config.js) | Loading, region selection, offline check-in, and the region website frame |
+| Install assets | [manifest.webmanifest](manifest.webmanifest) · [sw.js](sw.js) · [icons/](icons/) | App identity, service worker cache, and generated icons |
+| Tracker website and backend | [apps-script/](apps-script/) | Portal UI, registration, check-ins, roles, events, email, and spreadsheet setup |
+| Local checks | [apps-script/tests/](apps-script/tests/) | Node tests for portal and tracker behavior |
+| Screenshots | [docs/screenshots/](docs/screenshots/) | App shell captures used in the tour |
 
-### 22 October 2026
-- **Screenshots and change log added to this README.** The six screenshots are in `docs/screenshots/`.
-- **Website access opened.** The Region XI website deployment is now set to **Who has access: Anyone**. Before this, it sent visitors to a Google sign-in page, which can't be shown inside the app. It now opens directly as *START Scholar Portal · Region XI*.
-- **App published.** The repo `Feliciety02/start-app` was created with all the app files. GitHub Pages was turned on (branch `main`, folder `/`), so the app is live at https://feliciety02.github.io/start-app/.
-- **Region XI website address set.** In `config.js`, the placeholder `PASTE_YOUR_WEBSITE_ID` was replaced with the Region XI deployment (`AKfycbxpcLEC…XVShWQ`).
+## Set up a region
 
-### Still to do
-- [ ] In the Region XI tracker, open **START Tracker › 🌐 Website for members, Leads & you**, paste `https://feliciety02.github.io/start-app/` into **📱 START app address**, and click **Save**. Until this is done, the website won't show inside the app.
-- [ ] Test on an Android phone and an iPhone: open the app, sign in, close it, and open it again.
-- [ ] Share the app address and install steps with scholars, Campus Leads and RRs.
+The checkout already names Region XI in [config.js](config.js). For a new region or a fork, set up the tracker website and app address together:
+
+1. In the region's bound Apps Script project, deploy the START website as a **Web app** with **Who has access: Anyone**. A website that requires a Google sign-in cannot load inside the app frame.
+2. Put the deployment's `/exec` URL in the `regions` list in [config.js](config.js). With more than one region, START asks the visitor to choose one and remembers the selection.
+3. Publish the root app files, including `.nojekyll` and `icons/`, through GitHub Pages: **Settings → Pages → Deploy from a branch → main → / (root)**.
+4. In each tracker, open **START Tracker → 🌐 Website for members, Leads & you**. Enter the published app URL under **📱 START app address** and save it. This allows the website to appear inside the app.
+
+The [Apps Script guide](apps-script/README.md) covers tracker setup, schema changes, and deployment details. Editing local `.gs` or `Web_App.html` files does **not** change the live bound Apps Script project.
+
+## Updating and checking
+
+- **App shell, configuration, or icons:** publish the changed root files to GitHub Pages. Installed devices load the updated shell when they next open START online. If the icon remains old, reinstalling the home screen app may be necessary.
+- **Tracker website or server:** copy or sync the changed files from [apps-script/](apps-script/) into the bound project, run **Set up / fix the tracker** as the owner when schema or protections changed, then deploy a **new web-app version**. Keep the live project's complete `07_Look.gs` when syncing.
+- **Icons:** run `powershell -NoProfile -ExecutionPolicy Bypass -File ./icons/build-icons.ps1`, then publish the generated files in `icons/` and the manifest.
+- **Local checks:** run `node --test apps-script/tests/*.test.cjs` from the repository root.
+
+Local tests cannot verify live Google Sheets permissions, email delivery, or Apps Script response time. After a deployment, test registration, sign-in, one check-in, and the installed app on real Android and iPhone devices.
