@@ -33,20 +33,22 @@ Scholars can sign in with their START account. New eligible scholars can registe
 
 ## App tour
 
-These screenshots show **the app shell's own screens**, including loading, installation, and offline states. The signed-in START website fills the screen after loading. The captures are illustrative and may differ from the latest local UI; select an image to open it at full size.
+These are **unedited 1080 × 2400 screenshots from the installed START web app**, captured through USB debugging on a realme RMX2151 on November 16, 2026. The Lead and Member screens use the Regional Representative account's practice view. Select an image to open it at full size. The [capture archive](docs/screenshots/portal-2026-11-16/README.md) records the device, method, and file hashes.
 
 <table>
   <tr>
-    <td align="center"><a href="docs/screenshots/01-loading.png"><img src="docs/screenshots/01-loading.png" width="190" alt="START loading screen on a phone"></a><br><strong>1 · Opening</strong><br><sub>Loads the selected region</sub></td>
-    <td align="center"><a href="docs/screenshots/02-region-picker.png"><img src="docs/screenshots/02-region-picker.png" width="190" alt="Region selection screen"></a><br><strong>2 · Region picker</strong><br><sub>Appears when multiple regions are configured</sub></td>
-    <td align="center"><a href="docs/screenshots/03-install-iphone.png"><img src="docs/screenshots/03-install-iphone.png" width="190" alt="Instructions for adding START to an iPhone home screen"></a><br><strong>3 · Install hint</strong><br><sub>Phone-specific home screen steps</sub></td>
+    <td align="center"><a href="docs/screenshots/portal-2026-11-16/01-member-journey.png"><img src="docs/screenshots/portal-2026-11-16/01-member-journey.png" width="190" alt="Member practice view showing Journey level, XP, and weekly streak"></a><br><strong>1 · Journey</strong><br><sub>XP, streak, and progress</sub></td>
+    <td align="center"><a href="docs/screenshots/portal-2026-11-16/02-member-events.png"><img src="docs/screenshots/portal-2026-11-16/02-member-events.png" width="190" alt="Member practice view showing the START events calendar"></a><br><strong>2 · Events</strong><br><sub>START dates and schedules</sub></td>
+    <td align="center"><a href="docs/screenshots/portal-2026-11-16/03-member-ranks.png"><img src="docs/screenshots/portal-2026-11-16/03-member-ranks.png" width="190" alt="Member practice view showing school rankings and eligibility"></a><br><strong>3 · Ranks</strong><br><sub>School check-in standings</sub></td>
   </tr>
   <tr>
-    <td align="center"><a href="docs/screenshots/04-offline.png"><img src="docs/screenshots/04-offline.png" width="190" alt="START offline screen"></a><br><strong>4 · Offline</strong><br><sub>Recent scholar page and retry action</sub></td>
-    <td align="center"><a href="docs/screenshots/05-not-set-up.png"><img src="docs/screenshots/05-not-set-up.png" width="190" alt="Message shown when no region website is configured"></a><br><strong>5 · Setup needed</strong><br><sub>Shown when the region URL is missing</sub></td>
-    <td align="center"><a href="docs/screenshots/06-desktop.png"><img src="docs/screenshots/06-desktop.png" width="240" alt="START loading screen on a desktop browser"></a><br><strong>6 · Desktop</strong><br><sub>The same app shell on a larger screen</sub></td>
+    <td align="center"><a href="docs/screenshots/portal-2026-11-16/04-lead-school.png"><img src="docs/screenshots/portal-2026-11-16/04-lead-school.png" width="190" alt="Campus Lead practice view showing the school home page and weekly check-in"></a><br><strong>4 · Campus Lead</strong><br><sub>School and weekly check-in</sub></td>
+    <td align="center"><a href="docs/screenshots/portal-2026-11-16/05-rr-schools.png"><img src="docs/screenshots/portal-2026-11-16/05-rr-schools.png" width="190" alt="Regional Representative screen for managing school records"></a><br><strong>5 · Schools</strong><br><sub>Regional school records</sub></td>
+    <td align="center"><a href="docs/screenshots/portal-2026-11-16/06-rr-calendar.png"><img src="docs/screenshots/portal-2026-11-16/06-rr-calendar.png" width="190" alt="Regional Representative screen for managing events and the calendar"></a><br><strong>6 · Calendar</strong><br><sub>Regional event management</sub></td>
   </tr>
 </table>
+
+The app shell's [loading](docs/screenshots/01-loading.png), [region picker](docs/screenshots/02-region-picker.png), [installation hint](docs/screenshots/03-install-iphone.png), and [offline screen](docs/screenshots/04-offline.png) are also available.
 
 ## How it works
 
@@ -88,7 +90,7 @@ START is a web app. This repository does not contain an Android APK or an iOS Ap
 | Install assets | [manifest.webmanifest](manifest.webmanifest) · [sw.js](sw.js) · [icons/](icons/) | App identity, service worker cache, and generated icons |
 | Tracker website and backend | [apps-script/](apps-script/) | Portal UI, registration, check-ins, roles, events, email, and spreadsheet setup |
 | Local checks | [apps-script/tests/](apps-script/tests/) | Node tests for portal and tracker behavior |
-| Screenshots | [docs/screenshots/](docs/screenshots/) | App shell captures used in the tour |
+| Screenshots | [phone capture archive](docs/screenshots/portal-2026-11-16/README.md) · [app shell states](docs/screenshots/) | Installed app screens and shell states |
 
 ## Set up a region
 
