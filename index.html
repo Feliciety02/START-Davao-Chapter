@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="START">
-<link rel="manifest" href="manifest.webmanifest?v=13">
+<link rel="manifest" href="manifest.webmanifest?v=14">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=12">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=12">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,6 +24,7 @@
   html, body { margin: 0; height: 100%; font-family: Poppins, 'Segoe UI', Arial, sans-serif; color: var(--navy); overflow: hidden; background: #FFFFFF; }
   body::before { content: ""; position: fixed; inset: 0; background: var(--wash); z-index: 0; }
   button { font-family: inherit; }
+  :is(button, a, textarea, input):focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
   #portal { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: #F2F5FA; opacity: 0; transition: opacity .35s; z-index: 1; }
   #portal.on { opacity: 1; }
 
@@ -64,6 +65,12 @@
   #hint b { display: block; font-size: 14px; } #hint span { color: var(--ink2); }
   #hint .x { background: var(--ice); border: 0; width: 34px; height: 34px; border-radius: 50%; font-size: 18px; color: var(--navy); cursor: pointer; margin-left: auto; flex: none; }
   #hint .pill { padding: 9px 16px; font-size: 13px; white-space: nowrap; }
+  #hint > div { min-width: 0; }
+  @media (max-width: 380px) {
+    #hint { flex-wrap: wrap; }
+    #hint > div { flex: 1 1 calc(100% - 100px); }
+    #hint .pill { order: 3; width: 100%; }
+  }
   #switch { position: fixed; left: 10px; bottom: max(10px, env(safe-area-inset-bottom)); z-index: 4; display: none; background: #fff; color: var(--navy); border: 0;
             border-radius: 999px; padding: 6px 12px; font: 700 11.5px Poppins, Arial, sans-serif; cursor: pointer; box-shadow: var(--shadow); }
   #rescue { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 50; max-width: 560px; margin: 0 auto; background: #fff; color: var(--navy);
@@ -176,6 +183,7 @@
 
   /* ---------- the opening: yellow screen with a face → it shrinks into the START star → welcome ---------- */
   #splash { background: linear-gradient(145deg, #008CF5 0%, #46BFFF 22%, #E2F5FF 38%, #FFFFFF 48%, #FFFFFF 57%, #FFF6CF 68%, #FFDF57 84%, #FFCC00 100%); overflow: hidden; }
+  @media (max-height: 540px) { #splash { overflow-y: auto; align-items: flex-start; } #splash .scard { margin: auto; } }
   .introcover { position: absolute; inset: 0; background: #FFFFFF; z-index: 1; pointer-events: none; }
   .softbg { position: absolute; inset: 0; opacity: 0; pointer-events: none;
     background: radial-gradient(ellipse at 50% 46%, rgba(255,255,255,.97) 0%, rgba(255,255,255,.86) 24%, rgba(255,255,255,.35) 52%, rgba(255,255,255,0) 72%),
@@ -306,7 +314,7 @@
   var ICON_SHIELD = '<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M12 3l7 3v5c0 4.6-3 8.3-7 10-4-1.7-7-5.4-7-10V6z" fill="#FFDD00" stroke="#12203A" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 12l2.5 2.5 4.5-5" fill="none" stroke="#12203A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   function ico(n, s) { return '<svg viewBox="0 0 24 24" width="' + (s || 24) + '" height="' + (s || 24) + '" aria-hidden="true">' + (ICON[n] || '') + '</svg>'; }
 
-  function show(html) { state.innerHTML = html; splash.classList.remove('off'); }
+  function show(html) { state.innerHTML = html; splash.inert = false; splash.classList.remove('off'); splash.removeAttribute('aria-hidden'); }
   function showNow(html) { finishIntro(); show(html); }
   function loadingBar() { show('<div class="quest-gems" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>'); }
   $('splashstar').innerHTML = star(112);
@@ -415,7 +423,7 @@
   function offline(r) {
     var sn = snapOf(r);
     if (!sn) return false;
-    splash.classList.add('off');
+    splash.classList.add('off'); splash.setAttribute('aria-hidden', 'true'); splash.inert = true;
     var o = offPage();
     var ck = sn.checkin, pend = pendingOf(r);
     var status = pend ? '<div class="card wait"><h2>Check-in saved on this phone</h2><p>Status: <b>Pending</b>. It is sent by itself when you are back online and open START.</p></div>'
@@ -524,7 +532,7 @@
     }
     draw();
   }
-  function reveal() { afterIntro(function () { frame.classList.add('on'); splash.classList.add('off'); setTimeout(showInstallHint, 500); }); }
+  function reveal() { afterIntro(function () { frame.classList.add('on'); splash.classList.add('off'); splash.setAttribute('aria-hidden', 'true'); splash.inert = true; setTimeout(showInstallHint, 500); }); }
   // START did not say "ready": Google may be showing its own error page (often: signed into several Google accounts).
   // Show START anyway, with a small card to try again or open it in the browser.
   function slow() { reveal(); rescue(true); }
@@ -542,8 +550,10 @@
 
   // The portal (inside Google's frame) talks to the app: "ready", and saving the sign-in here
   window.addEventListener('message', function (e) {
+    if (e.source !== frame.contentWindow) return;
     if (!/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/i.test(e.origin)) return;
     var d = e.data || {};
+    if (d.start === 'clear-snapshot' && current) { store.set('start_snap:' + current.url, null); closeOffline(); return; }
     if (d.start === 'ready') { clearTimeout(open.t); reveal(); rescue(false); return; }
     if (d.start === 'snapshot' && current && d.data) { var j = JSON.stringify(d.data); if (j.length < 40000) store.set('start_snap:' + current.url, j); return; }
     if (d.start !== 'store' || !current) return;
@@ -551,7 +561,7 @@
     try { all = JSON.parse(store.get(key) || '{}') || {}; } catch (err) { all = {}; }
     if (d.op === 'get') { e.source.postMessage({ start: 'store', op: 'all', data: all }, e.origin); return; }
     if (d.op === 'set' && typeof d.k === 'string' && d.k.indexOf('start_') === 0) {
-      if (d.v == null) delete all[d.k]; else all[d.k] = String(d.v).slice(0, 2000);
+      if (d.v == null) delete all[d.k]; else all[d.k] = String(d.v).slice(0, d.k === 'start_pending' ? 12000 : 2000);
       store.set(key, JSON.stringify(all));
     }
   });
