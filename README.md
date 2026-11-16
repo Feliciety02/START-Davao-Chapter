@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/readme-banner.svg" width="1200" alt="START Scholar Portal banner with the START star and the app's weekly check-in card">
+  <img src="docs/readme-banner.png" width="1200" alt="START Scholar Portal banner showing real phone screens for Member, Campus Lead, and Regional Representative roles">
 </p>
 
 <h1 align="center">START Scholar Portal</h1>

@@ -1,0 +1,82 @@
+$ErrorActionPreference = 'Stop'
+
+$root = Split-Path -Parent $PSScriptRoot
+$sources = @{
+  MEMBER = 'docs/screenshots/portal-2026-11-16/01-member-journey.png'
+  LEAD = 'docs/screenshots/portal-2026-11-16/04-lead-school.png'
+  RR = 'docs/screenshots/portal-2026-11-16/06-rr-calendar.png'
+}
+
+$svg = @'
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 460" role="img" aria-labelledby="title desc">
+  <title id="title">START Scholar Portal, Region XI</title>
+  <desc id="desc">Real START phone screens for Member, Campus Lead, and Regional Representative roles, with the START star asset.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#063c76"/>
+      <stop offset="0.55" stop-color="#12203a"/>
+      <stop offset="1" stop-color="#174574"/>
+    </linearGradient>
+    <clipPath id="member-clip"><rect x="700" y="35" width="190" height="422" rx="19"/></clipPath>
+    <clipPath id="lead-clip"><rect x="890" y="35" width="190" height="422" rx="19"/></clipPath>
+    <clipPath id="rr-clip"><rect x="1080" y="35" width="190" height="422" rx="19"/></clipPath>
+  </defs>
+
+  <rect width="1400" height="460" rx="28" fill="url(#bg)"/>
+  <circle cx="1320" cy="-40" r="260" fill="#0099ff" opacity=".16"/>
+  <circle cx="1310" cy="480" r="250" fill="#ffdd00" opacity=".12"/>
+  <path d="M0 390 C250 330 395 445 610 380" fill="none" stroke="#7ccbff" stroke-width="3" opacity=".4"/>
+
+  <rect x="55" y="50" width="212" height="36" rx="18" fill="#ffdd00"/>
+  <text x="161" y="74" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" letter-spacing="1" fill="#12203a">REGION XI / DAVAO</text>
+  <text x="55" y="164" font-family="Arial, Helvetica, sans-serif" font-size="50" font-weight="800" fill="#ffffff">START Scholar Portal</text>
+  <text x="57" y="210" font-family="Arial, Helvetica, sans-serif" font-size="23" fill="#d6edfc">Check in. Grow your journey. Stay connected.</text>
+  <text x="57" y="277" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#ffffff">For DOST-SEI START scholars, Campus Leads,</text>
+  <text x="57" y="307" font-family="Arial, Helvetica, sans-serif" font-size="19" fill="#ffffff">and Regional Representatives in Davao Region.</text>
+  <text x="57" y="395" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#ffdd00">Three roles. One START community.</text>
+
+  <rect x="696" y="31" width="198" height="430" rx="23" fill="#ffffff"/>
+  <image x="700" y="35" width="190" height="422" href="screenshots/portal-2026-11-16/01-member-journey.png" clip-path="url(#member-clip)"/>
+  <rect x="886" y="31" width="198" height="430" rx="23" fill="#ffffff"/>
+  <image x="890" y="35" width="190" height="422" href="screenshots/portal-2026-11-16/04-lead-school.png" clip-path="url(#lead-clip)"/>
+  <rect x="1076" y="31" width="198" height="430" rx="23" fill="#ffffff"/>
+  <image x="1080" y="35" width="190" height="422" href="screenshots/portal-2026-11-16/06-rr-calendar.png" clip-path="url(#rr-clip)"/>
+
+  <rect x="724" y="9" width="142" height="32" rx="16" fill="#ffdd00"/>
+  <text x="795" y="30" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="800" fill="#12203a">MEMBER</text>
+  <rect x="910" y="9" width="150" height="32" rx="16" fill="#ffdd00"/>
+  <text x="985" y="30" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="800" fill="#12203a">CAMPUS LEAD</text>
+  <rect x="1103" y="9" width="144" height="32" rx="16" fill="#ffdd00"/>
+  <text x="1175" y="30" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="800" fill="#12203a">REGIONAL REP</text>
+
+</svg>
+'@
+
+foreach ($key in $sources.Keys) {
+  $sourcePath = Join-Path $root $sources[$key]
+  if (-not (Test-Path -LiteralPath $sourcePath)) {
+    throw "Missing banner asset: $sourcePath"
+  }
+}
+
+$outputPath = Join-Path $PSScriptRoot 'banner-source.svg'
+[IO.File]::WriteAllText($outputPath, $svg, [Text.UTF8Encoding]::new($false))
+
+$edgePath = 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
+if (-not (Test-Path -LiteralPath $edgePath)) {
+  throw 'Microsoft Edge is required to render docs/readme-banner.png on this Windows machine.'
+}
+$previewPath = Join-Path $PSScriptRoot ('readme-banner-' + [Guid]::NewGuid().ToString('N') + '.png')
+$profilePath = Join-Path $env:TEMP 'start-readme-banner-edge-profile'
+$bannerUri = [Uri]::new($outputPath).AbsoluteUri
+& $edgePath '--headless=new' '--disable-gpu' '--hide-scrollbars' '--no-first-run' "--user-data-dir=$profilePath" '--force-device-scale-factor=2' '--window-size=1400,460' "--screenshot=$previewPath" $bannerUri | Out-Null
+
+$deadline = (Get-Date).AddSeconds(15)
+while (-not (Test-Path -LiteralPath $previewPath) -and (Get-Date) -lt $deadline) {
+  Start-Sleep -Milliseconds 250
+}
+if (-not (Test-Path -LiteralPath $previewPath)) {
+  throw 'Edge did not render the README banner.'
+}
+Move-Item -LiteralPath $previewPath -Destination (Join-Path $PSScriptRoot 'readme-banner.png') -Force
+Write-Output 'Built docs/readme-banner.png from the existing Member, Campus Lead, and Regional Representative screenshots.'
