@@ -6,60 +6,50 @@
 <!-- Source for docs/readme-banner.png. Render at 1100x320, device scale 2 (headless Edge). -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root { --navy:#12203A; --blue:#0099FF; --blue-d:#0077C8; --sky:#7CCBFF; --ice:#EAF3FC; --sun:#FFDD00; --ink2:#4B5B77; }
+  :root { --navy:#12203A; --blue:#0099FF; --sky:#7CCBFF; --sun:#FFDD00; }
   * { box-sizing:border-box; margin:0; }
-  html, body { width:1100px; height:320px; background:transparent; font-family:Poppins, 'Segoe UI', Arial, sans-serif; color:var(--navy); }
-  .card { position:absolute; inset:0; overflow:hidden; border-radius:28px; background:#fff; border:1.5px solid #E3EEFA; }
-  .dots { position:absolute; left:0; top:0; width:640px; height:320px; background-image:radial-gradient(#DCE9F7 1.4px, transparent 1.6px); background-size:22px 22px;
-          -webkit-mask:linear-gradient(90deg, rgba(0,0,0,.55), transparent 75%); mask:linear-gradient(90deg, rgba(0,0,0,.55), transparent 75%); }
-  .bar { position:absolute; left:0; top:0; bottom:0; width:8px; background:linear-gradient(180deg,var(--blue),var(--sky) 60%,var(--sun)); }
+  html, body { width:1100px; height:320px; background:transparent; font-family:Poppins, 'Segoe UI', Arial, sans-serif; color:#fff; }
+  .card { position:absolute; inset:0; overflow:hidden; border-radius:26px; background:linear-gradient(120deg,#12203A 0%,#163A6B 55%,#0B5FA8 100%); }
+  .dots { position:absolute; right:0; top:0; width:500px; height:320px; background-image:radial-gradient(rgba(124,203,255,.28) 1.2px, transparent 1.5px); background-size:20px 20px;
+          -webkit-mask:linear-gradient(90deg, transparent, #000 40%); mask:linear-gradient(90deg, transparent, #000 40%); }
+  .ring { position:absolute; border-radius:50%; border:1.5px solid rgba(124,203,255,.22); }
+  .r1 { width:300px; height:300px; right:70px; top:10px; }
+  .r2 { width:420px; height:420px; right:10px; top:-50px; }
+  .r3 { width:200px; height:200px; right:120px; top:60px; background:radial-gradient(circle, rgba(255,221,0,.22), rgba(255,221,0,0) 70%); border:0; }
 
-  .text { position:absolute; left:58px; top:44px; width:560px; }
-  .kick { display:flex; align-items:center; gap:14px; }
-  .tile { width:52px; height:52px; border-radius:16px; background:var(--ice); border:2px solid #CFE6FA; display:grid; place-items:center; }
-  .kick span { font-size:15px; font-weight:700; letter-spacing:2.2px; color:var(--blue-d); text-transform:uppercase; }
-  h1 { margin-top:14px; font-size:58px; font-weight:800; line-height:1.02; letter-spacing:-1px; }
-  h1 em { font-style:normal; color:var(--blue); }
-  p { margin-top:16px; font-size:17px; line-height:1.5; color:var(--ink2); max-width:470px; }
+  .text { position:absolute; left:52px; top:40px; width:560px; }
+  .pill { display:inline-flex; align-items:center; gap:10px; padding:7px 16px 7px 13px; border-radius:999px; background:rgba(255,255,255,.12);
+          font-size:12.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:#EAF3FC; }
+  .pill i { width:9px; height:9px; border-radius:50%; background:var(--sun); }
+  h1 { margin-top:16px; font-size:62px; font-weight:800; line-height:1; letter-spacing:-1.5px; }
+  h1 span { color:var(--sun); }
+  .sub { margin-top:12px; font-size:19px; font-weight:500; color:#DCEBFA; }
+  .rule { margin-top:22px; width:430px; height:1.5px; background:rgba(124,203,255,.35); }
+  .tag { margin-top:16px; font-size:13px; font-weight:600; letter-spacing:1.2px; color:#B9C6DC; }
 
-  .panel { position:absolute; right:22px; top:22px; bottom:22px; width:390px; border-radius:24px; overflow:hidden;
-           background:linear-gradient(135deg,#0099FF 0%,#0077C8 70%,#005CAA 100%); }
-  .panel::before { content:""; position:absolute; right:-60px; top:-70px; width:240px; height:240px; border-radius:50%; background:radial-gradient(circle, rgba(255,255,255,.28), rgba(255,255,255,0) 68%); }
-  .orbit { position:absolute; left:50%; top:50%; width:228px; height:228px; margin:-114px 0 0 -114px; border-radius:50%; border:2px dashed rgba(255,255,255,.35); }
-  .orbit2 { width:156px; height:156px; margin:-78px 0 0 -78px; border:0; background:rgba(255,255,255,.12); }
-  .big { position:absolute; left:50%; top:50%; width:132px; height:132px; margin:-70px 0 0 -66px; }
-  .chip { position:absolute; display:flex; align-items:center; gap:8px; padding:8px 13px; border-radius:14px; background:#fff; box-shadow:0 6px 0 rgba(5,12,26,.18);
-          font-size:12px; font-weight:600; color:var(--ink2); white-space:nowrap; }
-  .chip b { font-size:19px; font-weight:800; color:var(--navy); line-height:1; }
-  .c1 { left:22px; top:30px; transform:rotate(-4deg); }
-  .c2 { right:22px; top:104px; transform:rotate(4deg); background:var(--sun); color:var(--navy); box-shadow:0 6px 0 #D4B200; }
-  .c3 { left:50%; bottom:22px; transform:translateX(-50%); background:var(--navy); color:#fff; box-shadow:0 6px 0 #050C1A; font-size:12.5px; }
-  .c3 i { font-style:normal; font-size:10.5px; font-weight:800; letter-spacing:.6px; padding:3px 8px; border-radius:999px; background:var(--sun); color:var(--navy); }
+  .star { position:absolute; right:100px; top:28px; width:240px; height:240px; transform:rotate(8deg); filter:drop-shadow(0 18px 24px rgba(5,12,26,.35)); }
   .spark { position:absolute; }
 </style>
 </head>
 <body>
 <div class="card">
   <div class="dots"></div>
-  <div class="bar"></div>
+  <div class="ring r2"></div>
+  <div class="ring r1"></div>
+  <div class="ring r3"></div>
 
   <div class="text">
-    <div class="kick"><div class="tile" id="tilestar"></div><span>DOST-SEI START · Region XI</span></div>
-    <h1>START Scholar<br><em>Portal</em></h1>
-    <p>Weekly check-ins, a Journey with XP, and school updates for scholars, Campus Leads, and RRs.</p>
+    <div class="pill"><i></i>DOST-SEI START · Region XI</div>
+    <h1>START <span>Portal</span></h1>
+    <p class="sub">Weekly check-ins and Journey for Davao scholars</p>
+    <div class="rule"></div>
+    <p class="tag">CHECK IN / PLAY BRAIN BREAKS / EARN XP</p>
   </div>
 
-  <div class="panel">
-    <div class="orbit"></div>
-    <div class="orbit orbit2"></div>
-    <div class="big" id="bigstar"></div>
-    <svg class="spark" style="left:60px;top:150px" width="20" height="20" viewBox="0 0 24 24"><path d="M12 2c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z" fill="#FFDD00"/></svg>
-    <svg class="spark" style="right:70px;top:40px" width="14" height="14" viewBox="0 0 24 24"><path d="M12 2c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z" fill="#fff"/></svg>
-    <svg class="spark" style="right:90px;bottom:80px" width="16" height="16" viewBox="0 0 24 24"><path d="M12 2c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z" fill="#7CCBFF"/></svg>
-    <div class="chip c1"><b>4</b>week streak</div>
-    <div class="chip c2"><b>120</b>XP earned</div>
-    <div class="chip c3"><i>THIS WEEK</i>Check-in → Game → Event</div>
-  </div>
+  <div class="star" id="bigstar"></div>
+  <svg class="spark" style="right:380px;top:70px" width="22" height="22" viewBox="0 0 24 24"><path d="M12 2c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z" fill="#FFDD00"/></svg>
+  <svg class="spark" style="right:60px;top:40px" width="16" height="16" viewBox="0 0 24 24"><path d="M12 2c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z" fill="#fff"/></svg>
+  <svg class="spark" style="right:350px;bottom:60px" width="14" height="14" viewBox="0 0 24 24"><path d="M12 2c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z" fill="#7CCBFF"/></svg>
 </div>
 <script>
   // the START star, copied from index.html
@@ -78,8 +68,7 @@
       '<ellipse cx="31.5" cy="63" rx="4.6" ry="2.8" fill="#FF8FA3" opacity=".7"/><ellipse cx="68.5" cy="63" rx="4.6" ry="2.8" fill="#FF8FA3" opacity=".7"/>' +
       '<path d="M45.6 62.4 q2.2 3 4.4 0 q2.2 3 4.4 0" fill="none" stroke="#12203A" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   }
-  document.getElementById('tilestar').innerHTML = star(38);
-  document.getElementById('bigstar').innerHTML = star(132);
+  document.getElementById('bigstar').innerHTML = star(240);
 </script>
 </body>
 </html>

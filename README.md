@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/readme-banner.png" width="1200" alt="START Scholar Portal banner with the START star and a phone showing the Journey page">
+  <img src="docs/readme-banner.png" width="1200" alt="START Portal banner: weekly check-ins and Journey for Davao scholars, with the START star mascot">
 </p>
 
 <h1 align="center">START Scholar Portal</h1>
