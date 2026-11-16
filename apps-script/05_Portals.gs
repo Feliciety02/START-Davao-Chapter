@@ -1536,7 +1536,7 @@ function webAnswerRow_(ss, email, weekKey, sh, c) {
  * Every day has one thing to do. The check-in day (Settings › "Weekly check-in opens") is the weekly check-in, worth the
  * most XP. Every other day is ONE random brain break: a word scramble (one hard word, one try, against the clock),
  * odd one out or a number pattern (three hard rounds, timed). Questions follow the scholar's own program (Scholars › C),
- * with Davao Region rounds mixed in. Days cannot be replayed: a game counts only on its own day, opening it starts it,
+ * with general science and technology rounds mixed in. Days cannot be replayed: a game counts only on its own day, opening it starts it,
  * and leaving before the end scores 0. The page shows the game; THIS file checks every answer and decides the XP.
  * Saved in the "Daily games" tab. XP from games and check-ins also funds reward requests. */
 var MINI = { xpScramble: 10, xpRound: 3, perfect: 1, rounds: 3, hearts: 1, programRounds: 2, secsScramble: 50, secsRound: 25, slackMs: 4000 };   // +5 s each (generous)   // slackMs: time for a tap to travel to START on slow data
@@ -1555,17 +1555,19 @@ var MINI_PATTERNS = [
   ['What comes next? 2, 3, 5, 7, 11, …', ['12', '13', '15', '17'], 1, 'These are prime numbers.'],
   ['What comes next? 1, 8, 27, 64, …', ['100', '125', '128', '81'], 1, 'These are cubes: 1³, 2³, 3³, 4³, 5³.'],
 ];
-var MINI_DAVAO = {
-  words: [['KADAYAWAN', 'Davao City\'s thanksgiving festival, every August'], ['HAMIGUITAN', 'Mountain range in Davao Oriental, a UNESCO World Heritage Site'],
-          ['MANGOSTEEN', 'Purple "queen of fruits" grown in Davao'], ['NABUNTURAN', 'Capital town of Davao de Oro'],
-          ['MALAGOS', 'Davao City garden resort known for its chocolate'], ['MINDANAO', 'The big island Davao is on']],
-  odd: [['Which is NOT a Davao Region city?', ['Tagum', 'Panabo', 'Mati', 'Valencia'], 3, 'Valencia City is in Bukidnon. The others are Davao Region cities.'],
-        ['Which mountain is NOT in Davao Region?', ['Mt. Apo', 'Mt. Hamiguitan', 'Mt. Talomo', 'Mt. Kitanglad'], 3, 'Mt. Kitanglad is in Bukidnon.'],
-        ['Which island is NOT part of Samal or nearby?', ['Talikud', 'Malipano', 'Siargao', 'Samal'], 2, 'Siargao is in Surigao del Norte.'],
-        ['Which is NOT a Davao Region provincial capital?', ['Mati', 'Nabunturan', 'Malita', 'Kidapawan'], 3, 'Kidapawan is the capital of Cotabato (Region XII).'],
-        ['Which people are NOT native to Davao Region?', ['Bagobo', 'Mandaya', 'Mansaka', 'Ifugao'], 3, 'The Ifugao are from the Cordillera.'],
-        ['Which place is NOT in Davao?', ['Eden Nature Park', 'Chocolate Hills', 'Philippine Eagle Center', 'People\'s Park'], 1, 'The Chocolate Hills are in Bohol.'],
-        ['Which is NOT a fruit?', ['Marang', 'Pomelo', 'Ampalaya', 'Durian'], 2, 'Ampalaya (bitter gourd) is eaten as a vegetable.']],
+// General science and technology: the fallback when the program is not one of the 13, and one odd-one-out round each day
+var MINI_SCITECH = {
+  words: [['ELECTRON', 'Negatively charged particle in an atom'], ['GRAVITY', 'The force that keeps the Moon in orbit'],
+          ['MOLECULE', 'Two or more atoms bonded together'], ['SATELLITE', 'An object that orbits a planet, like the Philippines\' Diwata-1'],
+          ['VOLCANO', 'PHIVOLCS watches these, like Mt. Mayon and Taal'], ['NEUTRON', 'The particle with no charge in an atom\'s nucleus'],
+          ['PHOTON', 'A single particle of light']],
+  odd: [['Which is NOT a planet?', ['Mars', 'Venus', 'Neptune', 'Sirius'], 3, 'Sirius is a star, the brightest in the night sky.'],
+        ['Which is NOT a noble gas?', ['Helium', 'Neon', 'Argon', 'Nitrogen'], 3, 'Nitrogen is in group 15; the noble gases are in group 18.'],
+        ['Which is NOT a renewable energy source?', ['Solar', 'Geothermal', 'Wind', 'Coal'], 3, 'Coal is a fossil fuel and runs out.'],
+        ['Which is NOT an SI base unit?', ['Metre', 'Kilogram', 'Second', 'Newton'], 3, 'The newton is a derived unit: kg·m/s².'],
+        ['Which is NOT a DOST agency?', ['PAGASA', 'PHIVOLCS', 'PCIEERD', 'LTO'], 3, 'The LTO is under the Department of Transportation.'],
+        ['Which is NOT a state of matter?', ['Solid', 'Liquid', 'Plasma', 'Energy'], 3, 'Energy is not matter; solid, liquid, gas and plasma are.'],
+        ['Which is NOT a type of rock?', ['Igneous', 'Sedimentary', 'Metamorphic', 'Magnetic'], 3, 'The three rock types are igneous, sedimentary and metamorphic.']],
 };
 // Program questions, shared between programs that study the same things
 var MQ_ = {
@@ -1578,16 +1580,17 @@ var MQ_ = {
                ['Which is NOT a web browser?', ['Chrome', 'Firefox', 'Safari', 'Apache'], 3, 'Apache is a web server.'],
                ['Which is NOT a social engineering attack?', ['Phishing', 'Pretexting', 'Baiting', 'Defragmenting'], 3, 'Defragmenting tidies a hard drive.'],
                ['Which is NOT an operating system?', ['Windows', 'Linux', 'macOS', 'MySQL'], 3, 'MySQL is a database system.']] },
-  sys: { words: [['DATABASE', 'An organised store of records'], ['FLOWCHART', 'A diagram of steps and decisions'], ['STAKEHOLDER', 'Anyone affected by a new system']],
+  sys: { words: [['DATABASE', 'An organised store of records'], ['FLOWCHART', 'A diagram of steps and decisions'], ['PROTOTYPE', 'An early working model of a system']],
          odd: [['Which is NOT a phase of the SDLC?', ['Planning', 'Analysis', 'Design', 'Marketing'], 3, 'The SDLC covers planning, analysis, design, building, testing and upkeep.'],
                ['Which is NOT a database system?', ['MySQL', 'PostgreSQL', 'Oracle Database', 'Photoshop'], 3, 'Photoshop edits images.'],
                ['Which is NOT a systems analysis diagram?', ['ERD', 'DFD', 'Use case diagram', 'CPU'], 3, 'A CPU is computer hardware.']] },
-  biz: { words: [['DASHBOARD', 'One screen of key numbers for managers'], ['FORECAST', 'An estimate of future sales or demand'], ['INVENTORY', 'The stock a business keeps on hand']],
+  biz: { words: [['ANALYTICS', 'Finding patterns in data to guide decisions'], ['AUTOMATION', 'Letting machines or software do repetitive work'], ['ECOMMERCE', 'Buying and selling over the internet']],
          odd: [['Which is NOT a business (ERP) system?', ['SAP', 'Odoo', 'Oracle NetSuite', 'Figma'], 3, 'Figma is a design tool.'],
-               ['Which is NOT one of the lean wastes?', ['Waiting', 'Overproduction', 'Defects', 'Ergonomics'], 3, 'Ergonomics fits work to people; it is not a waste.'],
-               ['Which is NOT a quality method?', ['Six Sigma', 'Kaizen', 'Lean', 'Kerberos'], 3, 'Kerberos is a network login protocol.']] },
-  teach: { words: [['PEDAGOGY', 'The method and practice of teaching'], ['CURRICULUM', 'Everything a course or school sets out to teach'], ['ASSESSMENT', 'Checking what learners know']],
-           odd: [['Which is NOT a domain in Bloom\'s taxonomy?', ['Cognitive', 'Affective', 'Psychomotor', 'Binary'], 3, 'Bloom\'s three domains are cognitive, affective and psychomotor.'],
+               ['Which is NOT a cloud service model?', ['SaaS', 'PaaS', 'IaaS', 'ROI'], 3, 'ROI (return on investment) is a business measure.'],
+               ['Which is NOT a data visualisation tool?', ['Power BI', 'Tableau', 'Looker Studio', 'Git'], 3, 'Git tracks changes in code.']] },
+  teach: { words: [['MULTIMEDIA', 'Text, sound, images and video combined'], ['SPREADSHEET', 'A grid of cells for numbers and formulas'], ['NETIQUETTE', 'Good manners when communicating online']],
+           odd: [['Which is NOT a spreadsheet program?', ['Excel', 'Google Sheets', 'LibreOffice Calc', 'PowerPoint'], 3, 'PowerPoint makes slide presentations.'],
+                 ['Which is NOT an image file format?', ['PNG', 'JPEG', 'GIF', 'MP3'], 3, 'MP3 is an audio format.'],
                  ['Which is NOT an input device?', ['Keyboard', 'Mouse', 'Scanner', 'Monitor'], 3, 'A monitor is an output device.']] },
   hw: { words: [['FIRMWARE', 'Software built into a piece of hardware'], ['REGISTER', 'Tiny, very fast memory inside a CPU'], ['TRANSISTOR', 'The tiny switch inside every chip']],
         odd: [['Which is NOT a logic gate?', ['AND', 'NOR', 'XOR', 'JUMP'], 3, 'JUMP is a CPU instruction, not a gate.'],
@@ -1661,10 +1664,10 @@ function miniProgram_(ss, email) {
     return row ? String(row[2] || '').trim() : '';
   } catch (e) { return ''; }
 }
-// The questions for a program: { words, odd } (Davao Region when the program is not one of the 13)
+// The questions for a program: { words, odd } (general science and technology when the program is not one of the 13)
 function miniBank_(program) {
   const sets = MINI_PROGRAMS[String(program || '').trim()];
-  if (!sets) return { words: MINI_DAVAO.words, odd: [], own: false };
+  if (!sets) return { words: MINI_SCITECH.words, odd: [], own: false };
   return { words: [].concat.apply([], sets.map(k => MQ_[k].words)), odd: [].concat.apply([], sets.map(k => MQ_[k].odd)), own: true };
 }
 // The full game stays on the server. Only miniPublic_ sends the current prompt to a browser.
@@ -1687,13 +1690,13 @@ function webMiniFor_(email, week, program) {
     icons.forEach((ic, i) => { cards.push({ kind: 'icon', icon: ic, pair: i }); cards.push({ kind: 'icon', icon: ic, pair: i }); });
     const order = shuffle(cards.map((c, i) => i), 13);                // card ids say nothing about the pairs
     return { id, kind, cards: order.map(i => cards[i]), pairs: MEMORY.pairs, xp: MEMORY.pairs * MEMORY.xpPair + MEMORY.tidyBonus,
-             secs: MEMORY.secs, preview: MEMORY.previewSecs, topic: sets ? String(program) : 'Davao Region' };
+             secs: MEMORY.secs, preview: MEMORY.previewSecs, topic: sets ? String(program) : 'Science and technology' };
   }
   if (kind === 'scramble') {
     const w = bank.words[b[3] % bank.words.length], word = w[0];
     let letters = shuffle(word.split(''), 4);
     if (letters.join('') === word) letters = letters.slice(1).concat(letters[0]);
-    return { id, kind: 'scramble', letters, clue: w[1], answer: word, hearts: MINI.hearts, xp: MINI.xpScramble, secs: MINI.secsScramble, topic: bank.own ? String(program) : 'Davao Region' };
+    return { id, kind: 'scramble', letters, clue: w[1], answer: word, hearts: MINI.hearts, xp: MINI.xpScramble, secs: MINI.secsScramble, topic: bank.own ? String(program) : 'Science and technology' };
   }
   const pack = (o, r, topic) => { const idx = shuffle([0, 1, 2, 3], 8 + r * 3);
     return { title: o[0], choices: idx.map(i => o[1][i]), odd: idx.indexOf(o[2]), why: o[3], topic }; };
@@ -1702,10 +1705,10 @@ function webMiniFor_(email, week, program) {
     const rounds = shuffle(MINI_PATTERNS.map((x, i) => i), 6).slice(0, MINI.rounds).map((i, r) => pack(MINI_PATTERNS[i], r, 'Logic'));
     return Object.assign({ id, kind, rounds }, points);
   }
-  // odd one out: two rounds about their program, one about Davao (three Davao rounds when the program is not known)
+  // odd one out: two rounds about their program, one general science round (three when the program is not known)
   const own = shuffle(bank.odd.map((x, i) => i), 6).slice(0, bank.own ? MINI.programRounds : 0).map(i => bank.odd[i]);
-  const davao = shuffle(MINI_DAVAO.odd.map((x, i) => i), 11).slice(0, MINI.rounds - own.length).map(i => MINI_DAVAO.odd[i]);
-  const rounds = own.concat(davao).map((o, r) => pack(o, r, r < own.length ? String(program) : 'Davao Region'));
+  const general = shuffle(MINI_SCITECH.odd.map((x, i) => i), 11).slice(0, MINI.rounds - own.length).map(i => MINI_SCITECH.odd[i]);
+  const rounds = own.concat(general).map((o, r) => pack(o, r, r < own.length ? String(program) : 'Science and technology'));
   return Object.assign({ id, kind, rounds }, points);
 }
 // What the scholar sent -> [text for the sheet, XP, stars 0-3]. Anything that does not match this game scores 0.
