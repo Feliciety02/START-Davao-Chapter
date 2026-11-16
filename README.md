@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/readme-banner.png" width="1200" alt="START Scholar Portal banner showing real phone screens for Member, Campus Lead, and Regional Representative roles">
+  <img src="docs/readme-banner.png" width="1200" alt="START Scholar Portal banner with the START star and a phone showing the Journey page">
 </p>
 
 <h1 align="center">START Scholar Portal</h1>

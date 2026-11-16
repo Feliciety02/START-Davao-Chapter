@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>START README banner</title>
+<!-- Source for docs/readme-banner.png. Render at 1100x320, device scale 2 (see docs/build-readme-banner.ps1). -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --navy:#12203A; --blue:#0099FF; --blue-d:#0077C8; --sky:#7CCBFF; --ice:#EAF3FC; --sun:#FFDD00; --ink2:#4B5B77; }
+  * { box-sizing:border-box; margin:0; }
+  html, body { width:1100px; height:320px; background:#fff; font-family:Poppins, 'Segoe UI', Arial, sans-serif; color:var(--navy); }
+  .card { position:absolute; inset:0; overflow:hidden; border-radius:28px; background:linear-gradient(120deg,#F3F8FE 0%,#EAF3FC 60%,#E2EFFB 100%); }
+  .glow { position:absolute; right:-70px; top:-120px; width:420px; height:420px; border-radius:50%; background:radial-gradient(circle, #FFF6C7 0%, rgba(255,246,199,0) 70%); }
+  .wave { position:absolute; left:0; bottom:0; }
+  .text { position:absolute; left:56px; top:46px; width:560px; }
+  .kick { display:flex; align-items:center; gap:14px; }
+  .tile { width:52px; height:52px; border-radius:14px; background:var(--navy); display:grid; place-items:center; }
+  .kick span { font-size:15px; font-weight:700; letter-spacing:2.2px; color:var(--blue-d); text-transform:uppercase; }
+  h1 { margin-top:14px; font-size:58px; font-weight:800; line-height:1.02; letter-spacing:-1px; }
+  h1 em { display:block; font-style:normal; color:var(--blue); }
+  p { margin-top:16px; font-size:17px; line-height:1.5; color:var(--ink2); max-width:470px; }
+
+  .phone { position:absolute; right:84px; top:28px; width:236px; height:330px; border:9px solid var(--navy); border-bottom:0; border-radius:34px 34px 0 0; background:#fff; padding:14px 16px 0; }
+  .notch { width:70px; height:7px; border-radius:6px; background:var(--navy); margin:0 auto 14px; }
+  .phead { display:flex; align-items:center; justify-content:space-between; }
+  .phead b { font-size:20px; font-weight:800; }
+  .stats { display:flex; gap:10px; margin-top:12px; padding:12px 14px; border-radius:16px; background:var(--ice); }
+  .stats div { flex:1; }
+  .stats b { display:block; font-size:22px; font-weight:800; line-height:1.1; }
+  .stats small { font-size:11px; color:var(--ink2); font-weight:500; }
+  .week { margin-top:12px; padding:12px 14px; border:1.5px solid #DCE6F2; border-radius:16px; }
+  .chip { display:inline-block; padding:3px 10px; border-radius:999px; background:var(--sun); font-size:11px; font-weight:800; letter-spacing:.6px; }
+  .steps { margin-top:10px; font-size:11.5px; font-weight:600; color:var(--ink2); }
+  .track { position:relative; display:flex; justify-content:space-between; margin:12px 4px 2px; }
+  .track::before { content:""; position:absolute; left:10px; right:10px; top:50%; height:5px; margin-top:-2.5px; border-radius:3px; background:linear-gradient(90deg,var(--blue) 0 50%,#DCE6F2 50%); }
+  .dot { position:relative; width:22px; height:22px; border-radius:50%; background:var(--blue); }
+  .dot.now { background:#fff; border:5px solid var(--navy); }
+  .dot.off { background:#fff; border:4px solid #DCE6F2; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="glow"></div>
+  <svg class="wave" width="700" height="120" viewBox="0 0 700 120" aria-hidden="true"><path d="M0 112 C160 92 300 120 460 100 S650 84 700 92" fill="none" stroke="#7CCBFF" stroke-width="3" opacity=".55"/></svg>
+
+  <div class="text">
+    <div class="kick"><div class="tile" id="tilestar"></div><span>DOST-SEI START · Region XI</span></div>
+    <h1>START Scholar<em>Portal</em></h1>
+    <p>Weekly check-ins, a Journey with XP, and school updates for scholars, Campus Leads, and RRs.</p>
+  </div>
+
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="phead"><b>Journey</b><span id="phonestar"></span></div>
+    <div class="stats"><div><b>4</b><small>week streak</small></div><div><b>120</b><small>XP earned</small></div></div>
+    <div class="week">
+      <span class="chip">THIS WEEK</span>
+      <div class="steps">Check-in → Game → Event</div>
+      <div class="track"><i class="dot"></i><i class="dot now"></i><i class="dot off"></i></div>
+    </div>
+  </div>
+</div>
+<script>
+  // the START star, copied from index.html
+  function star(size) {
+    var cx = 50, cy = 55, R = 41, r = 26, pts = [];
+    for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, rad = i % 2 ? r : R; pts.push([cx + rad * Math.cos(a), cy + rad * Math.sin(a)]); }
+    var d = 'M' + pts.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L') + 'Z';
+    var soft = function (fill, w, extra) { return '<path d="' + d + '" fill="' + fill + '" stroke="' + fill + '" stroke-width="' + w + '" stroke-linejoin="round"' + (extra || '') + '/>'; };
+    return '<svg viewBox="0 0 100 100" width="' + size + '" height="' + size + '" aria-hidden="true">' +
+      soft('#12203A', 16, ' transform="translate(0 3.5)"') + soft('#12203A', 16) +
+      soft('#E9A800', 10, ' transform="translate(0 3)"') + soft('#FFD21F', 10) +
+      '<path d="' + d + '" fill="#FFE77A" transform="translate(50 50) scale(.6) translate(-50 -55)" opacity=".75"/>' +
+      '<ellipse cx="33" cy="38" rx="6.5" ry="3.4" fill="#fff" opacity=".7" transform="rotate(-32 33 38)"/><circle cx="41.5" cy="31" r="1.9" fill="#fff" opacity=".8"/>' +
+      '<ellipse cx="40.5" cy="55" rx="4.8" ry="6.2" fill="#12203A"/><ellipse cx="59.5" cy="55" rx="4.8" ry="6.2" fill="#12203A"/>' +
+      '<circle cx="42.3" cy="52.4" r="2" fill="#fff"/><circle cx="61.3" cy="52.4" r="2" fill="#fff"/>' +
+      '<ellipse cx="31.5" cy="63" rx="4.6" ry="2.8" fill="#FF8FA3" opacity=".7"/><ellipse cx="68.5" cy="63" rx="4.6" ry="2.8" fill="#FF8FA3" opacity=".7"/>' +
+      '<path d="M45.6 62.4 q2.2 3 4.4 0 q2.2 3 4.4 0" fill="none" stroke="#12203A" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
+  document.getElementById('tilestar').innerHTML = star(40);
+  document.getElementById('phonestar').innerHTML = star(34);
+</script>
+</body>
+</html>
