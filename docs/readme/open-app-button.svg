@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="216" height="52" viewBox="0 0 216 52" role="img" aria-label="Open the app">
+  <rect width="216" height="52" rx="26" fill="#12203A"/>
+  <path d="M30 26l3-7 3 7 7 3-7 3-3 7-3-7-7-3z" transform="translate(4 -3) scale(0.85) translate(6 6)" fill="#FFDD00"/>
+  <text x="64" y="32" font-family="'Segoe UI', system-ui, -apple-system, Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#ffffff">Open the app</text>
+</svg>

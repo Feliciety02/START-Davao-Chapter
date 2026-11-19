@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/readme-banner.png" width="1200" alt="START Portal banner: weekly check-ins and Journey for Davao scholars, with the START star mascot">
+  <img src="docs/readme/banner.svg" width="1200" alt="START Region XI mark and START Portal name, with the START star mascot from the app">
 </p>
 
 <h1 align="center">START Scholar Portal</h1>
@@ -9,7 +9,13 @@
 <p align="center"><code>Region XI · Davao</code> &nbsp; <code>Web / PWA</code> &nbsp; <code>GitHub Pages</code> &nbsp; <code>Google Sheets + Apps Script</code></p>
 
 <p align="center">
-  <a href="https://feliciety02.github.io/START-Davao-Chapter/"><strong>Open the app</strong></a> &nbsp;·&nbsp;
+  <a href="https://feliciety02.github.io/START-Davao-Chapter/"><img src="docs/readme/open-app-button.svg" width="216" alt="Open the app"></a>
+  <br>
+  <sub>Opens in any browser and installs to the home screen. No app store needed.</sub>
+</p>
+
+<p align="center">
+  <a href="#at-a-glance"><strong>At a glance</strong></a> &nbsp;·&nbsp;
   <a href="#app-tour"><strong>App tour</strong></a> &nbsp;·&nbsp;
   <a href="#how-it-works"><strong>How it works</strong></a> &nbsp;·&nbsp;
   <a href="#install-start"><strong>Install START</strong></a> &nbsp;·&nbsp;
